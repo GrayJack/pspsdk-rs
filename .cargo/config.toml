@@ -1,0 +1,9 @@
+[build]
+rustdocflags = [
+    "-Zunstable-options",
+    "--show-type-layout",
+    "--enable-index-page",
+]
+
+[unstable]
+build-std = ["core", "alloc", "compiler_builtins"]

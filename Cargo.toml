@@ -1,0 +1,12 @@
+[package]
+name = "pspsdk"
+authors = ["GrayJack <gr41.j4ck@gmail.com>"]
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bitflag-attr = { version = "0.13.0", features = ["const-mut-ref"] }
+pspsdk-macros = { path = "pspsdk-macros", features = ["use_crate"] }
+
+[workspace]
+members = ["pspsdk-macros"]
