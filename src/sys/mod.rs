@@ -2,7 +2,9 @@ use bitflag_attr::bitflag;
 use pspsdk_macros::psp_stub;
 
 #[doc(hidden)]
+#[cfg(target_os = "psp")]
 pub mod macro_helpers;
+
 
 mod error;
 pub use error::SceError;
@@ -18,6 +20,88 @@ pub type SceSize = u32;
 pub type SceIsize = isize;
 #[cfg(not(target_os = "psp"))]
 pub type SceIsize = i32;
+
+/// Identification number for several kernel objects.
+#[rustc_layout_scalar_valid_range_start(0)]
+#[rustc_layout_scalar_valid_range_end(0x7FFFFFFF)]
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SceUid(u32);
+
+impl SceUid {
+    /// Create a new SceUid structure from a raw value.
+    ///
+    /// This functions checks for the value of `raw` to be a in the range of possible SceUid
+    /// values used by the PSP OS, returning an [`None`] otherwise.
+    pub const fn new(raw: u32) -> Option<Self> {
+        if let 0..=0x7FFFFFFF = raw {
+            Some(unsafe { Self::new_unchecked(raw) })
+        } else {
+            None
+        }
+    }
+
+    /// Create a new UID structure from a raw value without checking value range.
+    ///
+    /// # Safety
+    ///
+    /// Immediate language UB if `val` is not within the valid range for this
+    /// type, as it violates the validity invariant.
+    #[inline]
+    pub const unsafe fn new_unchecked(raw: u32) -> Self {
+        // SAFETY: Caller promised that `val` is within the valid range.
+        unsafe { Self(raw) }
+    }
+
+    #[inline]
+    pub const fn as_inner(self) -> u32 {
+        // SAFETY: pattern types are always legal values of their base type
+        // (Not using `.0` because that has perf regressions.)
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl crate::private::Sealed for SceUid {}
+
+/// A type that represents the return value of many PSP OS APIs.
+///
+/// If its value is in the range of [`SceError`] ( 0x80000001..=0xFFFFFFFF), then it is an error
+/// result, and a success value otherwise.
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SceResult(u32);
+
+impl SceResult {
+    /// Create a new SceResult.
+    pub const fn new(raw: u32) -> Self {
+        SceResult(raw)
+    }
+
+    /// Turn the SceResult into a [`Result`] type.
+    pub fn into_result<T: SceResultOk>(self) -> Result<T, SceError> {
+        match self.0 {
+            0..=0x7FFFFFFF => unsafe { core::mem::transmute(self.0) },
+            0x80000001..=0xFFFFFFFF => Err(unsafe { SceError::new_unchecked(self.0) }),
+            0x80000000 => Err(SceError::INVALID),
+        }
+    }
+}
+
+/// Trait of types that can be the ok result of [`SceResult`].
+///
+/// For this trait to be correct, the implementation must:
+/// - Be valid for the `0..=0x7FFFFFFF` range
+/// - Have a max size of 4 bytes
+/// - If a struct, be `repr(transparent)`
+pub unsafe trait SceResultOk: crate::private::Sealed {}
+
+unsafe impl SceResultOk for i32 {}
+unsafe impl SceResultOk for u32 {}
+#[cfg(target_pointer_width = 32)]
+unsafe impl SceResultOk for isize {}
+#[cfg(target_pointer_width = 32)]
+unsafe impl SceResultOk for usize {}
+unsafe impl SceResultOk for SceUid {}
 
 /// Resident/Stub library attributes.
 ///

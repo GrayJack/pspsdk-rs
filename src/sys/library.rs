@@ -1,7 +1,5 @@
 //! Module for types related to libraries.
 
-use core::ffi::c_void;
-
 use crate::sys::{SceLibFlags, SceSize};
 
 pub const STUB_LIBRARY_ENTRY_TABLE_OLD_LEN: u8 = 6;

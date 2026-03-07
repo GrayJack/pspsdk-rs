@@ -1,4 +1,5 @@
-#[cfg(target_os = "psp")]
+//! Module with types and functions that helps on macro generated code.
+
 use crate::sys::library::SceStubLibraryEntry;
 
 /// A "function" stub.
@@ -19,7 +20,6 @@ use crate::sys::library::SceStubLibraryEntry;
 /// can automatically remove unreferenced NIDs and library stubs during LTO.
 /// Compiling with LTO then only links the functions that are called, and no
 /// more.
-#[cfg(target_os = "psp")]
 #[derive(Copy, Clone)]
 pub(crate) struct Stub {
     // These are never read, but need to be written into as static items.
@@ -33,7 +33,6 @@ pub(crate) struct Stub {
 ///
 /// The name is padded on the end with zeroes. Must be at least one and a
 /// multiple of 4.
-#[cfg(target_os = "psp")]
 pub const fn lib_name_bytes_len(name: &str) -> usize {
     let name_len = name.len();
     name_len + (4 - name_len % 4)
@@ -42,7 +41,6 @@ pub const fn lib_name_bytes_len(name: &str) -> usize {
 /// Convert a library name to a byte array.
 ///
 /// This is intended to be used with `lib_name_bytes_len`.
-#[cfg(target_os = "psp")]
 pub const fn lib_name_bytes<const T: usize>(name: &str) -> [u8; T] {
     let mut buf = [0; T];
 

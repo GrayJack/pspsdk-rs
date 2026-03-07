@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::ToTokens;
-use syn::{Error, Result};
+use syn::Result;
 
 use crate::psp_stub::{PspStub, StubArgs};
 

@@ -2,7 +2,7 @@ use quote::{quote, ToTokens};
 use sha1::{Digest, Sha1};
 use syn::{
     parse::Parse, spanned::Spanned, Error, Expr, ExprLit, ForeignItem, ForeignItemFn, Ident,
-    ItemForeignMod, Lit, LitInt, LitStr, Meta, MetaNameValue, Path, Signature, Token,
+    ItemForeignMod, Lit, LitInt, LitStr, Meta, MetaNameValue, Signature, Token,
 };
 
 pub struct PspStub {
