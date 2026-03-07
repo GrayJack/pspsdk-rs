@@ -4,6 +4,9 @@ use pspsdk_macros::psp_stub;
 #[doc(hidden)]
 pub mod macro_helpers;
 
+mod error;
+pub use error::SceError;
+
 pub mod library;
 
 #[cfg(target_os = "psp")]
