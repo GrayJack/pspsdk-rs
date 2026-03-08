@@ -2,7 +2,7 @@ use quote::{quote, ToTokens};
 use sha1::{Digest, Sha1};
 use syn::{
     parse::Parse, spanned::Spanned, Error, Expr, ExprLit, ForeignItem, ForeignItemFn, Ident,
-    ItemForeignMod, Lit, LitInt, LitStr, Meta, MetaNameValue, Signature, Token,
+    ItemForeignMod, Lit, LitInt, LitStr, Meta, MetaNameValue, Path, Signature, Token,
 };
 
 pub struct PspStub {
@@ -16,7 +16,8 @@ impl PspStub {
 
         let items = extern_block
             .items
-            .iter()
+            .clone()
+            .into_iter()
             .map(|item| syn::parse2(item.to_token_stream()))
             .collect::<Result<_, _>>()?;
 
@@ -124,7 +125,7 @@ impl ToTokens for PspStub {
                 let stub_extern = quote! {
                     #(#attrs)*
                     #[link_name = #fn_libname_link]
-                    #vis #unsafety #sig;
+                    #vis #unsafety #sig
                 };
 
                 fn_stub_code.push(stub_vars);
@@ -167,10 +168,10 @@ impl ToTokens for PspStub {
                 #(#fn_stub_code)*
             }
 
-            #[cfg(target_os = "psp")]
+            #[cfg(any(target_os = "psp", doc))]
             #[allow(non_snake_case)]
             unsafe extern "C" {
-                #(#fn_stub_extern_items)*
+                #(#fn_stub_extern_items;)*
             }
         };
 

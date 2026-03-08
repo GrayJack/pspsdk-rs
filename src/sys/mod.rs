@@ -8,7 +8,7 @@ pub mod macro_helpers;
 
 
 mod error;
-pub use error::SceError;
+pub use error::{SceError, SceErrorFacility};
 
 pub mod atrac;
 pub mod library;

@@ -360,8 +360,8 @@ extern "C" {
 impl SceAtracId {
     /// Create a new Atrac ID from a raw value.
     ///
-    /// This functions checks for the value of `raw` to be a in the range of possible SceAtracId
-    /// values used by the PSP OS and homebrews, returning an [`None`] otherwise.
+    /// This functions checks for the value of `raw` to be a in the range of possible `SceAtracId`
+    /// values used by the PSP OS, returning an [`None`] otherwise.
     pub const fn new(raw: u32) -> Option<Self> {
         if let 0..6 = raw {
             Some(unsafe { Self::new_unchecked(raw) })

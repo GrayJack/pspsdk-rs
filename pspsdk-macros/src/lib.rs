@@ -2,9 +2,9 @@ use proc_macro::TokenStream;
 use quote::ToTokens;
 use syn::Result;
 
-use crate::psp_stub::{PspStub, StubArgs};
+use crate::pspstub::{PspStub, StubArgs};
 
-mod psp_stub;
+mod pspstub;
 
 #[proc_macro_attribute]
 pub fn psp_stub(attr: TokenStream, item: TokenStream) -> TokenStream {
