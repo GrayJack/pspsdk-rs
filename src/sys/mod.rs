@@ -1,5 +1,6 @@
+use core::marker::PhantomData;
+
 use bitflag_attr::bitflag;
-use pspsdk_macros::psp_stub;
 
 #[doc(hidden)]
 #[cfg(target_os = "psp")]
@@ -9,6 +10,7 @@ pub mod macro_helpers;
 mod error;
 pub use error::SceError;
 
+pub mod atrac;
 pub mod library;
 
 #[cfg(target_os = "psp")]
@@ -69,20 +71,20 @@ impl crate::private::Sealed for SceUid {}
 /// result, and a success value otherwise.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct SceResult(u32);
+pub struct SceResult<T>(u32, PhantomData<T>);
 
-impl SceResult {
+impl<T: SceResultOk> SceResult<T> {
     /// Create a new SceResult.
     pub const fn new(raw: u32) -> Self {
-        SceResult(raw)
+        SceResult(raw, PhantomData)
     }
 
     /// Turn the SceResult into a [`Result`] type.
-    pub fn into_result<T: SceResultOk>(self) -> Result<T, SceError> {
+    pub fn into_result(self) -> Result<T, SceError> {
         match self.0 {
-            0..=0x7FFFFFFF => unsafe { core::mem::transmute(self.0) },
+            0..=0x7FFFFFFF => unsafe { T::handle_ok_value(self.0) },
             0x80000001..=0xFFFFFFFF => Err(unsafe { SceError::new_unchecked(self.0) }),
-            0x80000000 => Err(SceError::INVALID),
+            0x80000000 => Err(SceError::INVALID_VALUE),
         }
     }
 }
@@ -93,15 +95,59 @@ impl SceResult {
 /// - Be valid for the `0..=0x7FFFFFFF` range
 /// - Have a max size of 4 bytes
 /// - If a struct, be `repr(transparent)`
-pub unsafe trait SceResultOk: crate::private::Sealed {}
+pub unsafe trait SceResultOk: Sized + crate::private::Sealed {
+    /// Turn the Ok value range (`(0,0x7FFFFFFF]`) into a result
+    ///
+    /// The `ok_value` is always in the ok value range when used by [`SceResult`].
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError>;
+}
 
-unsafe impl SceResultOk for i32 {}
-unsafe impl SceResultOk for u32 {}
-#[cfg(target_pointer_width = 32)]
-unsafe impl SceResultOk for isize {}
-#[cfg(target_pointer_width = 32)]
-unsafe impl SceResultOk for usize {}
-unsafe impl SceResultOk for SceUid {}
+macro_rules! __result_ok_int {
+    ($($ty:ty),+) => {
+        $(
+            unsafe impl SceResultOk for $ty {
+                unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+                    <$ty>::try_from(ok_value).map_err(|_| SceError::INVALID_VALUE)
+                }
+            }
+        )+
+    };
+}
+
+__result_ok_int!(i8, u8, i16, u16, bool);
+
+
+unsafe impl SceResultOk for i32 {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        debug_assert!(ok_value <= 0x7FFFFFFF);
+        Ok(u32::cast_signed(ok_value))
+    }
+}
+unsafe impl SceResultOk for u32 {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        debug_assert!(ok_value <= 0x7FFFFFFF);
+        Ok(ok_value)
+    }
+}
+#[cfg(target_pointer_width = "32")]
+unsafe impl SceResultOk for isize {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        isize::try_from(ok_value).map_err(|_| SceError::INVALID_VALUE)
+    }
+}
+#[cfg(target_pointer_width = "32")]
+unsafe impl SceResultOk for usize {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        usize::try_from(ok_value).map_err(|_| SceError::INVALID_VALUE)
+    }
+}
+unsafe impl SceResultOk for SceUid {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        debug_assert!(ok_value <= 0x7FFFFFFF);
+        // SAFETY: SceUid is always on the ok value range
+        Ok(unsafe { Self::new_unchecked(ok_value) })
+    }
+}
 
 /// Resident/Stub library attributes.
 ///
@@ -130,13 +176,4 @@ pub enum SceLibFlags {
     SyscallExport = 0x4000,
     /// The library is a system library (a mandatory library for all modules).
     IsSystemLib = 0x8000,
-}
-
-#[psp_stub(libname = "sceAtrac3plus", flags = 0x0009)]
-extern "C" {
-    #[nid(0x6A8C3CD5)]
-    pub fn sceAtracDecodeData(
-        atrac_id: i32, out_samples: *mut u16, out_n: *mut i32, out_end: *mut i32,
-        out_remain_frame: *mut i32,
-    ) -> i32;
 }

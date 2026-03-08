@@ -1,0 +1,400 @@
+#![allow(unused_imports)]
+
+use core::ffi::c_void;
+
+use pspsdk_macros::psp_stub;
+
+use crate::sys::{SceError, SceResult, SceResultOk, SceSize};
+
+/// Identification of Atrac3 objects.
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SceAtracId(u32);
+
+#[repr(C)]
+#[derive(Debug, Clone)]
+pub struct SceAtracBufferInfo {
+    pub write_position_first_buf: *mut u8,
+    pub writable_byte_first_buf: SceSize,
+    pub min_write_byte_first_buf: SceSize,
+    pub read_position_first_buf: SceSize,
+    pub write_position_second_buf: *mut u8,
+    pub writable_byte_second_buf: SceSize,
+    pub min_write_byte_second_buf: SceSize,
+    pub read_position_second_buf: SceSize,
+}
+
+/// The looping status of the Atrac object.
+///
+/// This information than be received from [`sceAtracGetLoopStatus`].
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SceAtracLoopStatus {
+    /// The Atrac object is not set to loop or currently looping.
+    NotLooping = 0x0,
+    /// The Atrac object is set to loop or currently looping.
+    Looping = 0x1,
+}
+
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SceAtracCodecKind {
+    Atrac3 = 0x00001001,
+    Atrac3Plus = 0x00001000,
+}
+
+// FIXME: Add missing docs and missing function
+#[psp_stub(libname = "sceAtrac3plus", flags = 0x0009)]
+extern "C" {
+    /// Get the Atrac ID for an available/released Atrac object with the specified `codec_kind`.
+    ///
+    /// # Parameters
+    /// - `codec_kind`: The kind of codec requested
+    ///
+    /// # Return Value
+    ///
+    /// Returns an Atrac ID on success, an error value otherwise.
+    pub fn sceAtracGetAtracID(codec_kind: SceAtracCodecKind) -> SceResult<SceAtracId>;
+
+    /// Creates a new Atrac ID from the specified data.
+    ///
+    /// # Parameters
+    ///
+    /// - `buf`: The buffer holding the Atrac3 data, including the RIFF/WAVE header.
+    /// - `bufsize`: The size of the buffer pointed by `buf``
+    ///
+    /// # Return Value
+    ///
+    /// Returns the new Atrac ID on success, an error value otherwise.
+    pub unsafe fn sceAtracSetDataAndGetID(
+        buf: *mut c_void, bufsize: usize,
+    ) -> SceResult<SceAtracId>;
+
+    /// Decode a frame of data.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The atrac ID
+    /// - `samples` **[[Out parameter]]**: A pointer to a buffer that receives the decoded data of
+    ///   the current frame
+    /// - `num_samples` **[[Out parameter]]**: A reference to a integer that receives the number of
+    ///   audio samples of the decoded frame
+    /// - `end` **[[Out parameter]]**: A reference to a integer that receives a boolean value
+    ///   indicating if the decoded frame is the last one
+    /// - `remain_frame` **[[Out parameter]]**: A reference to a integer that receives either `-1``
+    ///   if all atrac3 data is already on memory,
+    ///  or the remaining (not decoded yet) frames at memory if not all atrac3 data is on memory
+    ///
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub unsafe fn sceAtracDecodeData(
+        atrac_id: SceAtracId, samples: *mut u16, num_samples: &mut i32, end: &mut i32,
+        remain_frame: &mut i32,
+    ) -> Result<(), SceError>;
+
+    /// Gets the remaining (not decoded) number of frames
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `remain_frame` **[[Out parameter]]**: A reference to a integer that receives either `-1``
+    ///   if all atrac3 data is already on memory, or the remaining (not decoded yet) frames at
+    ///   memory if not all atrac3 data is on memory.
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracGetRemainFrame(
+        atrac_id: SceAtracId, remain_frame: &mut i32,
+    ) -> Result<(), SceError>;
+
+    /// Get information of the Atrac stream data of the given Atrac ID.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `write_pointer` **[[Out parameter]]**: A reference to where to read the atrac data
+    /// - `available_bytes` **[[Out parameter]]**: Number of bytes available at the `write_pointer`
+    ///   location
+    /// - `read_offset` **[[Out parameter]]**: Offset where to seek into the atrac file before
+    ///   reading
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracGetStreamDataInfo(
+        atrac_id: SceAtracId, write_pointer: &mut *mut u8, available_bytes: &mut SceSize,
+        read_offset: &mut SceSize,
+    ) -> Result<(), SceError>;
+
+    /// Adds a specified number of bytes to the atrac stream data.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `bytes_to_add`: Number of bytes to read into location given by
+    ///   [`sceAtracGetStreamDataInfo`].
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracAddStreamData(
+        atrac_id: SceAtracId, bytes_to_add: SceSize,
+    ) -> Result<(), SceError>;
+
+    /// Gets the Atrac object bitrate.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `bitrate` **[[Out parameter]]**: A reference to a integer that receives the bitrate in
+    ///   _kbps_
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracGetBitrate(atrac_id: SceAtracId, bitrate: &mut i32) -> Result<(), SceError>;
+
+    /// Sets the number of loops for the Atrac object associated to the given Atrac ID.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `nloops`: the number of loops to set
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracSetLoopNum(atrac_id: SceAtracId, num_loops: i32) -> Result<(), SceError>;
+
+    /// Releases an Atrac ID
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracReleaseAtracID(atrac_id: SceAtracId) -> Result<(), SceError>;
+
+    /// Gets the number of samples of the next frame to be decoded.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `num_samples` **[[Out parameter]]**: A reference to receives the number of samples of the
+    ///   next frame
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracGetNextSample(
+        atrac_id: SceAtracId, num_samples: &mut i32,
+    ) -> Result<(), SceError>;
+
+    /// Gets the maximum number of samples of the Atrac3 stream.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `max_samples` **[[Out parameter]]**: A reference to a integer that receives the maximum
+    ///   number of samples
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracGetMaxSample(
+        atrac_id: SceAtracId, max_samples: &mut i32,
+    ) -> Result<(), SceError>;
+
+    /// Gets the buffer information to reset the Atrac buffer.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `sample`: The sample to get the buffer information
+    /// - `buffer_info` **[[Out parameter]]**: A reference to a [`SceAtracBufferInfo`] structure to
+    ///   receive the buffer information
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracGetBufferInfoForReseting(
+        atrac_id: SceAtracId, sample: u32, buffer_info: &mut SceAtracBufferInfo,
+    ) -> Result<(), SceError>;
+
+    /// Get the channel of a Atrac object.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `channel` **[[Out parameter]]**: A reference to a integer to receive the channel number.
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracGetChannel(atrac_id: SceAtracId, channel: &mut u32) -> Result<(), SceError>;
+
+    /// Get the internal Codec error from the Atrac object.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `codec_error` **[[Out parameter]]**: A reference to a possible codec error
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracGetInternalErrorInfo(
+        atrac_id: SceAtracId, codec_error: &mut Option<SceError>,
+    ) -> Result<(), SceError>;
+
+
+    /// Get the loop status and loop iteration from the Atrac object.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `loop_num` **[[Out parameter]]**: A reference to a integer to receive the loop counter
+    /// - `loop_status` **[[Out parameter]]**: A reference to a [`SceAtracLoopStatus`] ti receive
+    ///   the loop status information
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracGetLoopStatus(
+        atrac_id: SceAtracId, loop_num: &mut SceSize, loop_status: &mut SceAtracLoopStatus,
+    ) -> Result<(), SceError>;
+
+    /// Gets the next decode sample position.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `sample_position` **[[Out parameter]]**: A reference to a integer to receive the next
+    ///   sample position
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracGetNextDecodePosition(
+        atrac_id: SceAtracId, sample_position: &mut SceSize,
+    ) -> Result<(), SceError>;
+
+    /// Get the second buffer information of the Atrac object.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `position` **[[Out parameter]]**: A reference to a integer to receive the second buffer
+    ///   position
+    /// - `data_byte` **[[Out parameter]]**: A reference to a integer to receive the second buffer
+    ///   data byte
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracGetSecondBufferInfo(
+        atrac_id: SceAtracId, position: &mut SceSize, data_byte: &mut u32,
+    ) -> Result<(), SceError>;
+
+    /// Get the sound sample information of the Atrac object.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `end_sample` **[[Out parameter]]**: A reference to a integer to receive the end
+    ///   information of the sample
+    /// - `loop_start_sample` **[[Out parameter]]**: A reference to a integer to receive the loop
+    ///   start information of the sample. It receiver `-1` when sample not looping/set to loop
+    /// - `loop_end_sample` **[[Out parameter]]**: A reference to a integer to receive the loop end
+    ///   information of the sample. It receiver `-1` when sample not looping/set to loop
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracGetSoundSample(
+        atrac_id: SceAtracId, end_sample: &mut i32, loop_start_sample: &mut i32,
+        loop_end_sample: &mut i32,
+    ) -> Result<(), SceError>;
+
+    /// Resets the play position of the sample of a Atrac object.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID
+    /// - `sample`: The sample to reset the play position
+    /// - `write_offset_first_buf`: The write offset of the first buffer to reset the play position
+    /// - `write_offset_second_buf`: The write offset of the second buffer to reset the play
+    ///   position position
+    ///
+    /// # Return Value
+    ///
+    /// [`Ok`] value on success, error value otherwise.
+    pub fn sceAtracResetPlayPosition(
+        atrac_id: SceAtracId, sample: u32, write_offset_first_buf: SceSize,
+        write_offset_second_buf: SceSize,
+    ) -> Result<(), SceError>;
+
+    pub unsafe fn sceAtracSetData(
+        atrac_id: SceAtracId, buffer_addr: *mut u8, buffer_byte: SceSize,
+    ) -> Result<(), SceError>;
+
+    pub unsafe fn sceAtracSetHalfwayBuffer(
+        atrac_id: SceAtracId, buffer_addr: *mut u8, read_byte: u32, buffer_byte: u32,
+    ) -> Result<(), SceError>;
+
+    pub unsafe fn sceAtracSetHalfwayBufferAndGetID(
+        buffer_addr: *mut u8, read_byte: u32, buffer_byte: u32,
+    ) -> SceResult<SceAtracId>;
+
+    pub unsafe fn sceAtracSetSecondBuffer(
+        atrac_id: SceAtracId, second_buffer_addr: *mut u8, second_buffer_byte: u32,
+    ) -> Result<(), SceError>;
+}
+
+
+impl SceAtracId {
+    /// Create a new Atrac ID from a raw value.
+    ///
+    /// This functions checks for the value of `raw` to be a in the range of possible SceAtracId
+    /// values used by the PSP OS and homebrews, returning an [`None`] otherwise.
+    pub const fn new(raw: u32) -> Option<Self> {
+        if let 0..6 = raw {
+            Some(unsafe { Self::new_unchecked(raw) })
+        } else {
+            None
+        }
+    }
+
+    /// Create a new Atrac ID structure from a raw value without checking value range.
+    ///
+    /// # Safety
+    ///
+    /// Immediate language UB if `val` is not within the valid range for this
+    /// type, as it violates the validity invariant.
+    #[inline]
+    pub const unsafe fn new_unchecked(raw: u32) -> Self {
+        Self(raw)
+    }
+
+    #[inline]
+    pub const fn as_inner(self) -> u32 {
+        // SAFETY: pattern types are always legal values of their base type
+        // (Not using `.0` because that has perf regressions.)
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl crate::private::Sealed for SceAtracId {}
+unsafe impl SceResultOk for SceAtracId {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        match ok_value {
+            0..6 => Ok(unsafe { Self::new_unchecked(ok_value) }),
+            _ => Err(SceError::INVALID_VALUE),
+        }
+    }
+}

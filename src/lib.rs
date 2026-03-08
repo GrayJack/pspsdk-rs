@@ -9,6 +9,15 @@ mod private {
     pub trait Sealed {}
 
     impl Sealed for () {}
+    impl Sealed for bool {}
+    impl Sealed for u8 {}
+    impl Sealed for i8 {}
+    impl Sealed for u16 {}
+    impl Sealed for i16 {}
+    impl Sealed for u32 {}
+    impl Sealed for i32 {}
+    impl Sealed for usize {}
+    impl Sealed for isize {}
     impl<T> Sealed for *const T {}
     impl<T> Sealed for *mut T {}
     impl<T> Sealed for &T {}
