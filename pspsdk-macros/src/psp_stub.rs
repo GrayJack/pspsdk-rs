@@ -16,7 +16,7 @@ impl PspStub {
 
         let items = extern_block
             .items
-            .into_iter()
+            .iter()
             .map(|item| syn::parse2(item.to_token_stream()))
             .collect::<Result<_, _>>()?;
 

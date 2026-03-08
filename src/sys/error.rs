@@ -48,7 +48,7 @@ impl SceError {
 macro_rules! __err_def {
     ($($err:ident = $val:expr;)+) => {
         impl SceError {
-            $(pub const $err: Self = unsafe {Self($err)};)+
+            $(pub const $err: Self = unsafe {Self($val)};)+
         }
     };
 }
@@ -56,31 +56,31 @@ macro_rules! __err_def {
 // Generic Error
 __err_def!(
     NOT_INIT = 0x80000001;
-    NOT_IMPL = 0x80000003;
+    NOT_IMPL= 0x80000003;
     NOT_SUPPORTED = 0x80000004;
     ALREADY = 0x80000020;
     BUSY = 0x80000021;
-    NOMEMORY = 0x80000022;
+    OUT_OF_MEMORY = 0x80000022;
     PRIV_REQUIRED = 0x80000023;
-    NOTFOUND = 0x80000025;
-    ILLCTX = 0x80000030;
+    NOT_FOUND = 0x80000025;
+    ILLEGAL_CONTEXT = 0x80000030;
     CPUDI = 0x80000031;
-    SEMA = 0x80000041;
-    INID = 0x80000100;
-    INNAME = 0x80000101;
-    ININDEX = 0x80000102;
-    INPTR = 0x80000103;
-    INSIZE = 0x80000104;
-    INFLAG = 0x80000105;
-    INCMD = 0x80000106;
-    INMODE = 0x80000107;
-    INFORMAT = 0x80000108;
-    INVALUE = 0x800001FE;
-    INARG = 0x800001FF;
-    NOENT = 0x80000202;
-    BADF = 0x80000209;
-    ACCESS = 0x8000020D;
-    EXIST = 0x80000211;
+    SEMAPHORE = 0x80000041;
+    INVALID_ID = 0x80000100;
+    INVALID_NAME = 0x80000101;
+    INVALID_INDEX = 0x80000102;
+    INVALID_POINTER = 0x80000103;
+    INVALID_SIZE = 0x80000104;
+    INVALID_FLAG = 0x80000105;
+    INVALID_COMMAND = 0x80000106;
+    INVALID_MODE = 0x80000107;
+    INVALID_FORMAT = 0x80000108;
+    INVALID_VALUE = 0x800001FE;
+    INVALID_ARGUMENT = 0x800001FF;
+    NO_ENTRY = 0x80000202;
+    BAD_FILE = 0x80000209;
+    ACCESS_ERROR = 0x8000020D;
+    FILE_EXIST = 0x80000211;
     INVAL = 0x80000216;
     MFILE = 0x80000218;
     NOSPC = 0x8000021C;
@@ -89,54 +89,54 @@ __err_def!(
 
 // Standard errors
 __err_def!(
-    PERM = 0x80010001;
-    NOENT = 0x80010002;
-    FOPEN = 0x80010003;
+    OPERATION_NOT_PERMITTED = 0x80010001;
+    FILE_NOT_FOUND = 0x80010002;
+    FILE_OPEN = 0x80010003;
     IO = 0x80010005;
     RR_DEVICE_IO = 0x80010006;
-    TOO_BIG = 0x80010007;
-    BAD_FILE = 0x80010009;
-    AGAIN = 0x8001000B;
+    ARG_LIST_TOO_LONG = 0x80010007;
+    INVALID_FILE_DESCRIPTOR = 0x80010009;
+    RESOURCE_UNAVAILABLE = 0x8001000B;
     NO_MEMORY = 0x8001000C;
-    ACCESS = 0x8001000D;
-    FAULT = 0x8001000E;
-    BUSY = 0x80010010;
-    EXIST = 0x80010011;
-    XDEV = 0x80010012;
-    NO_DEV = 0x80010013;
-    NOT_DIR = 0x80010014;
-    IS_DIR = 0x80010015;
-    INVALID = 0x80010016;
-    MFILE = 0x80010018;
-    FBIG = 0x8001001B;
-    NO_SPC = 0x8001001C;
-    ROFS = 0x8001001E;
+    NO_PERM = 0x8001000D;
+    FILE_INVALID_ADDR = 0x8001000E;
+    DEVICE_BUSY = 0x80010010;
+    FILE_ALREADY_EXISTS = 0x80010011;
+    CROSS_DEV_LINK = 0x80010012;
+    DEVICE_NOT_FOUND = 0x80010013;
+    NOT_A_DIRECTORY = 0x80010014;
+    IS_DIRECTORY = 0x80010015;
+    STD_INVALID_ARGUMENT = 0x80010016;
+    TOO_MANY_OPEN_SYSTEM_FILES = 0x80010018;
+    FILE_IS_TOO_BIG = 0x8001001B;
+    DEVICE_NO_FREE_SPACE = 0x8001001C;
+    READ_ONLY = 0x8001001E;
     CLOSED = 0x80010020;
     IDRM = 0x80010024;
-    PROTO = 0x80010047;
-    NOT_EMPTY = 0x8001005A;
+    FILE_PROTOCOL = 0x80010047;
+    DIRECTORY_IS_NOT_EMPTY = 0x8001005A;
     NAME_TOO_LONG = 0x8001005B;
-    MLINK = 0x8001005C;
-    CONN_RESET = 0x80010068;
-    NO_BUFS = 0x80010069;
+    TOO_MANY_SYMBOLIC_LINKS = 0x8001005C;
+    CONNECTION_RESET = 0x80010068;
+    NO_FREE_BUF_SPACE = 0x80010069;
     SHUTDOWN = 0x8001006E;
-    ADDR_IN_USE = 0x80010070;
-    CONN_ABORTED = 0x80010071;
-    TIMED_OUT = 0x80010074;
+    ADDR_IN_USE = 0x80010070 ;
+    CONNECTION_ABORTED = 0x80010071 ;
+    TIMEDOUT = 0x80010074 ;
     IN_PROGRESS = 0x80010077;
-    ALREADY = 0x80010078;
-    PROTO_NO_SUPPORT = 0x8001007B;
-    PROTOTYPE = 0x8001007C;
-    ADDR_NOT_AVAIL = 0x8001007D;
-    IS_CONN = 0x8001007F;
-    NOT_CONN = 0x80010080;
-    DQUOT = 0x80010084;
-    NO_SYS = 0x80010086;
+    STD_ALREADY = 0x80010078;
+    INVALID_PROTOCOL = 0x8001007B ;
+    INVALID_SOCKET_TYPE = 0x8001007C ;
+    ADDR_NOT_AVAILABLE = 0x8001007D;
+    IS_ALREADY_CONNECTED = 0x8001007F;
+    NOT_CONNECTED = 0x80010080;
+    FILE_QUOTA_EXCEEDED = 0x80010084;
+    STD_NOT_SUPPORTED = 0x80010086;
     NO_MEDIUM = 0x80010087;
-    OUT_MAIN_MEMORY = 0x8001B001;
-    NUMUNIT = 0x8001B002;
-    FILESIZE = 0x8001B003;
-    FLAG = 0x8001B004;
+    ADDR_OUT_MAIN_MEMORY = 0x8001B001;
+    INVALID_NUM_UNIT = 0x8001B002;
+    INVALID_FILE_SIZE = 0x8001B003;
+    STD_INVALID_FLAG = 0x8001B004;
     NO_CACHE = 0x8001B005;
     WRONG_MEDIUM = 0x8001B006;
 );
@@ -426,11 +426,24 @@ __err_def!(
 
 #[cfg(test)]
 mod tests {
+    use core::mem;
+
     use super::*;
 
     #[test]
-    fn test_size() {
+    fn test_niche_type_attributes() {
+        // Size of Result<(), SceError> and Option<SceError> must be 4 bytes
         assert_eq!(size_of::<Result<(), SceError>>(), size_of::<i32>());
         assert_eq!(size_of::<Option<SceError>>(), size_of::<i32>());
+
+        // Result<(), SceError> ok value must be zero
+        let result: Result<(), SceError> = Ok(());
+        let as_int: u32 = unsafe { mem::transmute(result) };
+        assert_eq!(as_int, 0);
+
+        // Option<SceError> None value must be zero
+        let option: Option<SceError> = None;
+        let as_int: u32 = unsafe { mem::transmute(option) };
+        assert_eq!(as_int, 0);
     }
 }
