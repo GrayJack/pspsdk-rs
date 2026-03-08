@@ -7,6 +7,64 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SceError(u32);
 
+/// The source facility of an error value.
+#[repr(u8)]
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum SceErrorFacility {
+    Null   = 0x000,
+    Errno  = 0x001,
+    Kernel = 0x002,
+    Registry = 0x008,
+    Vsh    = 0x010,
+    Utility = 0x011,
+    SysFile = 0x012,
+    MsApp  = 0x013,
+    Umd    = 0x021,
+    MemoryStick = 0x022,
+    Flash  = 0x023,
+    Usb    = 0x024,
+    Syscon = 0x025,
+    Audio  = 0x026,
+    Lflash = 0x027,
+    Lfatfs = 0x028,
+    Sircs  = 0x029,
+    Irda   = 0x02A,
+    Power  = 0x02B,
+    AudioRouting = 0x02C,
+    MediaSync = 0x02D,
+    Periph = 0x03F,
+    Network = 0x041,
+    Sas    = 0x042,
+    Http   = 0x043,
+    Wave   = 0x044,
+    Snd    = 0x045,
+    Font   = 0x046,
+    P3DA   = 0x047,
+    Magicgate = 0x050,
+    Cphio  = 0x051,
+    OpenPsId = 0x052,
+    Dnas   = 0x053,
+    Mtp    = 0x054,
+    Np     = 0x055,
+    GameUpdate = 0x056,
+    Fmac   = 0x057,
+    Face   = 0x058,
+    Library = 0x05F,
+    Mpeg   = 0x061,
+    Avc    = 0x062,
+    Atrac  = 0x063,
+    Asf    = 0x064,
+    Jpeg   = 0x065,
+    Avi    = 0x066,
+    MP3    = 0x067,
+    G729   = 0x068,
+    Aac    = 0x069,
+    Codec  = 0x07F,
+    #[default]
+    Other,
+}
+
 impl SceError {
     /// Create a new Error structure from a raw value.
     ///
@@ -42,6 +100,62 @@ impl SceError {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
+    }
+
+    /// Get the facility of the error.
+    pub const fn facility(self) -> SceErrorFacility {
+        match (self.0 >> 16) & 0xFF {
+            0x000 => SceErrorFacility::Null,
+            0x001 => SceErrorFacility::Errno,
+            0x002 => SceErrorFacility::Kernel,
+            0x008 => SceErrorFacility::Registry,
+            0x010 => SceErrorFacility::Vsh,
+            0x011 => SceErrorFacility::Utility,
+            0x012 => SceErrorFacility::SysFile,
+            0x013 => SceErrorFacility::MsApp,
+            0x021 => SceErrorFacility::Umd,
+            0x022 => SceErrorFacility::MemoryStick,
+            0x023 => SceErrorFacility::Flash,
+            0x024 => SceErrorFacility::Usb,
+            0x025 => SceErrorFacility::Syscon,
+            0x026 => SceErrorFacility::Audio,
+            0x027 => SceErrorFacility::Lflash,
+            0x028 => SceErrorFacility::Lfatfs,
+            0x029 => SceErrorFacility::Sircs,
+            0x02A => SceErrorFacility::Irda,
+            0x02B => SceErrorFacility::Power,
+            0x02C => SceErrorFacility::AudioRouting,
+            0x02D => SceErrorFacility::MediaSync,
+            0x03F => SceErrorFacility::Periph,
+            0x041 => SceErrorFacility::Network,
+            0x042 => SceErrorFacility::Sas,
+            0x043 => SceErrorFacility::Http,
+            0x044 => SceErrorFacility::Wave,
+            0x045 => SceErrorFacility::Snd,
+            0x046 => SceErrorFacility::Font,
+            0x047 => SceErrorFacility::P3DA,
+            0x050 => SceErrorFacility::Magicgate,
+            0x051 => SceErrorFacility::Cphio,
+            0x052 => SceErrorFacility::OpenPsId,
+            0x053 => SceErrorFacility::Dnas,
+            0x054 => SceErrorFacility::Mtp,
+            0x055 => SceErrorFacility::Np,
+            0x056 => SceErrorFacility::GameUpdate,
+            0x057 => SceErrorFacility::Fmac,
+            0x058 => SceErrorFacility::Face,
+            0x05F => SceErrorFacility::Library,
+            0x061 => SceErrorFacility::Mpeg,
+            0x062 => SceErrorFacility::Avc,
+            0x063 => SceErrorFacility::Atrac,
+            0x064 => SceErrorFacility::Asf,
+            0x065 => SceErrorFacility::Jpeg,
+            0x066 => SceErrorFacility::Avi,
+            0x067 => SceErrorFacility::MP3,
+            0x068 => SceErrorFacility::G729,
+            0x069 => SceErrorFacility::Aac,
+            0x07F => SceErrorFacility::Codec,
+            _ => SceErrorFacility::Other,
+        }
     }
 }
 
