@@ -11,6 +11,7 @@ mod error;
 pub use error::{SceError, SceErrorFacility};
 
 pub mod atrac;
+pub mod audio;
 pub mod library;
 
 #[cfg(target_os = "psp")]
