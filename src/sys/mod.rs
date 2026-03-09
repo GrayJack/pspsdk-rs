@@ -13,6 +13,7 @@ pub use error::{SceError, SceErrorFacility};
 pub mod atrac;
 pub mod audio;
 pub mod library;
+pub mod openpsid;
 
 #[cfg(target_os = "psp")]
 pub type SceSize = usize;
