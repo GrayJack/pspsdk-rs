@@ -4,12 +4,12 @@ use core::ffi::c_void;
 
 use pspsdk_macros::psp_stub;
 
-use crate::sys::{SceError, SceResult, SceResultOk, SceSize};
+use crate::sys::{SceError, SceResult, SceResultOk, SceSize, SceUid};
 
 /// Identification of Atrac3 objects.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct SceAtracId(u32);
+pub struct SceAtracId(SceUid);
 
 #[repr(C)]
 #[derive(Debug, Clone)]
@@ -378,7 +378,7 @@ impl SceAtracId {
     /// type, as it violates the validity invariant.
     #[inline]
     pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(raw)
+        Self(unsafe { SceUid::new_unchecked(raw) })
     }
 
     #[inline]
