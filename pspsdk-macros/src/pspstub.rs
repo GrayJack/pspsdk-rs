@@ -98,6 +98,9 @@ impl ToTokens for PspStub {
             {
                 let Signature { unsafety, .. } = sig;
 
+                let cfg_attrs: Vec<_> =
+                    attrs.iter().filter(|attr| attr.path().is_ident("cfg")).collect();
+
                 let fn_nid_section = LitStr::new(
                     &format!(".rodata.sceNid.{}.{}", lib_name.value(), sig.ident),
                     tokens.span(),
@@ -115,9 +118,11 @@ impl ToTokens for PspStub {
                 let fn_libname_link = LitStr::new(&fn_stub_var.to_string(), tokens.span());
 
                 let stub_vars = quote! {
+                    #(#cfg_attrs)*
                     #[unsafe(link_section = #fn_nid_section)]
                     static #fn_nid_var: u32 = #nid;
 
+                    #(#cfg_attrs)*
                     #[unsafe(link_section = #fn_stub_section)]
                     #[unsafe(no_mangle)]
                     static #fn_stub_var: #crate_path::sys::macro_helpers::Stub = #crate_path::sys::macro_helpers::Stub {
@@ -268,7 +273,7 @@ impl Default for StubArgs {
 
 struct PspExternItemInfo {
     item: ForeignItem,
-    nid: LitInt,
+    nid: Expr,
 }
 
 impl PspExternItemInfo {
@@ -310,7 +315,10 @@ impl Parse for PspExternItemInfo {
                         for byte in hash.iter().take(4).rev() {
                             nid.push_str(&format!("{byte:02X}"));
                         }
-                        LitInt::new(&nid, func.span())
+                        Expr::Lit(ExprLit {
+                            lit: Lit::Int(LitInt::new(&nid, func.span())),
+                            attrs: Vec::new(),
+                        })
                     },
                 };
 
@@ -344,7 +352,10 @@ impl Parse for PspExternItemInfo {
                         for byte in hash.iter().take(4).rev() {
                             nid.push_str(&format!("{byte:02X}"));
                         }
-                        LitInt::new(&nid, statik.span())
+                        Expr::Lit(ExprLit {
+                            lit: Lit::Int(LitInt::new(&nid, statik.span())),
+                            attrs: Vec::new(),
+                        })
                     },
                 };
 
@@ -362,7 +373,7 @@ impl Parse for PspExternItemInfo {
 }
 
 struct NidAttr {
-    pub value: LitInt,
+    pub value: Expr,
 }
 
 impl Parse for NidAttr {
@@ -371,7 +382,23 @@ impl Parse for NidAttr {
 
         match meta {
             Meta::List(meta_list) => {
-                let value: LitInt = syn::parse2(meta_list.tokens)?;
+                let value: Expr = syn::parse2(meta_list.tokens)?;
+
+                match &value {
+                    Expr::Lit(ExprLit { lit, .. }) => match lit {
+                        Lit::Int(_) => {
+                            todo!()
+                        },
+                        _ => return Err(Error::new(value.span(), "expected a integer literal")),
+                    },
+                    Expr::If(_) => {},
+                    _ => {
+                        return Err(Error::new(
+                            value.span(),
+                            "expected a literal integer or a if expression in constant context",
+                        ))
+                    },
+                }
 
                 Ok(NidAttr { value })
             },
