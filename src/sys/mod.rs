@@ -295,6 +295,14 @@ unsafe impl SceResultOk for usize {
         usize::try_from(ok_value).map_err(|_| SceError::INVALID_VALUE)
     }
 }
+unsafe impl SceResultOk for () {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        match ok_value {
+            0x00 => Ok(()),
+            _ => Err(SceError::INVALID_VALUE),
+        }
+    }
+}
 unsafe impl SceResultOk for SceUid {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         debug_assert!(ok_value <= 0x7FFFFFFF);
