@@ -61,7 +61,7 @@ extern "C" {
     /// # Parameters
     ///
     /// - `buf`: The buffer holding the Atrac3 data, including the RIFF/WAVE header.
-    /// - `bufsize`: The size of the buffer pointed by `buf``
+    /// - `bufsize`: The size of the buffer pointed by `buf`
     ///
     /// # Return Value
     ///

@@ -22,10 +22,12 @@ kernel = []
 # It may be required for signed homebrew apps (homebrew that works on OFW), but
 # that is an edge case.
 
-# Use PSP 1.50 NID on kernel modules
+# FIXME: Figure what firmware ranges didn't had any NID number change, then add feature for all ranges that had NID change
+
+# Use PSP 1.50~3.10 NID on kernel modules
 psp_150 = []
-# Use PSP 6.60/6.61 NID on kernel modules (6.61 didn't change NID of exported items)
-psp_660_661 = []
+# Use PSP 6.60~6.61 NID on kernel modules (6.61 didn't change NID of exported items)
+psp_660 = []
 # Use PSPemu 3.65 NID on kernel modules
 vita_365 = []
 # Use a hybrid of PSPemu 3.65 and PSP 6.60/6.61 NID on kernel modules based on Adrenaline used modules

@@ -5,7 +5,6 @@
 
 pub mod sys;
 
-
 mod private {
     pub trait Sealed {}
 
