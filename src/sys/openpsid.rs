@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 use pspsdk_macros::psp_stub;
 
 use crate::sys::SceError;

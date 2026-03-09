@@ -1,9 +1,9 @@
 /// Type representing return errors from the PSP APIs, official or otherwise.
 ///
 /// It's valid range is `(0x80000001, 0xFFFFFFFF]`.
+#[repr(transparent)]
 #[rustc_layout_scalar_valid_range_start(0x80000001)]
 #[rustc_layout_scalar_valid_range_end(0xFFFFFFFF)]
-#[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SceError(u32);
 

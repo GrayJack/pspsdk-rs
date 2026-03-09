@@ -1,6 +1,7 @@
 #![no_std]
 #![allow(internal_features)]
 #![feature(rustc_attrs)]
+#![allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
 
 pub mod sys;
 

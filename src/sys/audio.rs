@@ -77,7 +77,7 @@ extern "C" {
     ///   available channel.
     /// - `sample_count`: The number of samples that can be output on the channel per output call.
     ///   It must be a value between [`AUDIO_SAMPLE_MIN`] and [`AUDIO_SAMPLE_MAX`], and it must be
-    ///   aligned to 64 bytes. Use `audio_sample_align()` to align it.
+    ///   aligned to 64 bytes. Use [`audio_sample_align`] to align it.
     /// - `format`: The output format to use for the channel.
     ///
     /// # Return value
