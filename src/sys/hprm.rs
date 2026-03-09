@@ -1,4 +1,5 @@
 //! Headphone Remote
+#![allow(unused_imports)]
 
 use bitflag_attr::bitflag;
 use pspsdk_macros::psp_stub;
