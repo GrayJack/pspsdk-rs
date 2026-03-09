@@ -1,30 +1,43 @@
+use proc_macro2::Span;
 use quote::{quote, ToTokens};
 use sha1::{Digest, Sha1};
 use syn::{
-    parse::Parse, spanned::Spanned, Error, Expr, ExprLit, ForeignItem, ForeignItemFn, Ident,
-    ItemForeignMod, Lit, LitInt, LitStr, Meta, MetaNameValue, Path, Signature, Token,
+    meta::ParseNestedMeta, parse::Parse, spanned::Spanned, Error, Expr, ExprLit, ExprTuple,
+    ForeignItem, ForeignItemFn, Ident, ItemForeignMod, Lit, LitInt, LitStr, Meta, Signature,
 };
 
 pub struct PspStub {
-    lib_info: StubArgs,
+    lib_info: LibInfo,
     items: Vec<PspExternItemInfo>,
 }
 
 impl PspStub {
     pub fn parse(args: StubArgs, item: proc_macro::TokenStream) -> syn::Result<Self> {
-        let extern_block: ItemForeignMod = syn::parse(item)?;
+        if let (Some(libname), Some(flags)) = (args.lib_name, args.flags) {
+            let extern_block: ItemForeignMod = syn::parse(item)?;
 
-        let items = extern_block
+            let items = extern_block
             .items
-            .clone()
-            .into_iter()
+            // .clone()
+            .iter()
             .map(|item| syn::parse2(item.to_token_stream()))
             .collect::<Result<_, _>>()?;
 
-        Ok(PspStub {
-            lib_info: args,
-            items,
-        })
+            Ok(PspStub {
+                lib_info: LibInfo {
+                    lib_name: libname,
+                    flags,
+                    major_version: args.major_version,
+                    minor_version: args.minor_version,
+                },
+                items,
+            })
+        } else {
+            Err(Error::new(
+                Span::mixed_site(),
+                "`libname` and `flags` are required arguments",
+            ))
+        }
     }
 }
 
@@ -32,7 +45,7 @@ impl ToTokens for PspStub {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         let Self {
             lib_info:
-                StubArgs {
+                LibInfo {
                     lib_name,
                     flags,
                     major_version,
@@ -47,29 +60,28 @@ impl ToTokens for PspStub {
             quote! {::pspsdk}
         };
 
-        let mod_name = Ident::new(&format!("__{}", lib_name.value()), lib_name.span());
-        let resident_var = Ident::new(&format!("__{}_RESIDENT", lib_name.value()), lib_name.span());
+        let mod_name = Ident::new(&format!("__{}", lib_name.value()), tokens.span());
+        let resident_var = Ident::new(&format!("__{}_RESIDENT", lib_name.value()), tokens.span());
         let resident_section =
-            LitStr::new(&format!(".rodata.sceResident.{}", lib_name.value()), lib_name.span());
+            LitStr::new(&format!(".rodata.sceResident.{}", lib_name.value()), tokens.span());
 
-        let nid_start_var =
-            Ident::new(&format!("__{}_NID_START", lib_name.value()), lib_name.span());
+        let nid_start_var = Ident::new(&format!("__{}_NID_START", lib_name.value()), tokens.span());
         let nid_start_section =
-            LitStr::new(&format!(".rodata.sceNid.{}", lib_name.value()), lib_name.span());
+            LitStr::new(&format!(".rodata.sceNid.{}", lib_name.value()), tokens.span());
 
         let fn_stub_start_var =
-            Ident::new(&format!("__{}_FNSTUB_START", lib_name.value()), lib_name.span());
+            Ident::new(&format!("__{}_FNSTUB_START", lib_name.value()), tokens.span());
         let fn_stub_start_section =
-            LitStr::new(&format!(".sceStub.text.{}", lib_name.value()), lib_name.span());
+            LitStr::new(&format!(".sceStub.text.{}", lib_name.value()), tokens.span());
 
         let var_stub_start_var =
-            Ident::new(&format!("__{}_VARSTUB_START", lib_name.value()), lib_name.span());
+            Ident::new(&format!("__{}_VARSTUB_START", lib_name.value()), tokens.span());
         let var_stub_start_section =
-            LitStr::new(&format!(".rodata.sceVstub.{}", lib_name.value()), lib_name.span());
+            LitStr::new(&format!(".rodata.sceVstub.{}", lib_name.value()), tokens.span());
 
-        let stub_entry_var = Ident::new(&format!("__{}_STUB", lib_name.value()), lib_name.span());
+        let stub_entry_var = Ident::new(&format!("__{}_STUB", lib_name.value()), tokens.span());
         let stub_entry_section =
-            LitStr::new(&format!(".lib.stub.entry.{}", lib_name.value()), lib_name.span());
+            LitStr::new(&format!(".lib.stub.entry.{}", lib_name.value()), tokens.span());
 
         let var_stub_count = items.iter().filter(|e| e.is_static()).count() as u8;
         let fn_stub_count = items.iter().filter(|e| e.is_func()).count() as u16;
@@ -88,19 +100,19 @@ impl ToTokens for PspStub {
 
                 let fn_nid_section = LitStr::new(
                     &format!(".rodata.sceNid.{}.{}", lib_name.value(), sig.ident),
-                    lib_name.span(),
+                    tokens.span(),
                 );
-                let fn_nid_var = Ident::new(&format!("__{}_NID", sig.ident), lib_name.span());
+                let fn_nid_var = Ident::new(&format!("__{}_NID", sig.ident), tokens.span());
                 let fn_stub_section = LitStr::new(
                     &format!(".sceStub.text.{}.{}", lib_name.value(), sig.ident),
-                    lib_name.span(),
+                    tokens.span(),
                 );
-                let fn_stub_var = Ident::new(&format!("__{}_stub", sig.ident), lib_name.span());
+                let fn_stub_var = Ident::new(&format!("__{}_stub", sig.ident), tokens.span());
 
                 let mut inner_sig = sig.clone();
                 inner_sig.ident = fn_stub_var.clone();
 
-                let fn_libname_link = LitStr::new(&fn_stub_var.to_string(), lib_name.span());
+                let fn_libname_link = LitStr::new(&fn_stub_var.to_string(), tokens.span());
 
                 let stub_vars = quote! {
                     #[unsafe(link_section = #fn_nid_section)]
@@ -179,116 +191,77 @@ impl ToTokens for PspStub {
     }
 }
 
-pub struct StubArgs {
+pub struct LibInfo {
     lib_name: LitStr,
     flags: LitInt,
     major_version: LitInt,
     minor_version: LitInt,
 }
 
-impl Parse for StubArgs {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let kv = input.parse_terminated(MetaNameValue::parse, Token![,])?;
+pub struct StubArgs {
+    lib_name: Option<LitStr>,
+    flags: Option<LitInt>,
+    major_version: LitInt,
+    minor_version: LitInt,
+}
 
-        let mut name = None;
-        let mut flags = None;
-        let mut major_version = LitInt::new("0", input.span());
-        let mut minor_version = LitInt::new("0", input.span());
-        for meta in &kv {
-            if meta.path.is_ident("libname") || meta.path.is_ident("name") {
-                match meta.value {
-                    Expr::Lit(ExprLit {
-                        lit: Lit::Str(ref s),
-                        ..
-                    }) => name = Some(s.clone()),
-                    _ => {
-                        return Err(Error::new(
-                            meta.path.span(),
-                            "Expected a string literal for `libname`",
-                        ));
-                    },
-                }
+impl StubArgs {
+    pub fn parse(&mut self, meta: ParseNestedMeta) -> syn::Result<()> {
+        if meta.path.is_ident("libname") || meta.path.is_ident("name") {
+            self.lib_name = meta.value()?.parse()?;
+        } else if meta.path.is_ident("flags") {
+            self.flags = meta.value()?.parse()?;
+        } else if meta.path.is_ident("version") {
+            let tuple: ExprTuple = meta.value()?.parse()?;
+
+            if tuple.elems.len() != 2 {
+                return Err(Error::new(
+                    tuple.span(),
+                    "expected a tuple with 2 elements on `version`",
+                ));
             }
 
-            if meta.path.is_ident("flags") {
-                match meta.value {
-                    Expr::Lit(ExprLit {
-                        lit: Lit::Int(ref val),
-                        ..
-                    }) => flags = Some(val.clone()),
-                    _ => {
-                        return Err(Error::new(
-                            meta.value.span(),
-                            "expected a integer literal for `libname`",
-                        ));
-                    },
-                }
+            let major = tuple.elems.first().expect("expression");
+            let minor = tuple.elems.get(1).expect("expression");
+
+            match major {
+                Expr::Lit(ExprLit {
+                    lit: Lit::Int(val), ..
+                }) => self.major_version = val.clone(),
+                _ => {
+                    return Err(Error::new(
+                        major.span(),
+                        "expected a integer literal for the major version",
+                    ));
+                },
             }
 
-            if meta.path.is_ident("version") {
-                match meta.value {
-                    Expr::Tuple(ref t) => {
-                        if t.elems.len() != 2 {
-                            return Err(Error::new(
-                                meta.value.span(),
-                                "expected a tuple with 2 elements on `version`",
-                            ));
-                        }
-
-                        let major = t.elems.first().expect("expression");
-                        let minor = t.elems.get(1).expect("expression");
-
-                        match major {
-                            Expr::Lit(ExprLit {
-                                lit: Lit::Int(val), ..
-                            }) => major_version = val.clone(),
-                            _ => {
-                                return Err(Error::new(
-                                    major.span(),
-                                    "expected a integer literal for the major version",
-                                ));
-                            },
-                        }
-
-                        match minor {
-                            Expr::Lit(ExprLit {
-                                lit: Lit::Int(val), ..
-                            }) => minor_version = val.clone(),
-                            _ => {
-                                return Err(Error::new(
-                                    minor.span(),
-                                    "expected a integer literal for the major version",
-                                ));
-                            },
-                        }
-                    },
-                    _ => {
-                        return Err(Error::new(
-                            meta.value.span(),
-                            "expected a tuple with major and minor version on `version`",
-                        ));
-                    },
-                }
+            match minor {
+                Expr::Lit(ExprLit {
+                    lit: Lit::Int(val), ..
+                }) => self.minor_version = val.clone(),
+                _ => {
+                    return Err(Error::new(
+                        minor.span(),
+                        "expected a integer literal for the major version",
+                    ));
+                },
             }
-
-            if !meta.path.is_ident("libname")
-                && !meta.path.is_ident("name")
-                && !meta.path.is_ident("flags")
-                && !meta.path.is_ident("version")
-            {
-                return Err(Error::new(meta.path.span(), "invalid parameter for `psp_stub`"));
-            }
+        } else {
+            return Err(Error::new(meta.path.span(), "invalid parameter for `psp_stub`"));
         }
 
-        if let (Some(name), Some(flags)) = (name, flags) {
-            Ok(Self {
-                lib_name: name,
-                flags,
-                major_version,
-                minor_version,
-            })
-        } else {
-            Err(Error::new(input.span(), "both `libname` and `flags` must be specified"))
+        Ok(())
+    }
+}
+
+impl Default for StubArgs {
+    fn default() -> Self {
+        Self {
+            lib_name: Default::default(),
+            flags: Default::default(),
+            major_version: LitInt::new("0", Span::call_site()),
+            minor_version: LitInt::new("0", Span::call_site()),
         }
     }
 }
