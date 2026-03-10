@@ -8,7 +8,7 @@ pub mod macro_helpers;
 
 
 mod error;
-pub use error::{SceError, SceErrorFacility};
+pub use error::{ErrorFacility, SceError};
 
 pub mod atrac;
 pub mod audio;
@@ -314,15 +314,15 @@ unsafe impl SceResultOk for SceUid {
 ///
 /// Every library needs to have at least one of those attributes.
 ///
-/// Resident libraries can have the members [`AutoExport`](SceLibFlags::AutoExport),
-/// [`WeakExport`](SceLibFlags::WeakExport), [`NoLinkExport`](SceLibFlags::NoLinkExport),
-/// [`SyscallExport`](SceLibFlags::SyscallExport) and [`IsSystemLib`](SceLibFlags::IsSystemLib).
+/// Resident libraries can have the members [`AutoExport`](LibFlags::AutoExport),
+/// [`WeakExport`](LibFlags::WeakExport), [`NoLinkExport`](LibFlags::NoLinkExport),
+/// [`SyscallExport`](LibFlags::SyscallExport) and [`IsSystemLib`](LibFlags::IsSystemLib).
 ///
-/// Stub libraries can have [`NoSpecialFlags`](SceLibFlags::NoSpecialFlags) or
-/// [`WeakImport`](SceLibFlags::WeakImport).
+/// Stub libraries can have [`NoSpecialFlags`](LibFlags::NoSpecialFlags) or
+/// [`WeakImport`](LibFlags::WeakImport).
 #[bitflag(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
-pub enum SceLibFlags {
+pub enum LibFlags {
     /// The library has no special attributes.
     NoSpecialFlags = 0x0,
     /// Automatically register the library to the system.

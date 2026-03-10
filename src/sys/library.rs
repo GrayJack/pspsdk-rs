@@ -1,6 +1,6 @@
 //! Module for types related to libraries.
 
-use crate::sys::{SceLibFlags, SceSize};
+use crate::sys::{LibFlags, SceSize};
 
 pub const STUB_LIBRARY_ENTRY_TABLE_OLD_LEN: u8 = 6;
 pub const STUB_LIBRARY_ENTRY_TABLE_NEW_LEN: u8 = 7;
@@ -9,7 +9,7 @@ pub const STUB_LIBRARY_ENTRY_TABLE_NEW_LEN: u8 = 7;
 ///
 /// A module can have multiple stub libraries.
 #[repr(C)]
-pub struct SceStubLibraryEntry {
+pub struct StubLibraryEntry {
     /// The name of the library.
     pub name: *const u8,
     /// The version of the library.
@@ -21,8 +21,8 @@ pub struct SceStubLibraryEntry {
     pub version: (u8, u8),
     /// The library's flags.
     ///
-    /// It can be set to either [`SceLibFlags::NoSpecialFlags`] or [`SceLibFlags::WeakImport`].
-    pub flags: SceLibFlags,
+    /// It can be set to either [`LibFlags::NoSpecialFlags`] or [`LibFlags::WeakImport`].
+    pub flags: LibFlags,
     /// The length of the entry table in 32-Bit words.
     ///
     /// Set this to either [`STUB_LIBRARY_ENTRY_TABLE_OLD_LEN`] or
@@ -37,26 +37,26 @@ pub struct SceStubLibraryEntry {
     /// A pointer to an array of NIDs containing the NIDs of the imported functions and variables.
     pub nid_table: *const u32,
     /// A pointer to an array of imported function stubs.
-    pub func_stub_table: *const SceFunctionStub,
+    pub func_stub_table: *const FunctionStub,
     /// A pointer to an array of imported variable stubs.
-    pub var_stub_table: *const SceVariableStub,
+    pub var_stub_table: *const VariableStub,
     pub unk: u16,
 }
 
-unsafe impl Sync for SceStubLibraryEntry {}
+unsafe impl Sync for StubLibraryEntry {}
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub union SceFunctionStub {
-    pub direct_call: SceFunctionDirectCall,
-    pub syscall: SceFunctionSyscall,
+pub union FunctionStub {
+    pub direct_call: FunctionDirectCall,
+    pub syscall: FunctionSyscall,
 }
 
 /// This type represents a function stub belonging to the same privilege-level linked libraries,
 /// i.e. a kernel resident library linked with a kernel stub library.
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct SceFunctionDirectCall {
+pub struct FunctionDirectCall {
     /// The call to the imported function via a MIPS ASM Jump instruction.
     pub call: SceSize,
     /// The delay slot belonging to the call, typically a NOP instruction.
@@ -67,7 +67,7 @@ pub struct SceFunctionDirectCall {
 /// libraries, i.e. a kernel resident library linked with a user stub library.
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct SceFunctionSyscall {
+pub struct FunctionSyscall {
     /// The return instruction from the stub. Typically a `JR $ra command.
     pub return_addr: SceSize,
     /// The system call exception used to call the imported function.
@@ -77,7 +77,7 @@ pub struct SceFunctionSyscall {
 /// This type represents an imported variable stub.
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct SceVariableStub {
+pub struct VariableStub {
     /// The variable address.
     pub addr: SceSize,
     /// The variable NID, identifying the imported variable.

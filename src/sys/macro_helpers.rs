@@ -1,6 +1,6 @@
 //! Module with types and functions that helps on macro generated code.
 
-use crate::sys::library::SceStubLibraryEntry;
+use crate::sys::library::StubLibraryEntry;
 
 /// A "function" stub.
 ///
@@ -24,7 +24,7 @@ use crate::sys::library::SceStubLibraryEntry;
 pub(crate) struct Stub {
     // These are never read, but need to be written into as static items.
     #[allow(dead_code)]
-    pub(crate) lib_addr: &'static SceStubLibraryEntry,
+    pub(crate) lib_addr: &'static StubLibraryEntry,
     #[allow(dead_code)]
     pub(crate) nid_addr: &'static u32,
 }

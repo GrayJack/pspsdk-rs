@@ -169,10 +169,10 @@ impl ToTokens for PspStub {
                 static #var_stub_start_var: () = ();
 
                 #[unsafe(link_section = #stub_entry_section)]
-                static #stub_entry_var: #crate_path::sys::library::SceStubLibraryEntry = #crate_path::sys::library::SceStubLibraryEntry {
+                static #stub_entry_var: #crate_path::sys::library::StubLibraryEntry = #crate_path::sys::library::StubLibraryEntry {
                     name: #resident_var.as_ptr().cast(),
                     version: (#major_version, #minor_version),
-                    flags: #crate_path::sys::SceLibFlags::from_bits_retain(#flags),
+                    flags: #crate_path::sys::LibFlags::from_bits_retain(#flags),
                     len: #crate_path::sys::library::STUB_LIBRARY_ENTRY_TABLE_OLD_LEN,
                     var_stub_count: #var_stub_count,
                     func_stub_count: #fn_stub_count,

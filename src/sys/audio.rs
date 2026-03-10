@@ -16,11 +16,11 @@ pub const AUDIO_SAMPLE_MAX: u32 = 65472;
 /// Representation of the PSP channel number.
 #[repr(transparent)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct SceChannelId(u32);
+pub struct AudioChannelId(u32);
 
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct SceAudioInputParams {
+pub struct AudioInputParams {
     /// Automatic Level Control (ALC) configuration.
     pub alto_level_control: i32,
     /// The input gain (amplification level).
@@ -38,7 +38,7 @@ pub struct SceAudioInputParams {
 /// Possible audio formats for PSP.
 #[repr(u32)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum SceAudioFormats {
+pub enum AudioFormats {
     /// Channel set to stereo output.
     Stereo = 0,
     /// Channel set to mono output.
@@ -48,7 +48,7 @@ pub enum SceAudioFormats {
 /// Possible values for Audio output frequency.
 #[repr(u32)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum SceAudioOutputFrequency {
+pub enum AudioOutputFrequency {
     Khz48 = 48000,
     Khz44_1 = 44100,
     Khz32 = 32000,
@@ -63,7 +63,7 @@ pub enum SceAudioOutputFrequency {
 /// Possible values for Audio input frequency.
 #[repr(u32)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum SceAudioInputFrequency {
+pub enum AudioInputFrequency {
     Khz44_1 = 44100,
     Khz22_05 = 22050,
     Khz11_025 = 11025,
@@ -75,7 +75,7 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `channel`: The channel ID to reserve. Pass [`SceChannelId::NEXT`] to get the first
+    /// - `channel`: The channel ID to reserve. Pass [`AudioChannelId::NEXT`] to get the first
     ///   available channel.
     /// - `sample_count`: The number of samples that can be output on the channel per output call.
     ///   It must be a value between [`AUDIO_SAMPLE_MIN`] and [`AUDIO_SAMPLE_MAX`], and it must be
@@ -86,8 +86,8 @@ extern "C" {
     ///
     /// The channel ID on success, an error value otherwise.
     pub fn sceAudioChReserve(
-        channel: SceChannelId, sample_count: i32, format: SceAudioFormats,
-    ) -> SceResult<SceChannelId>;
+        channel: AudioChannelId, sample_count: i32, format: AudioFormats,
+    ) -> SceResult<AudioChannelId>;
 }
 
 /// Make the given sample count a multiple of 64.
@@ -95,25 +95,25 @@ pub const fn audio_sample_align(sample_count: i32) -> i32 {
     (sample_count + 63) & !63
 }
 
-impl SceChannelId {
+impl AudioChannelId {
     /// Channel 0
-    pub const CHANNEL_0: SceChannelId = unsafe { Self::new_unchecked(0) };
+    pub const CHANNEL_0: AudioChannelId = unsafe { Self::new_unchecked(0) };
     /// Channel 1
-    pub const CHANNEL_1: SceChannelId = unsafe { Self::new_unchecked(1) };
+    pub const CHANNEL_1: AudioChannelId = unsafe { Self::new_unchecked(1) };
     /// Channel 2
-    pub const CHANNEL_2: SceChannelId = unsafe { Self::new_unchecked(2) };
+    pub const CHANNEL_2: AudioChannelId = unsafe { Self::new_unchecked(2) };
     /// Channel 3
-    pub const CHANNEL_3: SceChannelId = unsafe { Self::new_unchecked(3) };
+    pub const CHANNEL_3: AudioChannelId = unsafe { Self::new_unchecked(3) };
     /// Channel 4
-    pub const CHANNEL_4: SceChannelId = unsafe { Self::new_unchecked(4) };
+    pub const CHANNEL_4: AudioChannelId = unsafe { Self::new_unchecked(4) };
     /// Channel 5
-    pub const CHANNEL_5: SceChannelId = unsafe { Self::new_unchecked(5) };
+    pub const CHANNEL_5: AudioChannelId = unsafe { Self::new_unchecked(5) };
     /// Channel 6
-    pub const CHANNEL_6: SceChannelId = unsafe { Self::new_unchecked(6) };
+    pub const CHANNEL_6: AudioChannelId = unsafe { Self::new_unchecked(6) };
     /// Channel 7
-    pub const CHANNEL_7: SceChannelId = unsafe { Self::new_unchecked(7) };
+    pub const CHANNEL_7: AudioChannelId = unsafe { Self::new_unchecked(7) };
     /// Channel value to request a the next channel on functions like [`sceAudioChReserve`].
-    pub const NEXT: SceChannelId = unsafe { Self::new_unchecked(0xFFFFFFFF) };
+    pub const NEXT: AudioChannelId = unsafe { Self::new_unchecked(0xFFFFFFFF) };
 
     /// Create a new channel number from a raw value.
     ///
@@ -146,8 +146,8 @@ impl SceChannelId {
     }
 }
 
-impl crate::private::Sealed for SceChannelId {}
-unsafe impl SceResultOk for SceChannelId {
+impl crate::private::Sealed for AudioChannelId {}
+unsafe impl SceResultOk for AudioChannelId {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         // On result Channel is never 0xFFFFFFFF
         match ok_value {
