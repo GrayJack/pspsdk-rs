@@ -12,7 +12,6 @@ pub use error::{SceError, SceErrorFacility};
 
 pub mod atrac;
 pub mod audio;
-pub mod audio_routing;
 pub mod hprm;
 pub mod library;
 pub mod openpsid;

@@ -6,6 +6,8 @@ use pspsdk_macros::psp_stub;
 
 use crate::sys::{SceError, SceResult, SceResultOk};
 
+pub mod routing;
+
 /// Minimum value for audio sample value.
 pub const AUDIO_SAMPLE_MIN: u32 = 64;
 /// Maximum value for audio sample value.
