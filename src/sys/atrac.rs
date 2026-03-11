@@ -49,7 +49,7 @@ extern "C" {
     /// Get the Atrac ID for an available/released Atrac object with the specified `codec_kind`.
     ///
     /// # Parameters
-    /// - `codec_kind`: The kind of codec requested
+    /// - `codec_kind`: The kind of codec requested.
     ///
     /// # Return Value
     ///
@@ -61,7 +61,7 @@ extern "C" {
     /// # Parameters
     ///
     /// - `buf`: The buffer holding the Atrac3 data, including the RIFF/WAVE header.
-    /// - `bufsize`: The size of the buffer pointed by `buf`
+    /// - `bufsize`: The size of the buffer pointed by `buf`.
     ///
     /// # Return Value
     ///
@@ -74,16 +74,16 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The atrac ID
+    /// - `atrac_id`: The atrac ID.
     /// - `samples` **[[Out parameter]]**: A pointer to a buffer that receives the decoded data of
-    ///   the current frame
+    ///   the current frame.
     /// - `num_samples` **[[Out parameter]]**: A reference to a integer that receives the number of
-    ///   audio samples of the decoded frame
+    ///   audio samples of the decoded frame.
     /// - `end` **[[Out parameter]]**: A reference to a integer that receives a boolean value
-    ///   indicating if the decoded frame is the last one
+    ///   indicating if the decoded frame is the last one.
     /// - `remain_frame` **[[Out parameter]]**: A reference to a integer that receives either `-1``
-    ///   if all atrac3 data is already on memory,
-    ///  or the remaining (not decoded yet) frames at memory if not all atrac3 data is on memory
+    ///   if all atrac3 data is already on memory, or the remaining (not decoded yet) frames at
+    ///   memory if not all atrac3 data is on memory.
     ///
     ///
     /// # Return Value
@@ -99,7 +99,7 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
+    /// - `atrac_id`: The Atrac ID.
     /// - `remain_frame` **[[Out parameter]]**: A reference to a integer that receives either `-1``
     ///   if all atrac3 data is already on memory, or the remaining (not decoded yet) frames at
     ///   memory if not all atrac3 data is on memory.
@@ -115,12 +115,12 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
-    /// - `write_pointer` **[[Out parameter]]**: A reference to where to read the atrac data
+    /// - `atrac_id`: The Atrac ID.
+    /// - `write_pointer` **[[Out parameter]]**: A reference to where to read the atrac data.
     /// - `available_bytes` **[[Out parameter]]**: Number of bytes available at the `write_pointer`
-    ///   location
+    ///   location.
     /// - `read_offset` **[[Out parameter]]**: Offset where to seek into the atrac file before
-    ///   reading
+    ///   reading.
     ///
     /// # Return Value
     ///
@@ -134,7 +134,7 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
+    /// - `atrac_id`: The Atrac ID.
     /// - `bytes_to_add`: Number of bytes to read into location given by
     ///   [`sceAtracGetStreamDataInfo`].
     ///
@@ -149,9 +149,9 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
+    /// - `atrac_id`: The Atrac ID.
     /// - `bitrate` **[[Out parameter]]**: A reference to a integer that receives the bitrate in
-    ///   _kbps_
+    ///   _kbps_.
     ///
     /// # Return Value
     ///
@@ -162,8 +162,8 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
-    /// - `nloops`: the number of loops to set
+    /// - `atrac_id`: The Atrac ID.
+    /// - `nloops`: The number of loops to set.
     ///
     /// # Return Value
     ///
@@ -174,7 +174,7 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
+    /// - `atrac_id`: The Atrac ID.
     ///
     /// # Return Value
     ///
@@ -185,9 +185,9 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
+    /// - `atrac_id`: The Atrac ID.
     /// - `num_samples` **[[Out parameter]]**: A reference to receives the number of samples of the
-    ///   next frame
+    ///   next frame.
     ///
     /// # Return Value
     ///
@@ -200,9 +200,9 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
+    /// - `atrac_id`: The Atrac ID.
     /// - `max_samples` **[[Out parameter]]**: A reference to a integer that receives the maximum
-    ///   number of samples
+    ///   number of samples.
     ///
     /// # Return Value
     ///
@@ -215,10 +215,10 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
-    /// - `sample`: The sample to get the buffer information
+    /// - `atrac_id`: The Atrac ID.
+    /// - `sample`: The sample to get the buffer information.
     /// - `buffer_info` **[[Out parameter]]**: A reference to a [`SceAtracBufferInfo`] structure to
-    ///   receive the buffer information
+    ///   receive the buffer information.
     ///
     /// # Return Value
     ///
@@ -231,7 +231,7 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
+    /// - `atrac_id`: The Atrac ID.
     /// - `channel` **[[Out parameter]]**: A reference to a integer to receive the channel number.
     ///
     /// # Return Value
@@ -243,8 +243,8 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
-    /// - `codec_error` **[[Out parameter]]**: A reference to a possible codec error
+    /// - `atrac_id`: The Atrac ID.
+    /// - `codec_error` **[[Out parameter]]**: A reference to a possible codec error.
     ///
     /// # Return Value
     ///
@@ -258,10 +258,10 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
-    /// - `loop_num` **[[Out parameter]]**: A reference to a integer to receive the loop counter
+    /// - `atrac_id`: The Atrac ID.
+    /// - `loop_num` **[[Out parameter]]**: A reference to a integer to receive the loop counter.
     /// - `loop_status` **[[Out parameter]]**: A reference to a [`SceAtracLoopStatus`] ti receive
-    ///   the loop status information
+    ///   the loop status information.
     ///
     /// # Return Value
     ///
@@ -274,9 +274,9 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
+    /// - `atrac_id`: The Atrac ID.
     /// - `sample_position` **[[Out parameter]]**: A reference to a integer to receive the next
-    ///   sample position
+    ///   sample position.
     ///
     /// # Return Value
     ///
@@ -289,11 +289,11 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
+    /// - `atrac_id`: The Atrac ID.
     /// - `position` **[[Out parameter]]**: A reference to a integer to receive the second buffer
-    ///   position
+    ///   position.
     /// - `data_byte` **[[Out parameter]]**: A reference to a integer to receive the second buffer
-    ///   data byte
+    ///   data byte.
     ///
     /// # Return Value
     ///
@@ -306,13 +306,13 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
+    /// - `atrac_id`: The Atrac ID.
     /// - `end_sample` **[[Out parameter]]**: A reference to a integer to receive the end
-    ///   information of the sample
+    ///   information of the sample.
     /// - `loop_start_sample` **[[Out parameter]]**: A reference to a integer to receive the loop
-    ///   start information of the sample. It receiver `-1` when sample not looping/set to loop
+    ///   start information of the sample. It receiver `-1` when sample not looping/set to loop.
     /// - `loop_end_sample` **[[Out parameter]]**: A reference to a integer to receive the loop end
-    ///   information of the sample. It receiver `-1` when sample not looping/set to loop
+    ///   information of the sample. It receiver `-1` when sample not looping/set to loop.
     ///
     /// # Return Value
     ///
@@ -326,11 +326,11 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `atrac_id`: The Atrac ID
-    /// - `sample`: The sample to reset the play position
-    /// - `write_offset_first_buf`: The write offset of the first buffer to reset the play position
+    /// - `atrac_id`: The Atrac ID.
+    /// - `sample`: The sample to reset the play position.
+    /// - `write_offset_first_buf`: The write offset of the first buffer to reset the play position.
     /// - `write_offset_second_buf`: The write offset of the second buffer to reset the play
-    ///   position position
+    ///   position position.
     ///
     /// # Return Value
     ///
