@@ -32,6 +32,7 @@ extern "C" {
     /// # Return Value
     ///
     /// [`Ok`] value on success, error value otherwise.
+    #[nid(0x1910B327)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceHprmPeekCurrentKey(key: &mut HprmKey) -> Result<(), SceError>;
 
@@ -44,6 +45,7 @@ extern "C" {
     /// # Return Value
     ///
     /// Unknown `Ok` value on success, error value otherwise.
+    #[nid(0x2BCEC83E)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceHprmPeekLatch(latch: &mut [u32; 4]) -> SceResult<i32>;
 
@@ -56,6 +58,7 @@ extern "C" {
     /// # Return Value
     ///
     /// Unknown `Ok` value on success, error value otherwise.
+    #[nid(0x40D2F9F0)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceHprmReadLatch(latch: &mut [u32; 4]) -> SceResult<i32>;
 
@@ -64,6 +67,7 @@ extern "C" {
     /// # Return Value
     ///
     /// Returns `true` if the headphones are plugged in, `false` otherwise.
+    #[nid(0x7E69EDA4)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceHprmIsHeadphoneExist() -> bool;
 
@@ -72,6 +76,7 @@ extern "C" {
     /// # Return Value
     ///
     /// Returns `true` if the remote is plugged in, `false` otherwise.
+    #[nid(0x208DB1BD)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceHprmIsRemoteExist() -> bool;
 
@@ -80,6 +85,7 @@ extern "C" {
     /// # Return Value
     ///
     /// Returns `true` if the microphone is plugged in, `false` otherwise.
+    #[nid(0x219C58F1)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceHprmIsMicrophoneExist() -> bool;
 
@@ -98,6 +104,7 @@ extern "C" {
     ///
     /// If given `slot` is a slot number, returns [`HprmCallbackSlot::ZERO`] on success, an error
     /// value otherwise.
+    #[nid(0xC7154136)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceHprmRegisterCallback(
         slot: HprmCallbackSlot, callback_id: SceUid,
@@ -111,6 +118,7 @@ extern "C" {
     ///
     /// # Return Value
     /// [`Ok`] value on success, error value otherwise.
+    #[nid(0x444ED0B7)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceHprmUnregitserCallback(slot: HprmCallbackSlot) -> Result<(), SceError>;
 }
@@ -122,15 +130,19 @@ extern "C" {
 #[psp_stub(libname = "sceHprm_driver", flags = 0x0001)]
 extern "C" {
     /// Initialize Headphone Remote module.
+    #[nid(0x1C5BC5A0)]
     fn sceHprmInit();
 
     /// De-initialize Headphone Remote module.
+    #[nid(0x588845DA)]
     fn sceHprmEnd();
 
     /// Suspends the headphone remote drive.
+    #[nid(0x526BB7F4)]
     fn sceHprmSuspend();
 
     /// Resumes the headphone remote drive.
+    #[nid(0x2C7B8B05)]
     fn sceHprmResume();
 
     /// Resets the headphone remote drive.
@@ -146,6 +158,7 @@ extern "C" {
     /// # Return Value
     ///
     /// [`Ok`] value on success, error value otherwise.
+    #[nid(0x1910B327)]
     pub fn sceHprmPeekCurrentKey(key: &mut HprmKey) -> Result<(), SceError>;
 
     /// Peek at the current latch data.

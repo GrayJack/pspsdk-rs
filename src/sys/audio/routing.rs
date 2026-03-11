@@ -38,6 +38,7 @@ extern "C" {
     /// # Return Values
     ///
     /// Returns the current routing mode.
+    #[nid(0x931ABEF5)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceAudioRoutingGetMode() -> AudioRoutingMode;
 
@@ -50,6 +51,7 @@ extern "C" {
     /// # Return Values
     ///
     /// Returns the precious routing mode on success, an error value otherwise.
+    #[nid(0x18B6F449)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceAudioRoutingSetMode(mode: AudioRoutingMode) -> SceResult<AudioRoutingMode>;
 
@@ -57,6 +59,7 @@ extern "C" {
     ///
     /// # Return Value
     /// Returns the current routing volume mode.
+    #[nid(0xD82D02FD)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceAudioRoutingGetVolumeMode() -> AudioRoutingVolumeMode;
 
@@ -68,6 +71,7 @@ extern "C" {
     ///
     /// # Return Value
     /// `Ok` value on success, error value otherwise.
+    #[nid(0x44B384EF)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceAudioRoutingSetVolumeMode(vol_mode: AudioRoutingVolumeMode) -> Result<(), SceError>;
 }

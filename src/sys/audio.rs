@@ -85,6 +85,7 @@ extern "C" {
     /// # Return value
     ///
     /// The channel ID on success, an error value otherwise.
+    #[nid(0x5EC81C55)]
     pub fn sceAudioChReserve(
         channel: AudioChannelId, sample_count: i32, format: AudioFormats,
     ) -> SceResult<AudioChannelId>;
