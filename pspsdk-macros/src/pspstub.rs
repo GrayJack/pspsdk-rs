@@ -164,7 +164,15 @@ impl ToTokens for PspStub {
                     }) => quote! {
                         #(#cfg_attrs)*
                         #[doc(hidden)]
-                        #vis(crate) unsafe fn #fn_stub_var(u32, u32, u32, u32, u32, u32, u32) -> u32
+                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
+                    },
+                    Some(EabiAttr {
+                        eabi: EabiKind::Arg8,
+                        ..
+                    }) => quote! {
+                        #(#cfg_attrs)*
+                        #[doc(hidden)]
+                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::I_II_I_RI,
@@ -197,6 +205,17 @@ impl ToTokens for PspStub {
                     },
                 };
 
+                let register = vec![
+                    quote! {"$4"},  // a0
+                    quote! {"$5"},  // a1
+                    quote! {"$6"},  // a2
+                    quote! {"$7"},  // a3
+                    quote! {"$8"},  // t0
+                    quote! {"$9"},  // t1
+                    quote! {"$10"}, // t2
+                    quote! {"$11"}, // t3
+                ];
+
                 let panic = quote! {
                     #[cfg(not(target_os = "psp"))] {
                         panic!("tried to call PSP system function on non-PSP target");
@@ -225,12 +244,27 @@ impl ToTokens for PspStub {
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
-                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc)]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
                             #vis #unsafety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
                                     unsafe {
-                                        ::core::mem::transmute(#crate_path::eabi::i5(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
+                                        // ::core::mem::transmute(#crate_path::eabi::i5(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
+                                        let result: u32;
+                                        ::core::arch::asm!(
+                                            ".set noat",
+                                            // Call the function pointer
+                                            "jalr {func}",
+                                            "nop",
+                                            #(in(#register) ::core::mem::transmute::<_, u32>(#args),)*
+                                            func = in(reg) #fn_stub_var ,
+                                            // Result comes back in v0 register ($2)
+                                            lateout("$2") result,
+                                            // Clobber registers that may be modified by the call
+                                            lateout("$8") _, // t0
+                                        );
+
+                                        ::core::mem::transmute(result)
                                     }
                                 }
 
@@ -266,7 +300,23 @@ impl ToTokens for PspStub {
                             #vis #unsafety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
                                     unsafe {
-                                        ::core::mem::transmute(#crate_path::eabi::i6(#( ::core::mem::transmute( #args ) ),* #fn_stub_var))
+                                        // ::core::mem::transmute(#crate_path::eabi::i5(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
+                                        let result: u32;
+                                        ::core::arch::asm!(
+                                            ".set noat",
+                                            // Call the function pointer
+                                            "jalr {func}",
+                                            "nop",
+                                            #(in(#register) ::core::mem::transmute::<_, u32>(#args),)*
+                                            func = in(reg) #fn_stub_var ,
+                                            // Result comes back in v0 register ($2)
+                                            lateout("$2") result,
+                                            // Clobber registers that may be modified by the call
+                                            lateout("$8") _, // t0
+                                            lateout("$9") _, // t1
+                                        );
+
+                                        ::core::mem::transmute(result)
                                     }
                                 }
 
@@ -303,7 +353,76 @@ impl ToTokens for PspStub {
                             #vis #unsafety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
                                     unsafe {
-                                        ::core::mem::transmute(#crate_path::eabi::i7(#( ::core::mem::transmute( #args ) ),* #fn_stub_var))
+                                        let result: u32;
+                                        ::core::arch::asm!(
+                                            ".set noat",
+                                            // Call the function pointer
+                                            "jalr {func}",
+                                            "nop",
+                                            #(in(#register) ::core::mem::transmute::<_, u32>(#args),)*
+                                            func = in(reg) #fn_stub_var ,
+                                            // Result comes back in v0 register ($2)
+                                            lateout("$2") result,
+                                            // Clobber registers that may be modified by the call
+                                            lateout("$8") _, // t0
+                                            lateout("$9") _, // t1
+                                            lateout("$10") _, // t2
+                                        );
+
+                                        ::core::mem::transmute(result)
+                                    }
+                                }
+
+                                #panic
+                            }
+                        }
+                    },
+                    Some(EabiAttr {
+                        eabi: EabiKind::Arg8,
+                        ..
+                    }) => {
+                        let args: Vec<_> = sig
+                            .inputs
+                            .iter()
+                            .filter_map(|f| match f {
+                                syn::FnArg::Receiver(_) => None,
+                                syn::FnArg::Typed(pat_type) => match *pat_type.pat.clone() {
+                                    syn::Pat::Ident(pat_ident) => Some(pat_ident.ident.clone()),
+                                    _ => None,
+                                },
+                            })
+                            .collect();
+
+                        let mut sig = sig.clone();
+                        sig.unsafety = None;
+
+                        quote! {
+                            #(#attrs)*
+                            #[cfg(any(target_os = "psp", doc))]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc)]
+                            #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
+                            #vis #unsafety extern "C" #sig {
+                                #[cfg(target_os = "psp")] {
+                                    unsafe {
+                                        // ::core::mem::transmute(#crate_path::eabi::i5(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
+                                        let result: u32;
+                                        ::core::arch::asm!(
+                                            ".set noat",
+                                            // Call the function pointer
+                                            "jalr {func}",
+                                            "nop",
+                                            #(in(#register) ::core::mem::transmute::<_, u32>(#args),)*
+                                            func = in(reg) #fn_stub_var ,
+                                            // Result comes back in v0 register ($2)
+                                            lateout("$2") result,
+                                            // Clobber registers that may be modified by the call
+                                            lateout("$8") _, // t0
+                                            lateout("$9") _, // t1
+                                            lateout("$10") _, // t2
+                                            lateout("$11") _, // t3
+                                        );
+
+                                        ::core::mem::transmute(result)
                                     }
                                 }
 
@@ -692,6 +811,11 @@ impl EabiAttr {
                         eabi: EabiKind::Arg7,
                         span: ident.span(),
                     })
+                } else if ident == "i8" {
+                    Ok(EabiAttr {
+                        eabi: EabiKind::Arg8,
+                        span: ident.span(),
+                    })
                 } else if ident == "i_ii_i_ri" {
                     Ok(EabiAttr {
                         eabi: EabiKind::I_II_I_RI,
@@ -724,6 +848,7 @@ enum EabiKind {
     Arg5,
     Arg6,
     Arg7,
+    Arg8,
     I_II_I_RI,
     I_II_I_RII,
 }
