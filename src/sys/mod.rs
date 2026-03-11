@@ -14,6 +14,7 @@ pub mod atrac;
 pub mod audio;
 pub mod hprm;
 pub mod library;
+pub mod mem;
 pub mod openpsid;
 
 #[cfg(target_os = "psp")]
