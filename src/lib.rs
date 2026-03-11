@@ -1,9 +1,12 @@
 #![no_std]
 #![allow(internal_features)]
-#![feature(rustc_attrs)]
+#![feature(rustc_attrs, asm_experimental_arch)]
 #![allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
 
 pub mod sys;
+
+#[doc(hidden)]
+pub mod eabi;
 
 mod private {
     pub trait Sealed {}

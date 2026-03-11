@@ -88,9 +88,10 @@ impl ToTokens for PspStub {
 
         let mut fn_stub_code = Vec::new();
         let mut fn_stub_extern_items = Vec::new();
+        let mut fn_eabi_defs = Vec::new();
 
         for fn_stub in items.iter().filter(|e| e.is_func()) {
-            let PspExternItemInfo { item, nid } = fn_stub;
+            let PspExternItemInfo { item, nid, eabi } = fn_stub;
 
             if let ForeignItem::Fn(ForeignItemFn {
                 attrs, vis, sig, ..
@@ -100,6 +101,13 @@ impl ToTokens for PspStub {
 
                 let cfg_attrs: Vec<_> =
                     attrs.iter().filter(|attr| attr.path().is_ident("cfg")).collect();
+
+                let attrs: Vec<_> = attrs
+                    .iter()
+                    .filter(|attr| {
+                        !attr.meta.path().is_ident("eabi") && !attr.meta.path().is_ident("nid")
+                    })
+                    .collect();
 
                 let fn_nid_section = LitStr::new(
                     &format!(".rodata.sceNid.{}.{}", lib_name.value(), sig.ident),
@@ -132,21 +140,255 @@ impl ToTokens for PspStub {
 
                 };
 
-                let unsafety = if unsafety.is_some() {
-                    // No need as it will show up in the signature already
-                    quote! {}
-                } else {
-                    quote! {safe}
+
+                let stub_extern = match eabi.clone() {
+                    Some(EabiAttr {
+                        eabi: EabiKind::Arg5,
+                        ..
+                    }) => quote! {
+                        #(#cfg_attrs)*
+                        #[doc(hidden)]
+                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32) -> u32
+                    },
+                    Some(EabiAttr {
+                        eabi: EabiKind::Arg6,
+                        ..
+                    }) => quote! {
+                        #(#cfg_attrs)*
+                        #[doc(hidden)]
+                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
+                    },
+                    Some(EabiAttr {
+                        eabi: EabiKind::Arg7,
+                        ..
+                    }) => quote! {
+                        #(#cfg_attrs)*
+                        #[doc(hidden)]
+                        #vis(crate) unsafe fn #fn_stub_var(u32, u32, u32, u32, u32, u32, u32) -> u32
+                    },
+                    Some(EabiAttr {
+                        eabi: EabiKind::I_II_I_RI,
+                        ..
+                    }) => quote! {
+                        #(#cfg_attrs)*
+                        #[doc(hidden)]
+                        #vis(crate) unsafe fn #fn_stub_var(u32, u64, u32) -> u32
+                    },
+                    Some(EabiAttr {
+                        eabi: EabiKind::I_II_I_RII,
+                        ..
+                    }) => quote! {
+                        #(#cfg_attrs)*
+                        #[doc(hidden)]
+                        #vis(crate) unsafe fn #fn_stub_var(u32, u64, u32) -> u64
+                    },
+                    None => {
+                        let unsafety = if unsafety.is_some() {
+                            // No need as it will show up in the signature already
+                            quote! {}
+                        } else {
+                            quote! {safe}
+                        };
+                        quote! {
+                            #(#attrs)*
+                            #[link_name = #fn_libname_link]
+                            #vis #unsafety #sig
+                        }
+                    },
                 };
 
-                let stub_extern = quote! {
-                    #(#attrs)*
-                    #[link_name = #fn_libname_link]
-                    #vis #unsafety #sig
+                let panic = quote! {
+                    #[cfg(not(target_os = "psp"))] {
+                        panic!("tried to call PSP system function on non-PSP target");
+                    }
                 };
+                let eabi_fn = match eabi.clone() {
+                    Some(EabiAttr {
+                        eabi: EabiKind::Arg5,
+                        ..
+                    }) => {
+                        let args: Vec<_> = sig
+                            .inputs
+                            .iter()
+                            .filter_map(|f| match f {
+                                syn::FnArg::Receiver(_) => None,
+                                syn::FnArg::Typed(pat_type) => match *pat_type.pat.clone() {
+                                    syn::Pat::Ident(pat_ident) => Some(pat_ident.ident.clone()),
+                                    _ => None,
+                                },
+                            })
+                            .collect();
+
+                        let mut sig = sig.clone();
+                        sig.unsafety = None;
+
+                        quote! {
+                            #(#attrs)*
+                            #[cfg(any(target_os = "psp", doc))]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc)]
+                            #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
+                            #vis #unsafety extern "C" #sig {
+                                #[cfg(target_os = "psp")] {
+                                    unsafe {
+                                        ::core::mem::transmute(#crate_path::eabi::i5(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
+                                    }
+                                }
+
+                                #panic
+
+                            }
+                        }
+                    },
+                    Some(EabiAttr {
+                        eabi: EabiKind::Arg6,
+                        ..
+                    }) => {
+                        let args: Vec<_> = sig
+                            .inputs
+                            .iter()
+                            .filter_map(|f| match f {
+                                syn::FnArg::Receiver(_) => None,
+                                syn::FnArg::Typed(pat_type) => match *pat_type.pat.clone() {
+                                    syn::Pat::Ident(pat_ident) => Some(pat_ident.ident.clone()),
+                                    _ => None,
+                                },
+                            })
+                            .collect();
+
+                        let mut sig = sig.clone();
+                        sig.unsafety = None;
+
+                        quote! {
+                            #(#attrs)*
+                            #[cfg(any(target_os = "psp", doc))]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc)]
+                            #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
+                            #vis #unsafety extern "C" #sig {
+                                #[cfg(target_os = "psp")] {
+                                    unsafe {
+                                        ::core::mem::transmute(#crate_path::eabi::i6(#( ::core::mem::transmute( #args ) ),* #fn_stub_var))
+                                    }
+                                }
+
+
+                                #panic
+                            }
+
+                        }
+                    },
+                    Some(EabiAttr {
+                        eabi: EabiKind::Arg7,
+                        ..
+                    }) => {
+                        let args: Vec<_> = sig
+                            .inputs
+                            .iter()
+                            .filter_map(|f| match f {
+                                syn::FnArg::Receiver(_) => None,
+                                syn::FnArg::Typed(pat_type) => match *pat_type.pat.clone() {
+                                    syn::Pat::Ident(pat_ident) => Some(pat_ident.ident.clone()),
+                                    _ => None,
+                                },
+                            })
+                            .collect();
+
+                        let mut sig = sig.clone();
+                        sig.unsafety = None;
+
+                        quote! {
+                            #(#attrs)*
+                            #[cfg(any(target_os = "psp", doc))]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc)]
+                            #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
+                            #vis #unsafety extern "C" #sig {
+                                #[cfg(target_os = "psp")] {
+                                    unsafe {
+                                        ::core::mem::transmute(#crate_path::eabi::i7(#( ::core::mem::transmute( #args ) ),* #fn_stub_var))
+                                    }
+                                }
+
+                                #panic
+                            }
+                        }
+                    },
+                    Some(EabiAttr {
+                        eabi: EabiKind::I_II_I_RI,
+                        ..
+                    }) => {
+                        let args: Vec<_> = sig
+                            .inputs
+                            .iter()
+                            .filter_map(|f| match f {
+                                syn::FnArg::Receiver(_) => None,
+                                syn::FnArg::Typed(pat_type) => match *pat_type.pat.clone() {
+                                    syn::Pat::Ident(pat_ident) => Some(pat_ident.ident.clone()),
+                                    _ => None,
+                                },
+                            })
+                            .collect();
+
+                        let mut sig = sig.clone();
+                        sig.unsafety = None;
+
+                        quote! {
+                            #(#attrs)*
+                            #[cfg(any(target_os = "psp", doc))]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc)]
+                            #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
+                            #vis #unsafety extern "C" #sig {
+                                #[cfg(target_os = "psp")] {
+                                    unsafe {
+                                        ::core::mem::transmute(#crate_path::eabi::i_ii_i_ri(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
+                                    }
+                                }
+
+                                #panic
+                            }
+                        }
+                    },
+                    Some(EabiAttr {
+                        eabi: EabiKind::I_II_I_RII,
+                        ..
+                    }) => {
+                        let args: Vec<_> = sig
+                            .inputs
+                            .iter()
+                            .filter_map(|f| match f {
+                                syn::FnArg::Receiver(_) => None,
+                                syn::FnArg::Typed(pat_type) => match *pat_type.pat.clone() {
+                                    syn::Pat::Ident(pat_ident) => Some(pat_ident.ident.clone()),
+                                    _ => None,
+                                },
+                            })
+                            .collect();
+
+                        let mut sig = sig.clone();
+                        sig.unsafety = None;
+
+                        quote! {
+                            #(#attrs)*
+                            #[cfg(any(target_os = "psp", doc))]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc)]
+                            #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
+                            #vis #unsafety extern "C" #sig {
+                                #[cfg(target_os = "psp")] {
+                                    unsafe {
+                                        ::core::mem::transmute(#crate_path::eabi::i_ii_i_rii(#( ::core::mem::transmute( #args ) ),* #fn_stub_var))
+                                    }
+                                }
+
+
+                                #panic
+                            }
+                        }
+                    },
+                    None => quote! {},
+                };
+
 
                 fn_stub_code.push(stub_vars);
                 fn_stub_extern_items.push(stub_extern);
+                fn_eabi_defs.push(eabi_fn);
             }
         }
 
@@ -190,6 +432,8 @@ impl ToTokens for PspStub {
             unsafe extern "C" {
                 #(#fn_stub_extern_items;)*
             }
+
+            #(#fn_eabi_defs)*
         };
 
         tokens.extend(generated);
@@ -274,6 +518,7 @@ impl Default for StubArgs {
 struct PspExternItemInfo {
     item: ForeignItem,
     nid: Expr,
+    eabi: Option<EabiAttr>,
 }
 
 impl PspExternItemInfo {
@@ -305,6 +550,12 @@ impl Parse for PspExternItemInfo {
                     .find(|att| att.path().is_ident("nid"))
                     .map(|att| syn::parse2::<NidAttr>(att.meta.to_token_stream()));
 
+                let eabi = func
+                    .attrs
+                    .iter()
+                    .find(|att| att.path().is_ident("eabi"))
+                    .map(|att| syn::parse2::<EabiAttr>(att.meta.to_token_stream()));
+
                 let func_name = func.sig.ident.to_string();
 
                 let nid = match nid {
@@ -322,11 +573,17 @@ impl Parse for PspExternItemInfo {
                     },
                 };
 
+
+                let eabi = match eabi {
+                    Some(eabi) => Some(eabi?),
+                    None => None,
+                };
+
                 let mut item = func.clone();
                 item.attrs = attrs;
                 let item = ForeignItem::Fn(item);
 
-                Ok(PspExternItemInfo { item, nid })
+                Ok(PspExternItemInfo { item, nid, eabi })
             },
             ForeignItem::Static(statik) => {
                 let attrs = statik
@@ -362,7 +619,11 @@ impl Parse for PspExternItemInfo {
                 let mut item = statik.clone();
                 item.attrs = attrs;
                 let item = ForeignItem::Static(item);
-                Ok(PspExternItemInfo { item, nid })
+                Ok(PspExternItemInfo {
+                    item,
+                    nid,
+                    eabi: None,
+                })
             },
             _ => Err(Error::new(
                 item.span(),
@@ -386,9 +647,7 @@ impl Parse for NidAttr {
 
                 match &value {
                     Expr::Lit(ExprLit { lit, .. }) => match lit {
-                        Lit::Int(_) => {
-                            todo!()
-                        },
+                        Lit::Int(_) => {},
                         _ => return Err(Error::new(value.span(), "expected a integer literal")),
                     },
                     Expr::If(_) => {},
@@ -405,4 +664,66 @@ impl Parse for NidAttr {
             _ => Err(Error::new(meta.span(), "`nid` attribute syntax is `#[nid({integer})]`")),
         }
     }
+}
+
+#[derive(Clone)]
+struct EabiAttr {
+    eabi: EabiKind,
+    span: Span,
+}
+
+impl EabiAttr {
+    fn from_meta(input: &Meta) -> syn::Result<Self> {
+        match input {
+            Meta::List(list) => {
+                let ident: Ident = syn::parse2(list.tokens.clone())?;
+                if ident == "i5" {
+                    Ok(EabiAttr {
+                        eabi: EabiKind::Arg5,
+                        span: ident.span(),
+                    })
+                } else if ident == "i6" {
+                    Ok(EabiAttr {
+                        eabi: EabiKind::Arg6,
+                        span: ident.span(),
+                    })
+                } else if ident == "i7" {
+                    Ok(EabiAttr {
+                        eabi: EabiKind::Arg7,
+                        span: ident.span(),
+                    })
+                } else if ident == "i_ii_i_ri" {
+                    Ok(EabiAttr {
+                        eabi: EabiKind::I_II_I_RI,
+                        span: ident.span(),
+                    })
+                } else if ident == "i_ii_i_rii" {
+                    Ok(EabiAttr {
+                        eabi: EabiKind::I_II_I_RII,
+                        span: ident.span(),
+                    })
+                } else {
+                    Err(Error::new(ident.span(), "invalid eabi kind"))
+                }
+            },
+            _ => Err(Error::new(input.span(), "expected something else")),
+        }
+    }
+}
+
+impl Parse for EabiAttr {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let meta = input.parse()?;
+        Self::from_meta(&meta)
+    }
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Clone, Copy)]
+enum EabiKind {
+    Arg5,
+    Arg6,
+    Arg7,
+    I_II_I_RI,
+    I_II_I_RII,
 }

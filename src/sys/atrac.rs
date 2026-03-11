@@ -89,6 +89,7 @@ extern "C" {
     /// # Return Value
     ///
     /// [`Ok`] value on success, error value otherwise.
+    #[eabi(i5)]
     pub unsafe fn sceAtracDecodeData(
         atrac_id: SceAtracId, samples: *mut u16, num_samples: &mut i32, end: &mut i32,
         remain_frame: &mut i32,
