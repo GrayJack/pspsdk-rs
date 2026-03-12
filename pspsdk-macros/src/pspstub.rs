@@ -180,7 +180,7 @@ impl ToTokens for PspStub {
                     }) => quote! {
                         #(#cfg_attrs)*
                         #[doc(hidden)]
-                        #vis(crate) unsafe fn #fn_stub_var(u32, u64, u32) -> u32
+                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u64, _: u32) -> u32
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::I_II_I_RII,
@@ -188,7 +188,7 @@ impl ToTokens for PspStub {
                     }) => quote! {
                         #(#cfg_attrs)*
                         #[doc(hidden)]
-                        #vis(crate) unsafe fn #fn_stub_var(u32, u64, u32) -> u64
+                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u64, _: u32) -> u64
                     },
                     None => {
                         let unsafety = if unsafety.is_some() {
@@ -244,7 +244,7 @@ impl ToTokens for PspStub {
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
-                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations)]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
                             #vis #unsafety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
@@ -295,7 +295,7 @@ impl ToTokens for PspStub {
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
-                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc)]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
                             #vis #unsafety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
@@ -348,7 +348,7 @@ impl ToTokens for PspStub {
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
-                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc)]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
                             #vis #unsafety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
@@ -399,7 +399,7 @@ impl ToTokens for PspStub {
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
-                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc)]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
                             #vis #unsafety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
@@ -452,7 +452,7 @@ impl ToTokens for PspStub {
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
-                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc)]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
                             #vis #unsafety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
@@ -487,12 +487,12 @@ impl ToTokens for PspStub {
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
-                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc)]
+                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
                             #vis #unsafety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
                                     unsafe {
-                                        ::core::mem::transmute(#crate_path::eabi::i_ii_i_rii(#( ::core::mem::transmute( #args ) ),* #fn_stub_var))
+                                        ::core::mem::transmute(#crate_path::eabi::i_ii_i_rii(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
                                     }
                                 }
 
