@@ -84,7 +84,7 @@ extern "C" {
     /// # Return Values
     ///
     /// Returns the current routing mode.
-    #[nid(if cfg!(any(feature = "psp_660", feature = "vita_365", feature = "vita_epi")) { 0x931ABEF5 } else { 0x39240E7D })]
+    #[nid(if cfg!(feature = "psp_660") { 0x931ABEF5 } else { 0x39240E7D })]
     pub fn sceAudioRoutingGetMode() -> AudioRoutingMode;
 
     /// Sets the audio routing mode.
@@ -96,14 +96,14 @@ extern "C" {
     /// # Return Values
     ///
     /// Returns the precious routing mode on success, an error value otherwise.
-    #[nid(if cfg!(any(feature = "psp_660", feature = "vita_365", feature = "vita_epi")) { 0x18B6F449 } else { 0x36FD8AA9 })]
+    #[nid(if cfg!(feature = "psp_660") { 0x18B6F449 } else { 0x36FD8AA9 })]
     pub fn sceAudioRoutingSetMode(mode: AudioRoutingMode) -> SceResult<AudioRoutingMode>;
 
     /// Gets the current audio routing volume mode.
     ///
     /// # Return Value
     /// Returns the current routing volume mode.
-    #[nid(if cfg!(any(feature = "psp_660", feature = "vita_365", feature = "vita_epi")) { 0xD82D02FD } else { 0x28235C56 })]
+    #[nid(if cfg!(feature = "psp_660") { 0xD82D02FD } else { 0x28235C56 })]
     pub fn sceAudioRoutingGetVolumeMode() -> AudioRoutingVolumeMode;
 
     /// Sets the audio routing volume mode.
@@ -114,7 +114,7 @@ extern "C" {
     ///
     /// # Return Value
     /// `Ok` value on success, error value otherwise.
-    #[nid(if cfg!(any(feature = "psp_660", feature = "vita_365", feature = "vita_epi")) { 0x44B384EF } else { 0xBB548475 })]
+    #[nid(if cfg!(feature = "psp_660") { 0x44B384EF } else { 0xBB548475 })]
     pub fn sceAudioRoutingSetVolumeMode(vol_mode: AudioRoutingVolumeMode) -> Result<(), SceError>;
 }
 

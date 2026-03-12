@@ -24,14 +24,26 @@ kernel = []
 
 # FIXME: Figure what firmware ranges didn't had any NID number change, then add feature for all ranges that had NID change
 
-# Use PSP 1.50~3.10 NID on kernel modules
-psp_150 = []
+# Use PSP 1.00~3.73 NID on kernel modules
+psp_100 = []
+# Use PSP 3.80~3.93 NID on kernel modules
+psp_380 = []
+# Use PSP 3.95~4.05 NID on kernel modules
+psp_395 = []
+# Use PSP 4.20~4.21 NID on kernel modules
+psp_420 = []
+# Use PSP 5.00~5.55 NID on kernel modules
+psp_500 = []
+# Use PSP 5.70 NID on kernel modules
+psp_570 = []
+# Use PSP 6.00~6.20 NID on kernel modules
+psp_600 = []
+# Use PSP 6.30~6.39 NID on kernel modules
+psp_630 = []
 # Use PSP 6.60~6.61 NID on kernel modules (6.61 didn't change NID of exported items)
 psp_660 = []
 # Use PSPemu 3.65 NID on kernel modules
-vita_365 = []
-# Use a hybrid of PSPemu 3.65 and PSP 6.60/6.61 NID on kernel modules based on Adrenaline used modules
-vita_epi = []
+vita_365 = ["psp_660"]
 
 [workspace]
 members = ["pspsdk-macros"]
