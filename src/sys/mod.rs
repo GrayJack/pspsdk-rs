@@ -13,9 +13,12 @@ pub use error::{ErrorFacility, SceError};
 pub mod atrac;
 pub mod audio;
 pub mod hprm;
+pub mod io;
 pub mod library;
 pub mod mem;
 pub mod openpsid;
+pub mod thread;
+pub mod time;
 
 #[cfg(target_os = "psp")]
 pub type SceSize = usize;

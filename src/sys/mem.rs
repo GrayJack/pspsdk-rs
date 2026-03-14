@@ -338,6 +338,7 @@ pub struct GameInfo {
     pub opnssmp_ver: u32,
 }
 
+/// A bitmask value with the information to what fields are set in a [`GameInfo`].
 #[bitflag(u32)]
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -568,6 +569,67 @@ extern "C" {
     ) -> SceResult<()>;
 }
 
+// FIXME: Add missing functions (uncracked named function not included)
+//
+// These are more important:
+//
+// s32 sceKernelResizeMemoryBlock(SceUID id, s32 leftShift, s32 rightShift);
+// s32 sceKernelJointMemoryBlock(SceUID id1, SceUID id2);
+// s32 sceKernelSeparateMemoryBlock(SceUID id, u32 cutBefore, u32 size);
+// s32 sceKernelQueryMemoryBlockInfo(SceUID id, SceSysmemMemoryBlockInfo *infoPtr);
+// s32 sceKernelSizeLockMemoryBlock(SceUID id);
+//
+// void *sceKernelMemset(void *src, s8 c, u32 size);
+// void *sceKernelMemset32(void *src, s32 c, u32 size);
+// void *sceKernelMemmove(void *dst, void *src, u32 size);
+// void *sceKernelMemmoveWithFill(void *dst, void *src, u32 size, s32 fill);
+// void *sceKernelMemcpy(void *dst, const void *src, u32 n);
+//
+// Memory Operations:
+//
+// void sceKernelMemoryExtendSize(void);
+// void sceKernelMemoryShrinkSize(void);
+// u32 sceKernelMemoryOpenSize(void);
+// void sceKernelMemoryCloseSize(u32 state);
+//
+// UID:
+//
+// s32 sceKernelCallUIDFunction(SceUID id, s32 funcId, ...);
+// s32 sceKernelCallUIDObjFunction(SceSysmemUidCB *uid, s32 funcId, ...);
+// int sceKernelLookupUIDFunction(SceSysmemUidCB *uid, int id, SceSysmemUidFunc *func,
+//      SceSysmemUidCB **parentUidWithFunc);
+// s32 sceKernelCallUIDObjCommonFunction(SceSysmemUidCB *uid, SceSysmemUidCB *uidWithFunc,
+//      s32 funcId, va_list ap);
+// int sceKernelCreateUIDtypeInherit(const char *parentName, const char *name, int size,
+//      SceSysmemUidLookupFunc *funcTable, SceSysmemUidLookupFunc *metaFuncTable,
+//      SceSysmemUidCB **uidTypeOut);
+// int sceKernelCreateUID(SceSysmemUidCB *type, const char *name, char k1,
+//      SceSysmemUidCB **outUid);
+// SceUID sceKernelSearchUIDbyName(const char *name, SceUID typeId);
+// int sceKernelCreateUIDtype(const char *name, int size, SceSysmemUidLookupFunc *funcTable,
+//      SceSysmemUidLookupFunc *metaFuncTable, SceSysmemUidCB **uidTypeOut);
+// s32 sceKernelDeleteUIDtype(SceSysmemUidCB *uid);
+// s32 sceKernelGetUIDname(SceUID id, s32 len, char *out);
+// s32 sceKernelRenameUID(SceUID id, const char *name);
+// s32 sceKernelGetUIDtype(SceUID id);
+// s32 sceKernelIsKindOf(SceSysmemUidCB *uid, SceSysmemUidCB *type);
+// s32 sceKernelPrintUidListAll(void);
+//
+// s32 sceKernelIsHold(SceSysmemUidCB *uid0, SceSysmemUidCB *uid1);
+// s32 sceKernelHoldUID(SceUID id0, SceUID id1);
+// s32 sceKernelReleaseUID(SceUID id0, SceUID id1);
+//
+// Debugging (disabled in release) so not very important
+//
+// s32 sceKernelApiEvaluationInit();
+// s32 sceKernelRegisterApiEvaluation();
+// s32 sceKernelApiEvaliationAddData();
+// s32 sceKernelApiEvaluationReport();
+// s32 sceKernelSetGcovFunction();
+// s32 sceKernelCallGcovFunction();
+// s32 sceKernelSetGprofFunction();
+// s32 sceKernelCallGprofFunction();
+// int sceKernelCheckDebugHandler();
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "SysMemForKernel", flags = 0x0001)]
 extern "C" {
@@ -1521,67 +1583,6 @@ extern "C" {
     /// This functions in only available between the version 1.00 and 3.40 of the PSP firmware.
     #[nid(0x621037F5)]
     pub fn sceKernelSysMemDumpTail();
-
-    // FIXME: Add those
-    // Debugging (disabled in release) so not very important
-    //
-    // s32 sceKernelApiEvaluationInit();
-    // s32 sceKernelRegisterApiEvaluation();
-    // s32 sceKernelApiEvaliationAddData();
-    // s32 sceKernelApiEvaluationReport();
-    // s32 sceKernelSetGcovFunction();
-    // s32 sceKernelCallGcovFunction();
-    // s32 sceKernelSetGprofFunction();
-    // s32 sceKernelCallGprofFunction();
-    // int sceKernelCheckDebugHandler();
-    //
-    // These are more important:
-    //
-    // s32 sceKernelResizeMemoryBlock(SceUID id, s32 leftShift, s32 rightShift);
-    // s32 sceKernelJointMemoryBlock(SceUID id1, SceUID id2);
-    // s32 sceKernelSeparateMemoryBlock(SceUID id, u32 cutBefore, u32 size);
-    // s32 sceKernelQueryMemoryBlockInfo(SceUID id, SceSysmemMemoryBlockInfo *infoPtr);
-    // s32 sceKernelSizeLockMemoryBlock(SceUID id);
-    //
-    // void *sceKernelMemset(void *src, s8 c, u32 size);
-    // void *sceKernelMemset32(void *src, s32 c, u32 size);
-    // void *sceKernelMemmove(void *dst, void *src, u32 size);
-    // void *sceKernelMemmoveWithFill(void *dst, void *src, u32 size, s32 fill);
-    // void *sceKernelMemcpy(void *dst, const void *src, u32 n);
-    //
-    // Memory Operations:
-    //
-    // void sceKernelMemoryExtendSize(void);
-    // void sceKernelMemoryShrinkSize(void);
-    // u32 sceKernelMemoryOpenSize(void);
-    // void sceKernelMemoryCloseSize(u32 state);
-    //
-    // UID:
-    //
-    // s32 sceKernelCallUIDFunction(SceUID id, s32 funcId, ...);
-    // s32 sceKernelCallUIDObjFunction(SceSysmemUidCB *uid, s32 funcId, ...);
-    // int sceKernelLookupUIDFunction(SceSysmemUidCB *uid, int id, SceSysmemUidFunc *func,
-    //      SceSysmemUidCB **parentUidWithFunc);
-    // s32 sceKernelCallUIDObjCommonFunction(SceSysmemUidCB *uid, SceSysmemUidCB *uidWithFunc,
-    //      s32 funcId, va_list ap);
-    // int sceKernelCreateUIDtypeInherit(const char *parentName, const char *name, int size,
-    //      SceSysmemUidLookupFunc *funcTable, SceSysmemUidLookupFunc *metaFuncTable,
-    //      SceSysmemUidCB **uidTypeOut);
-    // int sceKernelCreateUID(SceSysmemUidCB *type, const char *name, char k1,
-    //      SceSysmemUidCB **outUid);
-    // SceUID sceKernelSearchUIDbyName(const char *name, SceUID typeId);
-    // int sceKernelCreateUIDtype(const char *name, int size, SceSysmemUidLookupFunc *funcTable,
-    //      SceSysmemUidLookupFunc *metaFuncTable, SceSysmemUidCB **uidTypeOut);
-    // s32 sceKernelDeleteUIDtype(SceSysmemUidCB *uid);
-    // s32 sceKernelGetUIDname(SceUID id, s32 len, char *out);
-    // s32 sceKernelRenameUID(SceUID id, const char *name);
-    // s32 sceKernelGetUIDtype(SceUID id);
-    // s32 sceKernelIsKindOf(SceSysmemUidCB *uid, SceSysmemUidCB *type);
-    // s32 sceKernelPrintUidListAll(void);
-    //
-    // s32 sceKernelIsHold(SceSysmemUidCB *uid0, SceSysmemUidCB *uid1);
-    // s32 sceKernelHoldUID(SceUID id0, SceUID id1);
-    // s32 sceKernelReleaseUID(SceUID id0, SceUID id1);
 }
 
 impl MemoryBlockId {
