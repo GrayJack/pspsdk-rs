@@ -3,10 +3,8 @@ use core::{ffi::c_void, mem, ptr::NonNull};
 use bitflag_attr::bitflag;
 use pspsdk_macros::psp_stub;
 
-#[cfg(feature = "kernel")]
-use crate::sys::thread::CallbackId;
 use crate::sys::{
-    thread::{EventFlagId, SemaId, ThreadId},
+    thread::{CallbackId, EventFlagId, SemaId, ThreadId},
     time::DateTime,
     SceError, SceResult, SceResultOk, SceSize, SceUid,
 };

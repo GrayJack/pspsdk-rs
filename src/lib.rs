@@ -26,3 +26,32 @@ mod private {
     impl<T> Sealed for &T {}
     impl<T> Sealed for &mut T {}
 }
+
+
+// Setup things
+#[cfg(all(target_os = "psp", not(feature = "stub-only")))]
+core::arch::global_asm!(
+    r#"
+        .section .lib.ent.top, "a", @progbits
+        .align 2
+        .word 0
+    .global __lib_ent_top
+    __lib_ent_top:
+        .section .lib.ent.btm, "a", @progbits
+        .align 2
+    .global __lib_ent_bottom
+    __lib_ent_bottom:
+        .word 0
+
+        .section .lib.stub.top, "a", @progbits
+        .align 2
+        .word 0
+    .global __lib_stub_top
+    __lib_stub_top:
+        .section .lib.stub.btm, "a", @progbits
+        .align 2
+    .global __lib_stub_bottom
+    __lib_stub_bottom:
+        .word 0
+    "#
+);

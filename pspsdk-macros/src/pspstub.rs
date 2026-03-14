@@ -786,6 +786,7 @@ impl Parse for NidAttr {
 }
 
 #[derive(Clone)]
+#[allow(unused)]
 struct EabiAttr {
     eabi: EabiKind,
     span: Span,

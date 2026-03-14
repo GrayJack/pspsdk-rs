@@ -27,7 +27,7 @@ extern "C" {
     ///
     /// # Return Values
     ///
-    /// [`Ok`] value on success, error value otherwise.
+    /// `Ok` value on success, error value otherwise.
     #[nid(0xC69BEBCE)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceOpenPSIDGetOpenPSID(openpsid: &mut OpenPSID) -> Result<(), SceError>;
@@ -41,7 +41,7 @@ extern "C" {
     ///
     /// # Return Values
     ///
-    /// [`Ok`] value on success, error value otherwise.
+    /// `Ok` value on success, error value otherwise.
     #[nid(0xB29330DE)]
     pub fn sceOpenPSIDGetProductCode(product_code: &mut ProductCode) -> Result<(), SceError>;
 }
@@ -57,7 +57,7 @@ extern "C" {
     ///
     /// # Return Values
     ///
-    /// [`Ok`] value on success, error value otherwise.
+    /// `Ok` value on success, error value otherwise.
     #[nid(0xC69BEBCE)]
     pub fn sceOpenPSIDGetOpenPSID(openpsid: &mut OpenPSID) -> Result<(), SceError>;
 }

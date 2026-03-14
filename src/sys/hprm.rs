@@ -31,10 +31,10 @@ extern "C" {
     ///
     /// # Return Value
     ///
-    /// [`Ok`] value on success, error value otherwise.
+    /// `Ok` value on success, error value otherwise.
     #[nid(0x1910B327)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceHprmPeekCurrentKey(key: &mut HprmKey) -> Result<(), SceError>;
+    pub fn sceHprmPeekCurrentKey(key: &mut HprmKey) -> SceResult<()>;
 
     /// Peek at the current latch data.
     ///
@@ -117,10 +117,10 @@ extern "C" {
     /// - `slot`: The slot to unregister the callback function.
     ///
     /// # Return Value
-    /// [`Ok`] value on success, error value otherwise.
+    /// `Ok` value on success, error value otherwise.
     #[nid(0x444ED0B7)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceHprmUnregitserCallback(slot: HprmCallbackSlot) -> Result<(), SceError>;
+    pub fn sceHprmUnregitserCallback(slot: HprmCallbackSlot) -> SceResult<()>;
 }
 
 // FIXME: Add missing functions.
@@ -157,9 +157,9 @@ extern "C" {
     ///
     /// # Return Value
     ///
-    /// [`Ok`] value on success, error value otherwise.
+    /// `Ok` value on success, error value otherwise.
     #[nid(0x1910B327)]
-    pub fn sceHprmPeekCurrentKey(key: &mut HprmKey) -> Result<(), SceError>;
+    pub fn sceHprmPeekCurrentKey(key: &mut HprmKey) -> SceResult<()>;
 
     /// Peek at the current latch data.
     ///
@@ -235,9 +235,9 @@ extern "C" {
     /// - `slot`: The slot to unregister the callback function.
     ///
     /// # Return Value
-    /// [`Ok`] value on success, error value otherwise.
+    /// `Ok` value on success, error value otherwise.
     #[nid(if cfg!(feature = "psp_660") { 0xEB0CFCCC } else { 0x444ED0B7 })]
-    pub fn sceHprmUnregitserCallback(slot: HprmCallbackSlot) -> Result<(), SceError>;
+    pub fn sceHprmUnregitserCallback(slot: HprmCallbackSlot) -> SceResult<()>;
 }
 
 
