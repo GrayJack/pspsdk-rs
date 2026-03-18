@@ -1,9 +1,13 @@
 #![no_std]
 #![allow(internal_features)]
-#![feature(rustc_attrs, asm_experimental_arch, c_variadic)]
+#![feature(rustc_attrs, asm_experimental_arch, c_variadic, allocator_api)]
 #![allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
 
 pub mod sys;
+
+#[cfg(target_os = "psp")]
+#[cfg(not(feature = "stub-only"))]
+pub mod alloc;
 
 #[doc(hidden)]
 pub mod eabi;

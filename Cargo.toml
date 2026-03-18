@@ -12,6 +12,10 @@ pspsdk-macros = { path = "pspsdk-macros", features = ["use_crate"] }
 # Enable kernel modules.
 kernel = []
 
+# Compile this library as a stub provider. Useful to compile this as a static
+# library for other projects.
+stub-only = []
+
 # For the following features, you can't enable more than one of them
 # Also, they are more beneficial for CFW implementation, as the SystemControl
 # CFW module requires the NIDs to be correct.
