@@ -1,3 +1,11 @@
+/// The 64-bit system clock type.
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SystemClock {
+    pub low: u32,
+    pub hi: u32,
+}
+
 /// PSP Time structure.
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]

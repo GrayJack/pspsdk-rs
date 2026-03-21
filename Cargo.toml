@@ -11,6 +11,8 @@ pspsdk-macros = { path = "pspsdk-macros", features = ["use_crate"] }
 [features]
 # Enable kernel modules.
 kernel = []
+# Enable CFW modules.
+cfw-api = []
 
 # Compile this library as a stub provider. Useful to compile this as a static
 # library for other projects.

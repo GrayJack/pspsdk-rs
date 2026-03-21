@@ -15,7 +15,6 @@ pub struct SemaId(SceUid);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct EventFlagId(SceUid);
 
-
 /// The callback UID, created with [`sceKernelCreateCallback`].
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
