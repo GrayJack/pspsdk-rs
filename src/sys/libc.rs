@@ -12,11 +12,11 @@
 //!
 //! > NOTE: `SysclibForUser` export those functions as syscalls, that means they are slightly less
 //! > performant than `SysclibForKernel` and `scePaf` in the user-level context.
+#![allow(unused_imports)]
 
 use pspsdk_macros::psp_stub;
 
-#[cfg(feature = "kernel")]
-use crate::sys::SceSize;
+use crate::sys::{SceIsize, SceSize};
 
 // FIXME: Missing funcs
 // - (look_ctype_table, 0x32C767F2)
@@ -253,7 +253,7 @@ unsafe extern "C" fn memset(ptr: *mut u8, value: u32, num: SceSize) -> *mut u8 {
         let mut i = 0;
 
         while i < num {
-            *((ptr as usize + i) as *mut u8) = value as u8;
+            *((ptr as SceSize + i) as *mut u8) = value as u8;
             i += 1;
         }
 
@@ -269,7 +269,7 @@ unsafe extern "C" fn memcpy(dst: *mut u8, src: *const u8, num: SceSize) -> *mut 
         let mut i = 0;
 
         while i < num {
-            *((dst as isize + i) as *mut u8) = *((src as isize + i) as *mut u8);
+            *((dst as SceSize + i) as *mut u8) = *((src as SceSize + i) as *mut u8);
             i += 1;
         }
 
@@ -285,8 +285,8 @@ unsafe extern "C" fn memcmp(ptr1: *mut u8, ptr2: *mut u8, num: SceSize) -> i32 {
         let mut i = 0;
 
         while i < num {
-            let val1 = *((ptr1 as usize + i) as *mut u8);
-            let val2 = *((ptr2 as usize + i) as *mut u8);
+            let val1 = *((ptr1 as SceSize + i) as *mut u8);
+            let val2 = *((ptr2 as SceSize + i) as *mut u8);
             let diff = val1 as i32 - val2 as i32;
 
             if diff != 0 {
@@ -309,14 +309,14 @@ unsafe extern "C" fn memmove(dst: *mut u8, src: *mut u8, num: SceSize) -> *mut u
             let mut i = 0;
 
             while i < num {
-                *((dst as isize + i) as *mut u8) = *((src as isize + i) as *mut u8);
+                *((dst as SceSize + i) as *mut u8) = *((src as SceSize + i) as *mut u8);
                 i += 1;
             }
         } else {
             let mut i = num - 1;
 
             while i >= 0 {
-                *((dst as isize + i) as *mut u8) = *((src as isize + i) as *mut u8);
+                *((dst as SceSize + i) as *mut u8) = *((src as SceSize + i) as *mut u8);
                 i -= 1;
             }
         }
@@ -336,6 +336,6 @@ unsafe extern "C" fn strlen(s: *mut u8) -> SceSize {
             len += 1;
         }
 
-        len
+        len as SceSize
     }
 }
