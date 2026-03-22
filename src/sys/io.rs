@@ -1879,6 +1879,199 @@ extern "C" {
     pub unsafe fn sceIoChangeThreadCwd(thread_id: ThreadId, dir_path: *const u8) -> SceResult<()>;
 }
 
+// FIXME (Low-priority): Add missing itens
+// - (fdgetc, 0xD2B2A2A7)
+// - (fdgets, 0x11A5127A)
+// - (fdprintf, 0x2CCF071A)
+// - (fdputc, 0x4F78930A)
+// - (fdputs, 0x36B23B8B)
+// - (getchar, 0x7E338487)
+// - (gets, 0xBFF7E760)
+// - (printf, 0xCAB439DF)
+// - (putchar, 0xD768752A)
+// - (puts, 0xD97C8CB9)
+#[psp_stub(libname = "StdioForUser", flags = 0x4001)]
+extern "C" {
+    /// Function to get the current standard in file ID
+    ///
+    /// # Return Value
+    ///
+    /// The stdin file ID.
+    #[nid(0x172D316E)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelStdin() -> FileId;
+
+    /// Function to get the current standard out file ID
+    ///
+    /// # Return Value
+    ///
+    /// The stdout file ID.
+    #[nid(0xA6BAB2E9)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelStdout() -> FileId;
+
+    /// Function to get the current standard error file ID
+    ///
+    /// # Return Value
+    ///
+    /// The stderr file ID.
+    #[nid(0xF78BA90A)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelStderr() -> FileId;
+
+    /// Register a file descriptor as PIPE to stdout.
+    ///
+    /// # Parameters
+    ///
+    /// - `fd`: The file descriptor UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
+    #[nid(0x432D8F5C)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelRegisterStdoutPipe(fd: FileId) -> SceResult<()>;
+
+    /// Register a file descriptor as PIPE to stderr.
+    ///
+    /// # Parameters
+    ///
+    /// - `fd`: The file descriptor UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
+    #[nid(0x6F797E03)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelRegisterStderrPipe(fd: FileId) -> SceResult<()>;
+}
+
+#[cfg(feature = "kernel")]
+#[psp_stub(libname = "StdioForKernel", flags = 0x0001)]
+extern "C" {
+    /// Function to get the current standard in file ID
+    ///
+    /// # Return Value
+    ///
+    /// The stdin file ID.
+    #[nid(0x172D316E)]
+    pub fn sceKernelStdin() -> FileId;
+
+    /// Function to get the current standard out file ID
+    ///
+    /// # Return Value
+    ///
+    /// The stdout file ID.
+    #[nid(0xA6BAB2E9)]
+    pub fn sceKernelStdout() -> FileId;
+
+    /// Function to get the current standard error file ID
+    ///
+    /// # Return Value
+    ///
+    /// The stderr file ID.
+    #[nid(0xF78BA90A)]
+    pub fn sceKernelStderr() -> FileId;
+
+    /// Register a file descriptor as PIPE to stdout.
+    ///
+    /// # Parameters
+    ///
+    /// - `fd`: The file descriptor UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
+    #[nid(0x432D8F5C)]
+    pub fn sceKernelRegisterStdoutPipe(fd: FileId) -> SceResult<()>;
+
+    /// Register a file descriptor as PIPE to stderr.
+    ///
+    /// # Parameters
+    ///
+    /// - `fd`: The file descriptor UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
+    #[nid(0x6F797E03)]
+    pub fn sceKernelRegisterStderrPipe(fd: FileId) -> SceResult<()>;
+
+    /// Reopens the standard Out.
+    ///
+    /// # Parameters
+    ///
+    /// - `path` **[[In parameter]]**: The path to the file to open.
+    /// - `flags`: The flags with file access attributes.
+    /// - `mode`: The permission mode to use. If [`FileFlags::CreateFile`] is set in `flags`, it is
+    ///   ignored otherwise.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the reopened file descriptor UID on success, error value otherwise.
+    #[nid(0x98220F3E)]
+    pub unsafe fn sceKernelStdoutReopen(
+        path: *const u8, flags: FileFlags, mode: Mode,
+    ) -> SceResult<FileId>;
+
+    /// Reopens the standard Error.
+    ///
+    /// # Parameters
+    ///
+    /// - `path` **[[In parameter]]**: The path to the file to open.
+    /// - `flags`: The flags with file access attributes.
+    /// - `mode`: The permission mode to use. If [`FileFlags::CreateFile`] is set in `flags`, it is
+    ///   ignored otherwise.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the reopened file descriptor UID on success, error value otherwise.
+    #[nid(0xFB5380C5)]
+    pub unsafe fn sceKernelStderrReopen(
+        path: *const u8, flags: FileFlags, mode: Mode,
+    ) -> SceResult<FileId>;
+
+    /// Resets the standard Out.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
+    #[nid(0x2D8551AB)]
+    pub fn sceKernelStdoutReset() -> SceResult<()>;
+
+    /// Resets the standard Error.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
+    #[nid(0x9662BF86)]
+    pub fn sceKernelStderrReset() -> SceResult<()>;
+}
+
 impl FileId {
     /// Create a new file descriptor ID from a raw value.
     ///
