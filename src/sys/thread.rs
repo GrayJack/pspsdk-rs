@@ -208,6 +208,47 @@ pub struct ThreadRunStatus {
     pub notify_callback: u32,
 }
 
+/// Semaphore options
+#[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceKernelSemaOptParam")]
+pub struct SemaphoreOptions {
+    /// The size of this structure,
+    pub size: SceSize,
+    /// The name of the semaphore.
+    pub name: [u8; 32],
+    /// The semaphore attributes.
+    pub attr: SemaphoreAttributes,
+    /// The initial value the semaphore was created.
+    pub init_val: i32,
+    /// The current value the semaphore has set.
+    pub curr_val: i32,
+    /// The maximum value the semaphore has set.
+    pub max_val: i32,
+    /// The number of threads waiting on the semaphore.
+    pub num_wait_threads: u32,
+}
+
+/// Possible attributes for semaphores.
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum SemaphoreAttributes {
+    /// Uses FIFO logic in the wait queue.
+    #[default]
+    ThreadFIFO = 0x000,
+    /// Uses thread priority logic in the wait queue.
+    ThreadPriority = 0x100,
+}
+
+/// The information of the current state of a semaphore.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelSemaInfo")]
+pub struct SemaphoreInfo {
+    /// The size of this structure,
+    pub size: SceSize,
+}
+
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
 extern "C" {
     /// Create a thread.
@@ -217,7 +258,7 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `name` **[[In parameter]]**: Name assigned to the new thread. Only used for debug.
+    /// - `name` **[[In parameter]]**: The name assigned to the new thread. Only used for debug.
     /// - `entry`: The thread function to run when started.
     /// - `init_priority`: The initial priority of the thread. Less if higher priority.
     /// - `stack_size`: The size of the initial stack for the thread.
@@ -660,12 +701,27 @@ extern "C" {
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelCheckThreadStack() -> SceSize;
 
+    /// Gets the unused thread stack size of a thread.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The thread UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the unused thread stack size in bytes of a given thread on success, error value
+    /// otherwise.
+    #[nid(0x52089CA1)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelGetThreadStackFreeSize(id: ThreadId) -> SceResult<SceSize>;
+
     /// Get the status information of a thread.
     ///
     /// # Parameters
     ///
     /// - `id`: The thread UID.
-    /// - `info`: A reference to a [`ThreadInfo`] to receive the thread information.
+    /// - `info`  **[[Out parameter]]**: A reference to a [`ThreadInfo`] to receive the thread
+    ///   information.
     ///
     /// # Return Value
     ///
@@ -690,6 +746,145 @@ extern "C" {
     pub fn sceKernelReferThreadRunStatus(
         id: ThreadId, run_status: &mut ThreadRunStatus,
     ) -> SceResult<()>;
+
+    /// Creates a new semaphore
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new semaphore. Only used for debug.
+    /// - `attr`: The attribute for the semaphore. It changes the wait queue behavior.
+    /// - `init_val`: The initial value of the semaphore.
+    /// - `max_val`: The maximum value of the semaphore.
+    /// - `options` **[[In parameter]]**: The options configuring the semaphore behavior. If
+    ///   [`None`], the function will assume default behavior.
+    ///
+    /// # Returns Value
+    ///
+    /// Returns the semaphore UID on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0xD6DA4BA1)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelCreateSema(
+        name: *const u8, attr: SemaphoreAttributes, init_val: i32, max_val: i32,
+        options: Option<&SemaphoreOptions>,
+    ) -> SceResult<SemaId>;
+
+    /// Deletes a semaphore.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x28B6489C)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelDeleteSema(id: SemaId) -> SceResult<()>;
+
+    /// Sends a signal to a semaphore.
+    ///
+    /// If the semaphore has reached the maximum value, and the signal overflows that maximum, an
+    /// error is returned.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `signal`: The amount to signal the semaphore (i.e. if `2` then increment the semaphore by
+    ///   `2`).
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x3F53E640)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelSignalSema(id: SemaId, signal: i32) -> SceResult<()>;
+
+    /// Locks a semaphore until a target value or a timeout is reached.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `target_value`: The target value to wait.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x4E3A1105)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelWaitSema(
+        id: SemaId, target_value: i32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+
+    /// Locks a semaphore until a target value or a timeout is reached, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `target_value`: The target value to wait.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x6D212BAC)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelWaitSemaCB(
+        id: SemaId, target_value: i32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Polls a semaphore if the target value has reached.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `target_value`: The target value to test.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x58B1F937)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelPollSema(id: SemaId, target_value: i32) -> SceResult<()>;
+
+    /// Cancels the wait of a semaphore.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `set_value`: The value to set in the semaphore. If set to `-1`, the initial value of the
+    ///   semaphore is used.
+    /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
+    ///   that were waiting on the specified semaphore.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x8FFDF9A2)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelCancelSema(
+        id: SemaId, set_val: i32, num_wait_threads: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Gets the current status of the semaphore.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `info` **[[Out parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xBC6FEBC5)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferSemaStatus(id: SemaId, info: &mut SemaphoreInfo) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
@@ -702,7 +897,7 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `name` **[[In parameter]]**: Name assigned to the new thread. Only used for debug.
+    /// - `name` **[[In parameter]]**: The name assigned to the new thread. Only used for debug.
     /// - `entry`: The thread function to run when started.
     /// - `init_priority`: The initial priority of the thread. Less if higher priority.
     /// - `stack_size`: The size of the initial stack for the thread.
@@ -1195,6 +1390,137 @@ extern "C" {
     /// Returns the user level of the calling thread on success, error value otherwise.
     #[nid(0xF6427665)]
     pub fn sceKernelGetUserLevel() -> SceResult<u32>;
+
+    /// Creates a new semaphore
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new semaphore. Only used for debug.
+    /// - `attr`: The attribute for the semaphore. It changes the wait queue behavior.
+    /// - `init_val`: The initial value of the semaphore.
+    /// - `max_val`: The maximum value of the semaphore.
+    /// - `options` **[[In parameter]]**: The options configuring the semaphore behavior. If
+    ///   [`None`], the function will assume default behavior.
+    ///
+    /// # Returns Value
+    ///
+    /// Returns the semaphore UID on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0xD6DA4BA1)]
+    pub unsafe fn sceKernelCreateSema(
+        name: *const u8, attr: SemaphoreAttributes, init_val: i32, max_val: i32,
+        options: Option<&SemaphoreOptions>,
+    ) -> SceResult<SemaId>;
+
+    /// Deletes a semaphore.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x28B6489C)]
+    pub fn sceKernelDeleteSema(id: SemaId) -> SceResult<()>;
+
+    /// Sends a signal to a semaphore.
+    ///
+    /// If the semaphore has reached the maximum value, and the signal overflows that maximum, an
+    /// error is returned.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `signal`: The amount to signal the semaphore (i.e. if `2` then increment the semaphore by
+    ///   `2`).
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x3F53E640)]
+    pub fn sceKernelSignalSema(id: SemaId, signal: i32) -> SceResult<()>;
+
+    /// Locks a semaphore until a target value or a timeout is reached.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `target_value`: The target value to wait.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x4E3A1105)]
+    pub fn sceKernelWaitSema(
+        id: SemaId, target_value: i32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+
+    /// Locks a semaphore until a target value or a timeout is reached, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `target_value`: The target value to wait.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x6D212BAC)]
+    pub fn sceKernelWaitSemaCB(
+        id: SemaId, target_value: i32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Polls a semaphore if the target value has reached.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `target_value`: The target value to test.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x58B1F937)]
+    pub fn sceKernelPollSema(id: SemaId, target_value: i32) -> SceResult<()>;
+
+    /// Cancels the wait of a semaphore.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `set_value`: The value to set in the semaphore. If set to `-1`, the initial value of the
+    ///   semaphore is used.
+    /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
+    ///   that were waiting on the specified semaphore.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x8FFDF9A2)]
+    pub fn sceKernelCancelSema(
+        id: SemaId, set_val: i32, num_wait_threads: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Gets the current status of the semaphore.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `info` **[[Out parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xBC6FEBC5)]
+    pub fn sceKernelReferSemaStatus(id: SemaId, info: &mut SemaphoreInfo) -> SceResult<()>;
 }
 
 
