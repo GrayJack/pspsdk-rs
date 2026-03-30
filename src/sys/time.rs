@@ -1,6 +1,7 @@
 /// The 64-bit system clock type.
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceKernelSysClock")]
 pub struct SystemClock {
     pub low: u32,
     pub hi: u32,
@@ -9,6 +10,7 @@ pub struct SystemClock {
 /// PSP Time structure.
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[doc(alias = "ScePspDateTime")]
 pub struct DateTime {
     pub year: u16,
     pub month: u16,
