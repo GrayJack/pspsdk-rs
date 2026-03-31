@@ -36,7 +36,7 @@ pub type ThreadEntryFn = unsafe extern "C" fn(args: SceSize, argp: *mut c_void) 
 /// Attributes for threads.
 #[bitflag(u32)]
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub enum ThreadAttributes {
     /// Thread runs in User mode.
     ///
@@ -73,7 +73,7 @@ pub enum ThreadAttributes {
 /// The possible states that a PSP thread can be.
 #[bitflag(u32)]
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub enum ThreadState {
     Run   = 0x01,
     Ready = 0x02,
@@ -87,8 +87,12 @@ pub enum ThreadState {
 
 /// The possible kinds of wait state of the thread.
 #[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub enum ThreadWaitKind {
+    #[default]
+    #[doc(hidden)]
+    Unknown = 0x00,
     Sleep = 0x01,
     Delay = 0x02,
     Semaphore = 0x03,
@@ -142,7 +146,7 @@ pub struct ThreadInfo {
     /// The thread current status.
     pub status: u32,
     /// The thread entry function.
-    pub entry: ThreadEntryFn,
+    pub entry: Option<ThreadEntryFn>,
     /// The thread stack pointer.
     pub stack: *mut c_void,
     /// The thread stack size.
@@ -208,12 +212,33 @@ pub struct ThreadRunStatus {
     pub notify_callback: u32,
 }
 
-/// Semaphore options
+/// Semaphore options.
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[doc(alias = "SceKernelSemaOptParam")]
 pub struct SemaphoreOptions {
-    /// The size of this structure,
+    /// The size of this structure.
+    pub size: SceSize,
+}
+
+/// Attributes for semaphore creation.
+#[bitflag(u32)]
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum SemaphoreAttributes {
+    /// Uses FIFO logic in the wait queue.
+    #[default]
+    ThreadFIFO = 0x000,
+    /// Uses thread priority logic in the wait queue.
+    ThreadPriority = 0x100,
+}
+
+/// The information of the current state of a semaphore.
+#[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceKernelSemaInfo")]
+pub struct SemaphoreInfo {
+    /// The size of this structure.
     pub size: SceSize,
     /// The name of the semaphore.
     pub name: [u8; 32],
@@ -229,24 +254,58 @@ pub struct SemaphoreOptions {
     pub num_wait_threads: u32,
 }
 
-/// Possible attributes for semaphores.
-#[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub enum SemaphoreAttributes {
-    /// Uses FIFO logic in the wait queue.
-    #[default]
-    ThreadFIFO = 0x000,
-    /// Uses thread priority logic in the wait queue.
-    ThreadPriority = 0x100,
+/// Event Flag options.
+#[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceKernelEventFlagOptParam")]
+pub struct EventFlagOptions {
+    /// The size of this structure.
+    pub size: SceSize,
 }
 
-/// The information of the current state of a semaphore.
+/// Attributes for event flag creation.
+#[bitflag(u32)]
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum EventFlagAttributes {
+    /// The event flag is only permitted to be waited upon by a single thread.
+    #[default]
+    WaitSingle = 0x000,
+    /// The event flag is permitted to be waited upon by multiple threads.
+    WaitMultiple = 0x200,
+}
+
+/// The event flag wait kinds.
+#[bitflag(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum EventFlagWaitKinds {
+    /// Wait for all bits in the pattern to be set.
+    #[default]
+    And = 0x00,
+    /// Wait for one or more bits in the pattern to be set.
+    Or  = 0x01,
+    /// Clear all bits when the condition matches.
+    ClearAll = 0x10,
+    /// Clear the wait pattern when the condition matches.
+    ClearPat = 0x20,
+}
+
+/// The information of the current state of a event flag.
 #[repr(C)]
-#[derive(Debug, Clone)]
-#[doc(alias = "SceKernelSemaInfo")]
-pub struct SemaphoreInfo {
-    /// The size of this structure,
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct EventFlagInfo {
+    /// The size of this structure.
     pub size: SceSize,
+    /// The name of the event flag.
+    pub name: [u8; 32],
+    /// The attributes for of the event flag.
+    pub attr: EventFlagAttributes,
+    /// The initial patter of the event flag.
+    pub init_pattern: u32,
+    /// The current pattern of the event flag.
+    pub curr_pattern: u32,
+    /// The number of threads waiting on the event flag.
+    pub num_wait_threads: u32,
 }
 
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
@@ -871,7 +930,7 @@ extern "C" {
         id: SemaId, set_val: i32, num_wait_threads: &mut u32,
     ) -> SceResult<()>;
 
-    /// Gets the current status of the semaphore.
+    /// Gets the current state of the semaphore.
     ///
     /// # Parameters
     ///
@@ -885,6 +944,163 @@ extern "C" {
     #[nid(0xBC6FEBC5)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelReferSemaStatus(id: SemaId, info: &mut SemaphoreInfo) -> SceResult<()>;
+
+    /// Creates a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new event flag. Only used for debug.
+    /// - `attr`: The attribute for the event flag.
+    /// - `init_bitmask`: The initial bitmask value for the event flag.
+    /// - `options` **[[In parameter]]**: The options configuring the event flag behavior. If
+    ///   [`None`], the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the event flag UID on success, error value otherwise.
+    #[nid(0x55C20A00)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelCreateEventFlag(
+        name: *const u8, attr: EventFlagAttributes, init_bitmask: u32,
+        options: Option<&EventFlagOptions>,
+    ) -> SceResult<EventFlagId>;
+
+    /// Deletes a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xEF9E4C70)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelDeleteEventFlag(id: EventFlagId) -> SceResult<()>;
+
+    /// Sets a bit pattern on a even flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `bit_pat`: The bit patter to set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x1FB15A32)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelSetEventFlag(id: EventFlagId, bit_pat: u32) -> SceResult<()>;
+
+    /// Clears a bit pattern of a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `bit_pat`: The bit patter to clean.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x812346E4)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelClearEventFlag(id: EventFlagId, bit_pat: u32) -> SceResult<()>;
+
+    /// Waits for a bit pattern of a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `bit_pat`: The bit patter to wait for.
+    /// - `wait_kind`: The kind of wait to use.
+    /// - `out_bits` **[[Out parameter]]**: A reference to receive the bit pattern that was matched.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0x402FCF22)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelWaitEventFlag(
+        id: EventFlagId, bit_pat: u32, wait_kind: EventFlagWaitKinds, out_bits: &mut u32,
+        timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Waits for a bit pattern of a event flag, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `bit_pat`: The bit patter to wait for.
+    /// - `wait_kind`: The kind of wait to use.
+    /// - `out_bits` **[[Out parameter]]**: A reference to receive the bit pattern that was matched.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0x328C546A)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelWaitEventFlagCB(
+        id: EventFlagId, bit_pat: u32, wait_kind: EventFlagWaitKinds, out_bits: &mut u32,
+        timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Polls for a bit pattern of a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `bit_pat`: The bit patter to poll for.
+    /// - `wait_kind`: The kind of wait to use.
+    /// - `out_bits` **[[Out parameter]]**: A reference to receive the bit pattern that was matched.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x30FD48F0)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelPollEventFlag(
+        id: EventFlagId, bit_pat: u32, wait_kind: EventFlagWaitKinds, out_bits: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Cancels the wait of a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `set_pat`: The bit patter to set in the event flag.
+    /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
+    ///   that were waiting on the specified semaphore.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xCD203292)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelCancelEventFlag(id: EventFlagId, set_pat: u32, num_wait_threads: &mut u32);
+
+    /// Gets the current state of a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `info` **[[Out parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xA66B0120)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferEventFlagStatus(
+        id: EventFlagId, info: &mut EventFlagInfo,
+    ) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
@@ -1508,7 +1724,7 @@ extern "C" {
         id: SemaId, set_val: i32, num_wait_threads: &mut u32,
     ) -> SceResult<()>;
 
-    /// Gets the current status of the semaphore.
+    /// Gets the current state of the semaphore.
     ///
     /// # Parameters
     ///
@@ -1521,6 +1737,154 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xBC6FEBC5)]
     pub fn sceKernelReferSemaStatus(id: SemaId, info: &mut SemaphoreInfo) -> SceResult<()>;
+
+    /// Creates a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new event flag. Only used for debug.
+    /// - `attr`: The attribute for the event flag.
+    /// - `init_bitmask`: The initial bitmask value for the event flag.
+    /// - `options` **[[In parameter]]**: The options configuring the event flag behavior. If
+    ///   [`None`], the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the event flag UID on success, error value otherwise.
+    #[nid(0x55C20A00)]
+    pub unsafe fn sceKernelCreateEventFlag(
+        name: *const u8, attr: EventFlagAttributes, init_bitmask: u32,
+        options: Option<&EventFlagOptions>,
+    ) -> SceResult<EventFlagId>;
+
+    /// Deletes a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xEF9E4C70)]
+    pub fn sceKernelDeleteEventFlag(id: EventFlagId) -> SceResult<()>;
+
+    /// Sets a bit pattern on a even flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `bit_pat`: The bit patter to set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x1FB15A32)]
+    pub fn sceKernelSetEventFlag(id: EventFlagId, bit_pat: u32) -> SceResult<()>;
+
+    /// Clears a bit pattern of a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `bit_pat`: The bit patter to clean.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x812346E4)]
+    pub fn sceKernelClearEventFlag(id: EventFlagId, bit_pat: u32) -> SceResult<()>;
+
+    /// Waits for a bit pattern of a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `bit_pat`: The bit patter to wait for.
+    /// - `wait_kind`: The kind of wait to use.
+    /// - `out_bits` **[[Out parameter]]**: A reference to receive the bit pattern that was matched.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0x402FCF22)]
+    pub fn sceKernelWaitEventFlag(
+        id: EventFlagId, bit_pat: u32, wait_kind: EventFlagWaitKinds, out_bits: &mut u32,
+        timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Waits for a bit pattern of a event flag, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `bit_pat`: The bit patter to wait for.
+    /// - `wait_kind`: The kind of wait to use.
+    /// - `out_bits` **[[Out parameter]]**: A reference to receive the bit pattern that was matched.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0x328C546A)]
+    pub fn sceKernelWaitEventFlagCB(
+        id: EventFlagId, bit_pat: u32, wait_kind: EventFlagWaitKinds, out_bits: &mut u32,
+        timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Polls for a bit pattern of a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `bit_pat`: The bit patter to poll for.
+    /// - `wait_kind`: The kind of wait to use.
+    /// - `out_bits` **[[Out parameter]]**: A reference to receive the bit pattern that was matched.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x30FD48F0)]
+    pub fn sceKernelPollEventFlag(
+        id: EventFlagId, bit_pat: u32, wait_kind: EventFlagWaitKinds, out_bits: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Cancels the wait of a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `set_pat`: The bit patter to set in the event flag.
+    /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
+    ///   that were waiting on the specified semaphore.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xCD203292)]
+    pub fn sceKernelCancelEventFlag(id: EventFlagId, set_pat: u32, num_wait_threads: &mut u32);
+
+    /// Gets the current state of a event flag.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The event flag UID.
+    /// - `info` **[[Out parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xA66B0120)]
+    pub fn sceKernelReferEventFlagStatus(
+        id: EventFlagId, info: &mut EventFlagInfo,
+    ) -> SceResult<()>;
 }
 
 
@@ -1687,5 +2051,102 @@ impl crate::private::Sealed for ThreadState {}
 unsafe impl SceResultOk for ThreadState {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         Ok(Self::from_bits_retain(ok_value))
+    }
+}
+
+
+impl Default for ThreadOptions {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            stack_mem_partition: Default::default(),
+        }
+    }
+}
+
+impl Default for ThreadInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            name: Default::default(),
+            attr: Default::default(),
+            status: Default::default(),
+            entry: Default::default(),
+            stack: Default::default(),
+            stack_size: Default::default(),
+            gp_reg: Default::default(),
+            init_priority: Default::default(),
+            curr_priority: Default::default(),
+            wait_kind: Default::default(),
+            wait_id: Default::default(),
+            wakeup_count: Default::default(),
+            exit_status: Default::default(),
+            run_clocks: Default::default(),
+            intr_preempt_count: Default::default(),
+            thread_preempt_count: Default::default(),
+            release_count: Default::default(),
+            notify_callback: Default::default(),
+        }
+    }
+}
+
+impl Default for ThreadRunStatus {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            status: Default::default(),
+            curr_priority: Default::default(),
+            wait_kind: Default::default(),
+            wait_id: Default::default(),
+            wakeup_count: Default::default(),
+            run_clocks: Default::default(),
+            intr_preempt_count: Default::default(),
+            thread_preempt_count: Default::default(),
+            release_count: Default::default(),
+            notify_callback: Default::default(),
+        }
+    }
+}
+
+impl Default for SemaphoreOptions {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+        }
+    }
+}
+
+impl Default for SemaphoreInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            name: Default::default(),
+            attr: Default::default(),
+            init_val: Default::default(),
+            curr_val: Default::default(),
+            max_val: Default::default(),
+            num_wait_threads: Default::default(),
+        }
+    }
+}
+
+impl Default for EventFlagOptions {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+        }
+    }
+}
+
+impl Default for EventFlagInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            name: Default::default(),
+            attr: Default::default(),
+            init_pattern: Default::default(),
+            curr_pattern: Default::default(),
+            num_wait_threads: Default::default(),
+        }
     }
 }

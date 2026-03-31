@@ -1,6 +1,6 @@
 /// The 64-bit system clock type.
 #[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[doc(alias = "SceKernelSysClock")]
 pub struct SystemClock {
     pub low: u32,

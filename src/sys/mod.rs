@@ -73,6 +73,12 @@ impl SceUid {
 
 impl crate::private::Sealed for SceUid {}
 
+impl Default for SceUid {
+    fn default() -> Self {
+        unsafe { Self::new_unchecked(0) }
+    }
+}
+
 /// A type that represents the return value of many PSP OS APIs.
 ///
 /// If its value is in the range of [`SceError`] ( 0x80000001..=0xFFFFFFFF), then it is an error
