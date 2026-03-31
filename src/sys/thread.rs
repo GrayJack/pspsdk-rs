@@ -228,9 +228,9 @@ pub struct SemaphoreOptions {
 pub enum SemaphoreAttributes {
     /// Uses FIFO logic in the wait queue.
     #[default]
-    ThreadFIFO = 0x000,
+    WaitByFIFO = 0x000,
     /// Uses thread priority logic in the wait queue.
-    ThreadPriority = 0x100,
+    WaitByPriority = 0x100,
 }
 
 /// The information of the current state of a semaphore.
@@ -305,6 +305,53 @@ pub struct EventFlagInfo {
     /// The current pattern of the event flag.
     pub curr_pattern: u32,
     /// The number of threads waiting on the event flag.
+    pub num_wait_threads: u32,
+}
+
+/// The mutex UID, created with [`sceKernelCreateMutex`].
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct MutexId(SceUid);
+
+/// Mutex options.
+#[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceKernelMutexOptParam")]
+pub struct MutexOptions {
+    /// The size of this structure.
+    pub size: SceSize,
+}
+
+/// Attributes for mutex creation.
+#[bitflag(u32)]
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum MutexAttributes {
+    /// Uses FIFO logic in the wait queue.
+    #[default]
+    WaitByFIFO = 0x000,
+    /// Uses thread priority logic in the wait queue.
+    WaitByPriority = 0x100,
+    /// Allows recursive locks on a mutex by the thread that acquired the it.
+    RecursiveLock = 0x200,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone)]
+pub struct MutexInfo {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The name of the mutex.
+    pub name: [u8; 32],
+    /// The attributes for of the mutex.
+    pub attr: MutexAttributes,
+    /// The initial lock count value of the mutex.
+    pub init_count: i32,
+    /// The current lock count of the mutex.
+    pub curr_count: i32,
+    /// The current owner of the mutex.
+    pub curr_owner: SceUid,
+    /// The number of threads waiting on the mutex.
     pub num_wait_threads: u32,
 }
 
@@ -779,7 +826,7 @@ extern "C" {
     /// # Parameters
     ///
     /// - `id`: The thread UID.
-    /// - `info`  **[[Out parameter]]**: A reference to a [`ThreadInfo`] to receive the thread
+    /// - `info`  **[[InOut parameter]]**: A reference to a [`ThreadInfo`] to receive the thread
     ///   information.
     ///
     /// # Return Value
@@ -794,7 +841,7 @@ extern "C" {
     /// # Parameters
     ///
     /// - `id`: The thread UID.
-    /// - `run_status` **[[Out parameter]]**: A reference to [`ThreadRunStatus`] to receive the
+    /// - `run_status` **[[InOut parameter]]**: A reference to [`ThreadRunStatus`] to receive the
     ///   runtime thread information.
     ///
     /// # Return Value
@@ -930,12 +977,12 @@ extern "C" {
         id: SemaId, set_val: i32, num_wait_threads: &mut u32,
     ) -> SceResult<()>;
 
-    /// Gets the current state of the semaphore.
+    /// Gets the current state of a semaphore.
     ///
     /// # Parameters
     ///
     /// - `id`: The semaphore UID.
-    /// - `info` **[[Out parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
     ///   information.
     ///
     /// # Return Value
@@ -1090,7 +1137,7 @@ extern "C" {
     /// # Parameters
     ///
     /// - `id`: The event flag UID.
-    /// - `info` **[[Out parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
     ///   information.
     ///
     /// # Return Value
@@ -1101,6 +1148,170 @@ extern "C" {
     pub fn sceKernelReferEventFlagStatus(
         id: EventFlagId, info: &mut EventFlagInfo,
     ) -> SceResult<()>;
+
+    /// Creates a new mutex.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new mutex. Only used for debug.
+    /// - `attr`: The attribute for the mutex.
+    /// - `init_count`: The initial count value for the mutex.
+    /// - `options` **[[In parameter]]**: The options configuring the mutex behavior. If [`None`],
+    ///   the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the mutex UID on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0xB7D098C6)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelCreateMutex(
+        name: *const u8, attr: MutexAttributes, init_count: i32, options: Option<&MutexOptions>,
+    ) -> SceResult<MutexId>;
+
+    /// Deletes a mutex.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0xF8170FBE)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelDeleteMutex(id: MutexId) -> SceResult<()>;
+
+    /// Locks a mutex a number of times.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    /// - `lock_count`: The number of times to lock a mutex after resource acquisition. It must be
+    ///   `> 0`.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0xB011B11F)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelLockMutex(
+        id: MutexId, lock_count: u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Locks a mutex a number of times, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    /// - `lock_count`: The number of times to lock a mutex after resource acquisition. It must be
+    ///   `> 0`.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0x5BF4DD27)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelLockMutexCB(
+        id: MutexId, lock_count: u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Tries to lock a mutex a number of times.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    /// - `lock_count`: The number of times to lock a mutex after resource acquisition. It must be
+    ///   `> 0`.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0x0DDCD2C9)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelTryLockMutex(id: MutexId, lock_count: u32) -> SceResult<()>;
+
+    /// Unlock a mutex a number of times.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    /// - `lock_count`: The number of times to unlock a mutex after resource acquisition. It must be
+    ///   `> 0`.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0x6B30100F)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelUnlockMutex(id: MutexId, unlock_count: u32) -> SceResult<()>;
+
+    /// Cancels the wait state of threads waiting on a mutex.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    /// - `new_lock_count`: The new lock count to set on the mutex.
+    /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
+    ///   that were waiting on the specified mutex.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0x87D9223C)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelCancelMutex(id: MutexId, new_lock_count: u32, numWaitThreads: &mut u32);
+
+    /// Gets the current state of a mutex.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`MutexInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0xA9C2CB9A)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferMutexStatus(id: MutexId, info: &mut MutexInfo) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
@@ -1558,7 +1769,7 @@ extern "C" {
     /// # Parameters
     ///
     /// - `id`: The thread UID.
-    /// - `info` **[[Out parameter]]**: A reference to a [`ThreadInfo`] to receive the thread
+    /// - `info` **[[InOut parameter]]**: A reference to a [`ThreadInfo`] to receive the thread
     ///   information.
     ///
     /// # Return Value
@@ -1572,7 +1783,7 @@ extern "C" {
     /// # Parameters
     ///
     /// - `id`: The thread UID.
-    /// - `run_status` **[[Out parameter]]**: A reference to [`ThreadRunStatus`] to receive the
+    /// - `run_status` **[[InOut parameter]]**: A reference to [`ThreadRunStatus`] to receive the
     ///   runtime thread information.
     ///
     /// # Return Value
@@ -1724,12 +1935,12 @@ extern "C" {
         id: SemaId, set_val: i32, num_wait_threads: &mut u32,
     ) -> SceResult<()>;
 
-    /// Gets the current state of the semaphore.
+    /// Gets the current state of a semaphore.
     ///
     /// # Parameters
     ///
     /// - `id`: The semaphore UID.
-    /// - `info` **[[Out parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
     ///   information.
     ///
     /// # Return Value
@@ -1875,7 +2086,7 @@ extern "C" {
     /// # Parameters
     ///
     /// - `id`: The event flag UID.
-    /// - `info` **[[Out parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
     ///   information.
     ///
     /// # Return Value
@@ -1885,6 +2096,162 @@ extern "C" {
     pub fn sceKernelReferEventFlagStatus(
         id: EventFlagId, info: &mut EventFlagInfo,
     ) -> SceResult<()>;
+
+    /// Creates a new mutex.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new mutex. Only used for debug.
+    /// - `attr`: The attribute for the mutex.
+    /// - `init_count`: The initial count value for the mutex.
+    /// - `options` **[[In parameter]]**: The options configuring the mutex behavior. If [`None`],
+    ///   the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the mutex UID on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0xB7D098C6)]
+    pub unsafe fn sceKernelCreateMutex(
+        name: *const u8, attr: MutexAttributes, init_count: i32, options: Option<&MutexOptions>,
+    ) -> SceResult<MutexId>;
+
+    /// Deletes a mutex.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0xF8170FBE)]
+    pub fn sceKernelDeleteMutex(id: MutexId) -> SceResult<()>;
+
+    /// Locks a mutex a number of times.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    /// - `lock_count`: The number of times to lock a mutex after resource acquisition. It must be
+    ///   `> 0`.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0xB011B11F)]
+    pub fn sceKernelLockMutex(
+        id: MutexId, lock_count: u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Locks a mutex a number of times, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    /// - `lock_count`: The number of times to lock a mutex after resource acquisition. It must be
+    ///   `> 0`.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0x5BF4DD27)]
+    pub fn sceKernelLockMutexCB(
+        id: MutexId, lock_count: u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Tries to lock a mutex a number of times.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    /// - `lock_count`: The number of times to lock a mutex after resource acquisition. It must be
+    ///   `> 0`.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0x0DDCD2C9)]
+    pub fn sceKernelTryLockMutex(id: MutexId, lock_count: u32) -> SceResult<()>;
+
+    /// Unlock a mutex a number of times.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    /// - `lock_count`: The number of times to unlock a mutex after resource acquisition. It must be
+    ///   `> 0`.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0x6B30100F)]
+    pub fn sceKernelUnlockMutex(id: MutexId, unlock_count: u32) -> SceResult<()>;
+
+    /// Cancels the wait state of threads waiting on a mutex.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    /// - `new_lock_count`: The new lock count to set on the mutex.
+    /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
+    ///   that were waiting on the specified mutex.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0x87D9223C)]
+    pub fn sceKernelCancelMutex(id: MutexId, new_lock_count: u32, numWaitThreads: &mut u32);
+
+    /// Gets the current state of a mutex.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The mutex UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`MutexInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.70.
+    #[nid(0xA9C2CB9A)]
+    pub fn sceKernelReferMutexStatus(id: MutexId, info: &mut MutexInfo) -> SceResult<()>;
 }
 
 
@@ -2054,6 +2421,44 @@ unsafe impl SceResultOk for ThreadState {
     }
 }
 
+impl MutexId {
+    /// Create a new mutex ID from a raw value.
+    ///
+    /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
+    /// values used by the PSP OS, returning an [`None`] otherwise.
+    pub const fn new(raw: u32) -> Option<Self> {
+        if let 0..=0x7FFFFFFF = raw {
+            Some(unsafe { Self::new_unchecked(raw) })
+        } else {
+            None
+        }
+    }
+
+    /// Create a new thread ID structure from a raw value without checking value range.
+    ///
+    /// # Safety
+    ///
+    /// Immediate language UB if `val` is not within the valid range for this
+    /// type, as it violates the validity invariant.
+    #[inline]
+    pub const unsafe fn new_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::new_unchecked(raw) })
+    }
+
+    #[inline]
+    pub const fn as_inner(self) -> u32 {
+        // SAFETY: pattern types are always legal values of their base type
+        // (Not using `.0` because that has perf regressions.)
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl crate::private::Sealed for MutexId {}
+unsafe impl SceResultOk for MutexId {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
+    }
+}
 
 impl Default for ThreadOptions {
     fn default() -> Self {
@@ -2146,6 +2551,28 @@ impl Default for EventFlagInfo {
             attr: Default::default(),
             init_pattern: Default::default(),
             curr_pattern: Default::default(),
+            num_wait_threads: Default::default(),
+        }
+    }
+}
+
+impl Default for MutexOptions {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+        }
+    }
+}
+
+impl Default for MutexInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            name: Default::default(),
+            attr: Default::default(),
+            init_count: Default::default(),
+            curr_count: Default::default(),
+            curr_owner: Default::default(),
             num_wait_threads: Default::default(),
         }
     }
