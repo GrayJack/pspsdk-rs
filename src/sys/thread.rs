@@ -421,6 +421,68 @@ pub struct LwMutexInfo {
     pub num_wait_threads: u32,
 }
 
+/// The message box UID.
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct MsgBoxId(SceUid);
+
+/// Message box options.
+#[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceKernelMbxOptParam")]
+pub struct MsgBoxOptions {
+    /// The size of this structure.
+    pub size: SceSize,
+}
+
+/// The header of the a message package with user data.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelMsgPacket")]
+pub struct MsgPacket {
+    /// A pointer to the next package.
+    pub next: *mut MsgPacket,
+    /// The priority of the message.
+    pub msg_priority: u8,
+    /// Reserved.
+    pub dummy: [u8; 3],
+}
+
+/// Attributes for message box creation.
+#[bitflag(u32)]
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum MsgBoxAttributes {
+    /// Uses FIFO logic in the thread wait queue.
+    #[default]
+    WaitByFIFO = 0x000,
+    /// Uses thread priority logic in the thread wait queue.
+    WaitByPriority = 0x100,
+    /// Uses FIFO logic in the message queue.
+    MsgByFIFO = 0x000,
+    /// Uses thread priority logic in the message queue.
+    MsgByPriority = 0x400,
+}
+
+/// The information of the current state of a message box.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelMbxInfo")]
+pub struct MsgBoxInfo {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The name of the message box.
+    pub name: [u8; 32],
+    /// The attributes for of the message box.
+    pub attr: MsgBoxAttributes,
+    /// The number of threads waiting on the message box.
+    pub num_wait_threads: u32,
+    /// The number of remaining messages to be received of the message box.
+    pub num_messages: u32,
+    /// The top message of the message box.
+    pub top_msg: *mut MsgPacket,
+}
+
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
 extern "C" {
     /// Create a thread.
@@ -1525,6 +1587,132 @@ extern "C" {
     #[nid(0x4C145944)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelReferLwMutexStatusByID(id: LwMutexId, info: &mut LwMutexInfo) -> SceResult<()>;
+
+    /// Creates a new message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new message box. Only used for
+    ///   debug.
+    /// - `attr`: The message box attributes.
+    /// - `options` **[[In parameter]]**: The options configuring the message box behavior. If
+    ///   [`None`], the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the UID of the created message box on success, error value otherwise.
+    #[nid(0x8125221D)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelCreateMbx(
+        name: *const u8, attr: MsgBoxAttributes, options: Option<&mut MsgBoxOptions>,
+    ) -> SceResult<MsgBoxId>;
+
+    /// Deletes a message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x86255ADA)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelDeleteMbx(id: MsgBoxId) -> SceResult<()>;
+
+    /// Sends a message to a message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    /// - `msg` **[[In parameter]]**: A pointer to a message to be forwarded to the receiver.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xE9B3061E)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelSendMbx(id: MsgBoxId, msg: *mut MsgPacket) -> SceResult<()>;
+
+    /// Waits to receive a message to a message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    /// - `msg` **[[Out parameter]]**: A pointer to a pointer to receive the message.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x18260574)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelReceiveMbx(
+        id: MsgBoxId, msg: *mut *mut MsgPacket, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Waits to receive a message to a message box, but service any callbacks as necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    /// - `msg` **[[Out parameter]]**: A pointer to a pointer to receive the message.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xF3986382)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelReceiveMbxCB(
+        id: MsgBoxId, msg: *mut *mut MsgPacket, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Polls if the message has arrived in a message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    /// - `msg` **[[Out parameter]]**: A pointer to a pointer to receive the message.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x0D81716A)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelPollMbx(id: MsgBoxId, msg: *mut *mut MsgPacket) -> SceResult<()>;
+
+    /// Cancels the wait of a message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
+    ///   that were waiting on the specified semaphore.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x87D4DD36)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelCancelReceiveMbx(id: MsgBoxId, num_wait_threads: &mut u32) -> SceResult<()>;
+
+    /// Gets the current state of a message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xA8E8C846)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferMbxStatus(id: MsgBoxId, info: &mut MsgBoxInfo) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
@@ -2483,6 +2671,124 @@ extern "C" {
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0x4C145944)]
     pub fn sceKernelReferLwMutexStatusByID(id: LwMutexId, info: &mut LwMutexInfo) -> SceResult<()>;
+
+    /// Creates a new message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new message box. Only used for
+    ///   debug.
+    /// - `attr`: The message box attributes.
+    /// - `options` **[[In parameter]]**: The options configuring the message box behavior. If
+    ///   [`None`], the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the UID of the created message box on success, error value otherwise.
+    #[nid(0x8125221D)]
+    pub unsafe fn sceKernelCreateMbx(
+        name: *const u8, attr: MsgBoxAttributes, options: Option<&mut MsgBoxOptions>,
+    ) -> SceResult<MsgBoxId>;
+
+    /// Deletes a message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x86255ADA)]
+    pub unsafe fn sceKernelDeleteMbx(id: MsgBoxId) -> SceResult<()>;
+
+    /// Sends a message to a message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    /// - `msg` **[[In parameter]]**: A pointer to a message to be forwarded to the receiver.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xE9B3061E)]
+    pub unsafe fn sceKernelSendMbx(id: MsgBoxId, msg: *mut MsgPacket) -> SceResult<()>;
+
+    /// Waits to receive a message to a message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    /// - `msg` **[[Out parameter]]**: A pointer to a pointer to receive the message.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x18260574)]
+    pub unsafe fn sceKernelReceiveMbx(
+        id: MsgBoxId, msg: *mut *mut MsgPacket, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Waits to receive a message to a message box, but service any callbacks as necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    /// - `msg` **[[Out parameter]]**: A pointer to a pointer to receive the message.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xF3986382)]
+    pub unsafe fn sceKernelReceiveMbxCB(
+        id: MsgBoxId, msg: *mut *mut MsgPacket, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Polls if the message has arrived in a message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    /// - `msg` **[[Out parameter]]**: A pointer to a pointer to receive the message.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x0D81716A)]
+    pub unsafe fn sceKernelPollMbx(id: MsgBoxId, msg: *mut *mut MsgPacket) -> SceResult<()>;
+
+    /// Cancels the wait of a message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
+    ///   that were waiting on the specified semaphore.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x87D4DD36)]
+    pub fn sceKernelCancelReceiveMbx(id: MsgBoxId, num_wait_threads: &mut u32) -> SceResult<()>;
+
+    /// Gets the current state of a message box.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message box UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xA8E8C846)]
+    pub fn sceKernelReferMbxStatus(id: MsgBoxId, info: &mut MsgBoxInfo) -> SceResult<()>;
 }
 
 
@@ -2874,6 +3180,58 @@ impl Default for LwMutexInfo {
             curr_count: Default::default(),
             curr_owner: Default::default(),
             num_wait_threads: Default::default(),
+        }
+    }
+}
+
+impl MsgBoxId {
+    /// Create a new lightweight mutex ID from a raw value.
+    ///
+    /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
+    /// values used by the PSP OS, returning an [`None`] otherwise.
+    pub const fn new(raw: u32) -> Option<Self> {
+        if let 0..=0x7FFFFFFF = raw {
+            Some(unsafe { Self::new_unchecked(raw) })
+        } else {
+            None
+        }
+    }
+
+    /// Create a new thread ID structure from a raw value without checking value range.
+    ///
+    /// # Safety
+    ///
+    /// Immediate language UB if `val` is not within the valid range for this
+    /// type, as it violates the validity invariant.
+    #[inline]
+    pub const unsafe fn new_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::new_unchecked(raw) })
+    }
+
+    #[inline]
+    pub const fn as_inner(self) -> u32 {
+        // SAFETY: pattern types are always legal values of their base type
+        // (Not using `.0` because that has perf regressions.)
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl crate::private::Sealed for MsgBoxId {}
+unsafe impl SceResultOk for MsgBoxId {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
+    }
+}
+
+impl Default for MsgBoxInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            name: Default::default(),
+            attr: Default::default(),
+            num_wait_threads: Default::default(),
+            num_messages: Default::default(),
+            top_msg: Default::default(),
         }
     }
 }
