@@ -1,4 +1,6 @@
-use core::ffi::c_void;
+#[cfg(feature = "kernel")]
+use core::mem::MaybeUninit;
+use core::{ffi::c_void, fmt};
 
 use bitflag_attr::bitflag;
 use pspsdk_macros::psp_stub;
@@ -9,22 +11,22 @@ use crate::sys::{
 
 /// The thread UID, created with [`sceKernelCreateThread`].
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct ThreadId(SceUid);
 
 /// The semaphore UID, created with [`sceKernelCreateSema`].
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct SemaId(SceUid);
 
 /// The event flag UID, created with [`sceKernelCreateEventFlag`].
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct EventFlagId(SceUid);
 
 /// The callback UID, created with [`sceKernelCreateCallback`].
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct CallbackId(SceUid);
 
 /// The thread entry function.
@@ -336,8 +338,10 @@ pub enum MutexAttributes {
     RecursiveLock = 0x200,
 }
 
+/// The information of the current state of a mutex.
 #[repr(C)]
 #[derive(Debug, Clone)]
+#[doc(alias = "SceKernelMutexInfo")]
 pub struct MutexInfo {
     /// The size of this structure.
     pub size: SceSize,
@@ -352,6 +356,68 @@ pub struct MutexInfo {
     /// The current owner of the mutex.
     pub curr_owner: SceUid,
     /// The number of threads waiting on the mutex.
+    pub num_wait_threads: u32,
+}
+
+/// The lightweight mutex UID.
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct LwMutexId(SceUid);
+
+/// The work area for the lightweight mutex to work on.
+///
+/// The instances of this type **must** live in the PSP user RAM partition to work with the
+/// functions related to lightweight mutex (i.e. either live in the data section of a user PRX or
+/// PBP or be allocated in that memory partition).
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[doc(alias = "SceKernelLwMutexWork")]
+pub struct LwMutexWorkArea {
+    /// The locking count
+    pub lock_count: i32,
+    /// The locking thread.
+    pub lock_thread: ThreadId,
+    /// The lightweight mutex attribute
+    pub attr: MutexAttributes,
+    /// The number of threads waiting on the mutex.
+    pub num_wait_threads: u32,
+    /// The lightweight mutex UID.
+    pub uid: LwMutexId,
+    /// Padding,
+    pub pad: [u32; 3],
+}
+
+/// Lightweight mutex options.
+#[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceKernelLwMutexOptParam")]
+pub struct LwMutexOptions {
+    /// The size of this structure.
+    pub size: SceSize,
+}
+
+/// The information of the current state of a lightweight mutex.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelLwMutexInfo")]
+pub struct LwMutexInfo {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The name of the lightweight mutex.
+    pub name: [u8; 32],
+    /// The attributes for of the lightweight mutex.
+    pub attr: MutexAttributes,
+    /// The lightweight mutex UID.
+    pub uid: LwMutexId,
+    /// The address of the lightweight mutex work area.
+    pub work_addr: *mut LwMutexWorkArea,
+    /// The initial lock count value of the lightweight mutex.
+    pub init_count: i32,
+    /// The current lock count of the lightweight mutex.
+    pub curr_count: i32,
+    /// The current owner of the lightweight mutex.
+    pub curr_owner: SceUid,
+    /// The number of threads waiting on the lightweight mutex.
     pub num_wait_threads: u32,
 }
 
@@ -1255,13 +1321,13 @@ extern "C" {
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelTryLockMutex(id: MutexId, lock_count: u32) -> SceResult<()>;
 
-    /// Unlock a mutex a number of times.
+    /// Unlocks a mutex a number of times.
     ///
     /// # Parameters
     ///
     /// - `id`: The mutex UID.
-    /// - `lock_count`: The number of times to unlock a mutex after resource acquisition. It must be
-    ///   `> 0`.
+    /// - `unlock_count`: The number of times to unlock a mutex after resource acquisition. It must
+    ///   be `> 0`.
     ///
     /// # Return Value
     ///
@@ -1312,6 +1378,153 @@ extern "C" {
     #[nid(0xA9C2CB9A)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelReferMutexStatus(id: MutexId, info: &mut MutexInfo) -> SceResult<()>;
+
+    /// Creates a new lightweight mutex.
+    ///
+    /// # Parameters
+    ///
+    /// - `work_area` **[[Out parameter]]**: A reference to a lightweight mutex work area to be
+    ///   initialized/populated.
+    /// - `name` **[[In parameter]]**: The name assigned to the new lightweight mutex. Only used for
+    ///   debug.
+    /// - `attr`: The attribute for the lightweight mutex.
+    /// - `init_count`: The initial count value for the lightweight mutex.
+    /// - `options` **[[In parameter]]**: The options configuring the lightweight mutex behavior. If
+    ///   [`None`], the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 3.95.
+    #[eabi(i5)]
+    #[nid(0x19CFF145)]
+    pub unsafe fn sceKernelCreateLwMutex(
+        work_area: &mut MaybeUninit<LwMutexWorkArea>, name: *const u8, attr: MutexAttributes,
+        init_count: i32, options: Option<&LwMutexOptions>,
+    ) -> SceResult<()>;
+
+    /// Deletes a lightweight mutex.
+    ///
+    ///  # Parameters
+    ///
+    /// - `work_area` **[[InOut parameter]]**: A reference to a lightweight mutex work area.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 3.95.
+    #[nid(0x60107536)]
+    pub fn sceKernelDeleteLwMutex(work_area: &mut LwMutexWorkArea) -> SceResult<()>;
+
+    /// Locks a lightweight mutex a number of times.
+    ///
+    /// # Parameters
+    ///
+    /// - `work_area` **[[InOut parameter]]**: A reference to a lightweight mutex work area.
+    /// - `lock_count`: The number of times to lock a mutex after resource acquisition. It must be
+    ///   `> 0`.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 3.95.
+    #[nid(0x7CFF8CF3)]
+    pub fn _sceKernelLockLwMutex(
+        work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Locks a lightweight mutex a number of times, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `work_area` **[[InOut parameter]]**: A reference to a lightweight mutex work area.
+    /// - `lock_count`: The number of times to lock a mutex after resource acquisition. It must be
+    ///   `> 0`.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 3.95.
+    #[nid(0x31327F19)]
+    pub fn _sceKernelLockLwMutexCB(
+        work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Tries to lock a lightweight mutex a number of times.
+    ///
+    /// # Parameters
+    ///
+    /// - `work_area` **[[InOut parameter]]**: A reference to a lightweight mutex work area.
+    /// - `lock_count`: The number of times to lock a mutex after resource acquisition. It must be
+    ///   `> 0`.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 3.95.
+    #[nid(0x71040D5C)]
+    pub fn _sceKernelTryLockLwMutex(
+        work_area: &mut LwMutexWorkArea, lock_count: u32,
+    ) -> SceResult<()>;
+
+    /// Unlocks a mutex a number of times.
+    ///
+    /// # Parameters
+    ///
+    /// - `work_area` **[[InOut parameter]]**: A reference to a lightweight mutex work area.
+    /// - `unlock_count`: The number of times to unlock a mutex after resource acquisition. It must
+    ///   be `> 0`.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 3.95.
+    #[nid(0xBEED3A47)]
+    pub fn _sceKernelUnlockLwMutex(
+        work_area: &mut LwMutexWorkArea, unlock_count: u32,
+    ) -> SceResult<()>;
+
+    /// Gets the current state of a lightweight mutex by its UID.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The lightweight mutex UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`MutexInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 3.95.
+    #[nid(0x4C145944)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferLwMutexStatusByID(id: LwMutexId, info: &mut LwMutexInfo) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
@@ -2198,13 +2411,13 @@ extern "C" {
     #[nid(0x0DDCD2C9)]
     pub fn sceKernelTryLockMutex(id: MutexId, lock_count: u32) -> SceResult<()>;
 
-    /// Unlock a mutex a number of times.
+    /// Unlocks a mutex a number of times.
     ///
     /// # Parameters
     ///
     /// - `id`: The mutex UID.
-    /// - `lock_count`: The number of times to unlock a mutex after resource acquisition. It must be
-    ///   `> 0`.
+    /// - `unlock_count`: The number of times to unlock a mutex after resource acquisition. It must
+    ///   be `> 0`.
     ///
     /// # Return Value
     ///
@@ -2252,6 +2465,24 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0xA9C2CB9A)]
     pub fn sceKernelReferMutexStatus(id: MutexId, info: &mut MutexInfo) -> SceResult<()>;
+
+    /// Gets the current state of a lightweight mutex by its UID.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The lightweight mutex UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`MutexInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 3.95.
+    #[nid(0x4C145944)]
+    pub fn sceKernelReferLwMutexStatusByID(id: LwMutexId, info: &mut LwMutexInfo) -> SceResult<()>;
 }
 
 
@@ -2570,6 +2801,75 @@ impl Default for MutexInfo {
             size: size_of::<Self>(),
             name: Default::default(),
             attr: Default::default(),
+            init_count: Default::default(),
+            curr_count: Default::default(),
+            curr_owner: Default::default(),
+            num_wait_threads: Default::default(),
+        }
+    }
+}
+
+impl LwMutexId {
+    /// Create a new lightweight mutex ID from a raw value.
+    ///
+    /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
+    /// values used by the PSP OS, returning an [`None`] otherwise.
+    pub const fn new(raw: u32) -> Option<Self> {
+        if let 0..=0x7FFFFFFF = raw {
+            Some(unsafe { Self::new_unchecked(raw) })
+        } else {
+            None
+        }
+    }
+
+    /// Create a new thread ID structure from a raw value without checking value range.
+    ///
+    /// # Safety
+    ///
+    /// Immediate language UB if `val` is not within the valid range for this
+    /// type, as it violates the validity invariant.
+    #[inline]
+    pub const unsafe fn new_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::new_unchecked(raw) })
+    }
+
+    #[inline]
+    pub const fn as_inner(self) -> u32 {
+        // SAFETY: pattern types are always legal values of their base type
+        // (Not using `.0` because that has perf regressions.)
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl crate::private::Sealed for LwMutexId {}
+unsafe impl SceResultOk for LwMutexId {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
+    }
+}
+
+impl LwMutexWorkArea {
+    #[inline]
+    pub const fn default_new() -> Self {
+        Self {
+            lock_count: 0,
+            lock_thread: unsafe { ThreadId::new_unchecked(0) },
+            attr: MutexAttributes::from_bits_retain(0),
+            num_wait_threads: 0,
+            uid: unsafe { LwMutexId::new_unchecked(0) },
+            pad: [0; 3],
+        }
+    }
+}
+
+impl Default for LwMutexInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            name: Default::default(),
+            attr: Default::default(),
+            uid: Default::default(),
+            work_addr: Default::default(),
             init_count: Default::default(),
             curr_count: Default::default(),
             curr_owner: Default::default(),
