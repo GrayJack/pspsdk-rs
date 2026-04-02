@@ -29,31 +29,39 @@ pub struct FileId(SceUid);
 #[derive(Debug, Clone, Copy, Debug, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum FileFlags {
     /// File access mode flag. Marks that the file is open for reads only.
+    #[doc(alias("SCE_O_RDONLY", "SCE_FREAD", "PSP_O_RDONLY"))]
     ReadOnly = 0x0001,
     /// File access mode flag. Marks that the file is open for writes only.
+    #[doc(alias("SCE_O_WRONLY", "SCE_FWRITE", "PSP_O_WRONLY"))]
     WriteOnly = 0x0002,
     /// File access mode flag. Marks that the file is open for reads and writes.
+    #[doc(alias("SCE_O_RDWR", "PSP_O_RDWR"))]
     ReadWrite = 0x0003,
     /// I/O operation mode flag. Non-blocking mode.
     ///
     /// Not used/reserved.
+    #[doc(alias("SCE_O_NBLOCK", "SCE_FNBLOCK", "PSP_O_NBLOCK"))]
     NonBlock = 0x0004,
     /// I/O operation mode flag. Directory operation mode.
     ///
     /// This flag is only used internally by [`sceIoDopen`].
+    #[doc(alias("SCE_O_DIR", "SCE_FDIRO", "PSP_O_DIR"))]
     DirectoryMode = 0x0008,
     /// Unknown mode flag. Read locked (non-shared) (?).
     ///
     /// Not used/reserved.
+    #[doc(alias("SCE_FRLOCK"))]
     ReadLocked = 0x0010,
     /// Unknown mode flag. Write locked (non-shared) (?).
     ///
     /// Not used/reserved.
+    #[doc(alias("SCE_FWLOCK"))]
     WriteLocked = 0x0020,
     /// I/O operation mode flag. Append mode.
     ///
     /// If this flags is set, the file offset is set to the end of the file prior to each write
     /// operation on the file.
+    #[doc(alias("SCE_O_APPEND", "SCE_FAPPEND", "PSP_O_APPEND"))]
     AppendMode = 0x0100,
     /// Open mode flag. Create file if it does not exist.
     ///
@@ -61,6 +69,7 @@ pub enum FileFlags {
     /// set, on which case the open operation will fail if the file exists.
     ///
     /// [`Exclusive`]: Self::Exclusive
+    #[doc(alias("SCE_O_CREAT", "SCE_FCREAT", "PSP_O_CREAT"))]
     CreateFile = 0x0200,
     /// Open mode flag. Truncate existing file to zero length.
     ///
@@ -68,6 +77,7 @@ pub enum FileFlags {
     ///
     /// If this flag is set and the file is a regular file, truncates the file to a length of zero
     /// (`0`).
+    #[doc(alias("SCE_O_TRUNC", "SCE_FTRUNC", "PSP_O_TRUNC"))]
     Truncate = 0x0400,
     /// Open mode flag. Exclusive file creation.
     ///
@@ -75,37 +85,45 @@ pub enum FileFlags {
     /// already exists.
     ///
     /// [`CreateFile`]: Self::CreateFile
+    #[doc(alias("SCE_O_EXCL", "SCE_EXCL", "PSP_O_EXCL"))]
     Exclusive = 0x0800,
     /// Unknown mode flag. Scan type (?).
     ///
     /// Not used/reserved.
+    #[doc(alias("SCE_FSCAN"))]
     Scan   = 0x1000,
     /// Unknown mode flag. Remote command entry (?).
     ///
     /// Not used/reserved.
+    #[doc(alias("SCE_FRCOM"))]
     RemoteCommand = 0x2000,
     /// Open mode flag. Do not use device buffer and console interrupt.
     ///
     /// Not used/reserved.
+    #[doc(alias("SCE_FNBUF"))]
     NoBuffer = 0x4000,
     /// Open mode flag. No wait (?)
     ///
     /// It is set in some titles I/O operations, but no reference to it on the reversed code on I/O
     /// functions.
+    #[doc(alias("SCE_O_NOWAIT", "SCE_FASYNC", "PSP_O_NOWAIT"))]
     NoWait = 0x8000,
     /// I/O operation mode flag. Exclusive access mode.
     ///
     /// When set, only the the same thread that opened the file descriptor or the async thread of
     /// the file descriptor can execute operations on the file.
+    #[doc(alias("SCE_O_FDEXCL", "SCE_FFDEXCL"))]
     ExclusiveAccess = 0x01000000,
     /// I/O operation mode flag. Power locked mode.
     ///
     /// When set, all power tick timer will be locked from triggering while the file descriptor is
     /// opened.
+    #[doc(alias("SCE_O_PWLOCK", "SCE_FPWLOCK"))]
     PowerLock = 0x02000000,
     /// Open mode flag. Encrypted mode.
     ///
     /// The file uses Kernel/DNAS/NPDRM-encryption.
+    #[doc(alias("SCE_O_ENCRYPTED", "SCE_FENCRYPTED"))]
     Encrypted = 0x04000000,
     /// Open mode flag. Global File descriptor mode.
     ///
@@ -123,6 +141,7 @@ pub enum FileFlags {
     ///
     /// Trying to open DRM protected files without this flag will cause errors. Other checks
     /// probably happen on the DRM specific functions that require this flag and more.
+    #[doc(alias("SCE_O_FGAMEDATA", "SCE_FGAMEDATA"))]
     DrmProtected = 0x40000000,
 }
 
@@ -200,17 +219,20 @@ pub enum Mode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Whence {
     /// Seek offset from the start of the file.
+    #[doc(alias("SCE_SEEK_SET", "SEEK_SET"))]
     Start = 0,
     /// Seek offset from the current internal position of the file.
+    #[doc(alias("SCE_SEEK_CUR", "SEEK_CUR"))]
     Current = 1,
     /// Seek offset from the end of the file.
+    #[doc(alias("SCE_SEEK_END", "SEEK_END"))]
     End   = 2,
 }
 
 /// A single directory entry.
-#[doc(alias("SceIoDirent"))]
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("SceIoDirent"))]
 pub struct Dirent {
     /// The file status
     #[doc(alias("d_stat"))]
@@ -237,7 +259,7 @@ pub struct DirentFatPrivate {
 
 /// The status information of a file.
 #[repr(C)]
-#[doc(alias("PspIoDrv"))]
+#[doc(alias("SceIoStat"))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Stat {
     /// The file permissions.

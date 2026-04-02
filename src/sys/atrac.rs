@@ -9,11 +9,12 @@ use crate::sys::{SceError, SceResult, SceResultOk, SceSize, SceUid};
 /// Identification of Atrac3 objects.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct SceAtracId(SceUid);
+pub struct AtracId(SceUid);
 
 #[repr(C)]
 #[derive(Debug, Clone)]
-pub struct SceAtracBufferInfo {
+#[doc(alias("SceBufferInfo", "PspBufferInfo"))]
+pub struct AtracBufferInfo {
     pub write_position_first_buf: *mut u8,
     pub writable_byte_first_buf: SceSize,
     pub min_write_byte_first_buf: SceSize,
@@ -29,17 +30,20 @@ pub struct SceAtracBufferInfo {
 /// This information than be received from [`sceAtracGetLoopStatus`].
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum SceAtracLoopStatus {
+pub enum AtracLoopStatus {
     /// The Atrac object is not set to loop or currently looping.
     NotLooping = 0x0,
     /// The Atrac object is set to loop or currently looping.
     Looping = 0x1,
 }
 
+/// The possible kinds of ATRAC codec.
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum SceAtracCodecKind {
+pub enum AtracCodecKind {
+    #[doc(alias("SCE_ATRAC_AT3", "PSP_ATRAC_AT3"))]
     Atrac3 = 0x00001001,
+    #[doc(alias("SCE_ATRAC_AT3PLUS", "PSP_ATRAC_AT3PLUS"))]
     Atrac3Plus = 0x00001000,
 }
 
@@ -55,7 +59,7 @@ extern "C" {
     ///
     /// Returns an Atrac ID on success, an error value otherwise.
     #[nid(0x780F88D1)]
-    pub fn sceAtracGetAtracID(codec_kind: SceAtracCodecKind) -> SceResult<SceAtracId>;
+    pub fn sceAtracGetAtracID(codec_kind: AtracCodecKind) -> SceResult<AtracId>;
 
     /// Creates a new Atrac ID from the specified data.
     ///
@@ -68,9 +72,7 @@ extern "C" {
     ///
     /// Returns the new Atrac ID on success, an error value otherwise.
     #[nid(0x7A20E7AF)]
-    pub unsafe fn sceAtracSetDataAndGetID(
-        buf: *mut c_void, bufsize: usize,
-    ) -> SceResult<SceAtracId>;
+    pub unsafe fn sceAtracSetDataAndGetID(buf: *mut c_void, bufsize: usize) -> SceResult<AtracId>;
 
     /// Decode a frame of data.
     ///
@@ -94,7 +96,7 @@ extern "C" {
     #[eabi(i5)]
     #[nid(0x6A8C3CD5)]
     pub unsafe fn sceAtracDecodeData(
-        atrac_id: SceAtracId, samples: *mut u16, num_samples: &mut i32, end: &mut i32,
+        atrac_id: AtracId, samples: *mut u16, num_samples: &mut i32, end: &mut i32,
         remain_frame: &mut i32,
     ) -> SceResult<()>;
 
@@ -111,7 +113,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x9AE849A7)]
-    pub fn sceAtracGetRemainFrame(atrac_id: SceAtracId, remain_frame: &mut i32) -> SceResult<()>;
+    pub fn sceAtracGetRemainFrame(atrac_id: AtracId, remain_frame: &mut i32) -> SceResult<()>;
 
     /// Get information of the Atrac stream data of the given Atrac ID.
     ///
@@ -129,7 +131,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x5D268707)]
     pub fn sceAtracGetStreamDataInfo(
-        atrac_id: SceAtracId, write_pointer: &mut *mut u8, available_bytes: &mut SceSize,
+        atrac_id: AtracId, write_pointer: &mut *mut u8, available_bytes: &mut SceSize,
         read_offset: &mut SceSize,
     ) -> SceResult<()>;
 
@@ -145,7 +147,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x7DB31251)]
-    pub fn sceAtracAddStreamData(atrac_id: SceAtracId, bytes_to_add: SceSize) -> SceResult<()>;
+    pub fn sceAtracAddStreamData(atrac_id: AtracId, bytes_to_add: SceSize) -> SceResult<()>;
 
     /// Gets the Atrac object bitrate.
     ///
@@ -159,7 +161,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xA554A158)]
-    pub fn sceAtracGetBitrate(atrac_id: SceAtracId, bitrate: &mut i32) -> SceResult<()>;
+    pub fn sceAtracGetBitrate(atrac_id: AtracId, bitrate: &mut i32) -> SceResult<()>;
 
     /// Sets the number of loops for the Atrac object associated to the given Atrac ID.
     ///
@@ -172,7 +174,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x868120B5)]
-    pub fn sceAtracSetLoopNum(atrac_id: SceAtracId, num_loops: i32) -> SceResult<()>;
+    pub fn sceAtracSetLoopNum(atrac_id: AtracId, num_loops: i32) -> SceResult<()>;
 
     /// Releases an Atrac ID
     ///
@@ -184,7 +186,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x61EB33F5)]
-    pub fn sceAtracReleaseAtracID(atrac_id: SceAtracId) -> SceResult<()>;
+    pub fn sceAtracReleaseAtracID(atrac_id: AtracId) -> SceResult<()>;
 
     /// Gets the number of samples of the next frame to be decoded.
     ///
@@ -198,7 +200,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x36FAABFB)]
-    pub fn sceAtracGetNextSample(atrac_id: SceAtracId, num_samples: &mut i32) -> SceResult<()>;
+    pub fn sceAtracGetNextSample(atrac_id: AtracId, num_samples: &mut i32) -> SceResult<()>;
 
     /// Gets the maximum number of samples of the Atrac3 stream.
     ///
@@ -212,7 +214,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xD6A5F2F7)]
-    pub fn sceAtracGetMaxSample(atrac_id: SceAtracId, max_samples: &mut i32) -> SceResult<()>;
+    pub fn sceAtracGetMaxSample(atrac_id: AtracId, max_samples: &mut i32) -> SceResult<()>;
 
     /// Gets the buffer information to reset the Atrac buffer.
     ///
@@ -228,7 +230,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xCA3CA3D2)]
     pub fn sceAtracGetBufferInfoForReseting(
-        atrac_id: SceAtracId, sample: u32, buffer_info: &mut SceAtracBufferInfo,
+        atrac_id: AtracId, sample: u32, buffer_info: &mut AtracBufferInfo,
     ) -> SceResult<()>;
 
     /// Get the channel of a Atrac object.
@@ -242,7 +244,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x31668BAA)]
-    pub fn sceAtracGetChannel(atrac_id: SceAtracId, channel: &mut u32) -> SceResult<()>;
+    pub fn sceAtracGetChannel(atrac_id: AtracId, channel: &mut u32) -> SceResult<()>;
 
     /// Get the internal Codec error from the Atrac object.
     ///
@@ -256,7 +258,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xE88F759B)]
     pub fn sceAtracGetInternalErrorInfo(
-        atrac_id: SceAtracId, codec_error: &mut Option<SceError>,
+        atrac_id: AtracId, codec_error: &mut Option<SceError>,
     ) -> SceResult<()>;
 
 
@@ -274,7 +276,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xFAA4F89B)]
     pub fn sceAtracGetLoopStatus(
-        atrac_id: SceAtracId, loop_num: &mut SceSize, loop_status: &mut SceAtracLoopStatus,
+        atrac_id: AtracId, loop_num: &mut SceSize, loop_status: &mut AtracLoopStatus,
     ) -> SceResult<()>;
 
     /// Gets the next decode sample position.
@@ -290,7 +292,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xE23E3A35)]
     pub fn sceAtracGetNextDecodePosition(
-        atrac_id: SceAtracId, sample_position: &mut SceSize,
+        atrac_id: AtracId, sample_position: &mut SceSize,
     ) -> SceResult<()>;
 
     /// Get the second buffer information of the Atrac object.
@@ -308,7 +310,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x83E85EA0)]
     pub fn sceAtracGetSecondBufferInfo(
-        atrac_id: SceAtracId, position: &mut SceSize, data_byte: &mut u32,
+        atrac_id: AtracId, position: &mut SceSize, data_byte: &mut u32,
     ) -> SceResult<()>;
 
     /// Get the sound sample information of the Atrac object.
@@ -328,7 +330,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xA2BBA8BE)]
     pub fn sceAtracGetSoundSample(
-        atrac_id: SceAtracId, end_sample: &mut i32, loop_start_sample: &mut i32,
+        atrac_id: AtracId, end_sample: &mut i32, loop_start_sample: &mut i32,
         loop_end_sample: &mut i32,
     ) -> SceResult<()>;
 
@@ -347,33 +349,33 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x644E5607)]
     pub fn sceAtracResetPlayPosition(
-        atrac_id: SceAtracId, sample: u32, write_offset_first_buf: SceSize,
+        atrac_id: AtracId, sample: u32, write_offset_first_buf: SceSize,
         write_offset_second_buf: SceSize,
     ) -> SceResult<()>;
 
     #[nid(0x0E2A73AB)]
     pub unsafe fn sceAtracSetData(
-        atrac_id: SceAtracId, buffer_addr: *mut u8, buffer_byte: SceSize,
+        atrac_id: AtracId, buffer_addr: *mut u8, buffer_byte: SceSize,
     ) -> SceResult<()>;
 
     #[nid(0x3F6E26B5)]
     pub unsafe fn sceAtracSetHalfwayBuffer(
-        atrac_id: SceAtracId, buffer_addr: *mut u8, read_byte: u32, buffer_byte: u32,
+        atrac_id: AtracId, buffer_addr: *mut u8, read_byte: u32, buffer_byte: u32,
     ) -> SceResult<()>;
 
     #[nid(0x0FAE370E)]
     pub unsafe fn sceAtracSetHalfwayBufferAndGetID(
         buffer_addr: *mut u8, read_byte: u32, buffer_byte: u32,
-    ) -> SceResult<SceAtracId>;
+    ) -> SceResult<AtracId>;
 
     #[nid(0x83BF7AFD)]
     pub unsafe fn sceAtracSetSecondBuffer(
-        atrac_id: SceAtracId, second_buffer_addr: *mut u8, second_buffer_byte: u32,
+        atrac_id: AtracId, second_buffer_addr: *mut u8, second_buffer_byte: u32,
     ) -> SceResult<()>;
 }
 
 
-impl SceAtracId {
+impl AtracId {
     /// Create a new Atrac ID from a raw value.
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceAtracId`
@@ -405,8 +407,8 @@ impl SceAtracId {
     }
 }
 
-impl crate::private::Sealed for SceAtracId {}
-unsafe impl SceResultOk for SceAtracId {
+impl crate::private::Sealed for AtracId {}
+unsafe impl SceResultOk for AtracId {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         match ok_value {
             0..6 => Ok(unsafe { Self::new_unchecked(ok_value) }),

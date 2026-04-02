@@ -6,6 +6,7 @@ use crate::sys::SceError;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("PspOpenPSID", "SceOpenPSID"))]
 pub struct OpenPSID {
     pub data: [u8; 16],
 }
@@ -13,6 +14,7 @@ pub struct OpenPSID {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("SceProductCode"))]
 pub struct ProductCode {
     pub unk: [u8; 2],
 }

@@ -20,6 +20,7 @@ pub struct AudioChannelId(u32);
 
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("SceAudioInputParams", "pspAudioInputParams"))]
 pub struct AudioInputParams {
     /// Automatic Level Control (ALC) configuration.
     pub alto_level_control: i32,
@@ -40,8 +41,10 @@ pub struct AudioInputParams {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum AudioFormats {
     /// Channel set to stereo output.
+    #[doc(alias("PSP_AUDIO_FORMAT_STEREO"))]
     Stereo = 0,
     /// Channel set to mono output.
+    #[doc(alias("PSP_AUDIO_FORMAT_MONO"))]
     Mono   = 0x10,
 }
 

@@ -23,34 +23,48 @@ pub struct HeapId(SceUid);
 /// The RAM partition ID
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[doc(alias("SceSysMemPartitionId"))]
 pub enum MemoryPartitionId {
     /// Unknown. Sometimes used to default to [`MainKernel`](MemoryPartitionId::MainKernel) if
     /// kernel call and [`MainUser`](MemoryPartitionId::MainUser) if user call.
     #[default]
+    #[doc(alias("SCE_KERNEL_UNKNOWN_PARTITION"))]
     Unknown = 0,
     /// Principal kernel partition. Usually 8MB.
+    #[doc(alias("SCE_KERNEL_PRIMARY_KERNEL_PARTITION", "PSP_MEMORY_PARTITION_KERNEL"))]
     MainKernel = 1,
     /// Principal user partition. Usually 24MB.
+    #[doc(alias("SCE_KERNEL_PRIMARY_USER_PARTITION", "PSP_MEMORY_PARTITION_USER"))]
     MainUser = 2,
     /// Other kernel partition.
+    #[doc(alias("SCE_KERNEL_OTHER_KERNEL_PARTITION_1"))]
     OtherKernel = 3,
     /// Other kernel partition.
+    #[doc(alias("SCE_KERNEL_OTHER_KERNEL_PARTITION_2"))]
     OtherKernel2 = 4,
     /// Visual Shell partition.
+    #[doc(alias("SCE_KERNEL_VSHELL_PARTITION"))]
     Vshell = 5,
     /// Syscon user partition.
+    #[doc(alias("SCE_KERNEL_SC_USER_PARTITION"))]
     SysconUser = 6,
     /// Media Engine user partition.
+    #[doc(alias("SCE_KERNEL_ME_USER_PARTITION"))]
     MeUser = 7,
     /// Extended syscon kernel partition.
+    #[doc(alias("SCE_KERNEL_EXTENDED_SC_KERNEL_PARTITION"))]
     ExtendedSysconKernel = 8,
     /// Extended syscon kernel partition.
+    #[doc(alias("SCE_KERNEL_EXTENDED_SC_2_KERNEL_PARTITION"))]
     ExtendedSysconKernel2 = 9,
     /// Media Engine kernel partition.
+    #[doc(alias("SCE_KERNEL_EXTENDED_ME_KERNEL_PARTITION"))]
     ExtendedMeKernel = 10,
     /// Visual Shell kernel partition.
+    #[doc(alias("SCE_KERNEL_VSHELL_KERNEL_PARTITION"))]
     ExtendedVshell = 11,
     /// Extended kernel partition.
+    #[doc(alias("SCE_KERNEL_EXTENDED_KERNEL_PARTITION"))]
     ExtendedKernel = 12,
 }
 
@@ -60,20 +74,26 @@ pub enum MemoryPartitionId {
 pub enum MemoryBlockKind {
     /// Allocate from the lowest available address.
     #[default]
+    #[doc(alias("SCE_KERNEL_SMEM_Low", "PSP_SMEM_Low"))]
     Low  = 0,
     /// Allocate from the highest available address.
+    #[doc(alias("SCE_KERNEL_SMEM_High", "PSP_SMEM_High"))]
     High = 1,
     /// Allocate from the specified address.
+    #[doc(alias("SCE_KERNEL_SMEM_Addr", "PSP_SMEM_Addr"))]
     Addr = 2,
     /// Allocate from the lowest available address aligned to the specified address.
+    #[doc(alias("SCE_KERNEL_SMEM_LOWALIGNED"))]
     LowAligned = 3,
     /// Allocate from the highest available address aligned to the specified address.
+    #[doc(alias("SCE_KERNEL_SMEM_HIGHALIGNED"))]
     HighAligned = 4,
 }
 
 /// Basic information of a memory partition.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("SceSysmemPartInfo"))]
 pub struct MemoryPartitionBasicInfo {
     /// The partition initial RAM address.
     pub addr: SceSize,
@@ -84,10 +104,15 @@ pub struct MemoryPartitionBasicInfo {
 /// Full information of a memory partition.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("PspSysmemPartitionInfo", "SceSysmemPartitionInfo"))]
 pub struct MemoryPartitionInfo {
+    /// The size of this structure.
     pub size: SceSize,
+    /// The initial address of the partition.
     pub start_addr: SceSize,
+    /// The memory size of the partition.
     pub mem_size: SceSize,
+    /// The attributes of the partition.
     pub attributes: u32,
 }
 
@@ -96,6 +121,7 @@ pub type GeListUpdateStallAddrLazy = unsafe extern "C" fn(i32, *mut c_void) -> i
 
 /// Struct passed to [`sceKernelSetUsersystemLibWork`].
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[doc(alias("SceGeLazy"))]
 pub struct GeLazy {
     /// Last display list for which a [`GeListUpdateStallAddrLazy`] was run.
     pub display_list_id: SceIsize,
@@ -122,6 +148,7 @@ pub enum HeapCreateFlag {
 /// Allocation options for the [`sceKernelAllocHeapMemoryWithOption`].
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("SceSysmemHeapAllocOption"))]
 pub struct HeapAllocOptions {
     /// The size of this structure... probably
     pub size: SceSize,
@@ -129,9 +156,10 @@ pub struct HeapAllocOptions {
     pub align: SceSize,
 }
 
-/// Information of a heap object in the system.
+/// The information of the current state of a heap object in the system.
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("SceSysmemHeapInfo"))]
 pub struct HeapInfo {
     /// The size of this structure.
     pub size: SceSize,
@@ -158,14 +186,16 @@ pub struct HeapInfo {
 /// Heap block information.
 #[repr(C)]
 #[derive(Debug, Clone)]
+#[doc(alias("SceSysmemHeapBlock"))]
 pub struct HeapBlock {
     pub next: *mut HeapBlock,
     pub previous: *mut HeapBlock,
 }
 
-
+/// The information of the current state of a low heap.
 #[repr(C)]
 #[derive(Debug, Clone)]
+#[doc(alias("SceSysmemLowheapInfo"))]
 pub struct LowHeapInfo {
     /// The size of this structure.
     pub size: SceSize,
@@ -185,6 +215,7 @@ pub struct LowHeapInfo {
 
 #[repr(C)]
 #[derive(Debug, Clone)]
+#[doc(alias("SceSysmemLowheapInfoBlock"))]
 pub struct LowheapInfoBlock {
     pub block: *mut LowheapInfoBlock,
     pub offset: SceSize,
@@ -193,6 +224,7 @@ pub struct LowheapInfoBlock {
 /// Low Heap block information.
 #[repr(C)]
 #[derive(Debug, Clone)]
+#[doc(alias("SceSysmemLowheapBlock"))]
 pub struct LowHeapBlock {
     pub next: *mut LowHeapBlock,
     pub count: SceSize,
@@ -202,22 +234,31 @@ pub struct LowHeapBlock {
 #[repr(u32)]
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("ScePspHwModels"))]
 pub enum PspHardwareModel {
     /// PSP Fat (01g).
+    #[doc(alias("PSP_1000"))]
     Psp01g = 0,
     /// PSP Slim (02g).
+    #[doc(alias("PSP_2000"))]
     Psp02g = 1,
     /// PSP Brite (03g).
+    #[doc(alias("PSP_3000"))]
     Psp03g = 2,
     /// PSP Brite (04g).
+    #[doc(alias("PSP_4000"))]
     Psp04g = 3,
     /// PSP Go (05g).
+    #[doc(alias("PSP_GO"))]
     Psp05g = 4,
     /// PSP Brite (07g).
+    #[doc(alias("PSP_7000"))]
     Psp07g = 6,
     /// PSP Brite (09g).
+    #[doc(alias("PSP_9000"))]
     Psp09g = 8,
     /// PSP Street E-1000 (11g).
+    #[doc(alias("PSP_11000"))]
     Psp11g = 10,
 }
 
@@ -226,6 +267,7 @@ pub enum PspHardwareModel {
 /// This table is typically used by PSP kernel internal APIs.
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("SceSysmemPartTable"))]
 pub struct MemoryPartitionTable {
     /// Total memory size (?).
     pub mem_size: SceSize,
@@ -254,13 +296,16 @@ pub struct MemoryPartitionTable {
 /// Extra options to pass to [`sceKernelAllocMemoryBlock`].
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("SceSysmemMemoryBlockAllocOption"))]
 pub struct MemoryBlockAllocOptions {
+    /// The size of this structure
     pub size: SceSize,
 }
 
 /// Control block for UID
 #[repr(C, packed)]
 #[derive(Clone)]
+#[doc(alias("SceSysmemUidCB"))]
 pub struct UidControlBlock {
     pub parent0: *mut UidControlBlock,
     pub next_child: *mut UidControlBlock,
@@ -287,6 +332,7 @@ type UidFunction = unsafe extern "C" fn(
 /// Lookup table of [`UidControlBlock`].
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
+#[doc(alias("SceSysmemUidLookupFunc"))]
 pub struct UidLookupFunction {
     pub id: u32,
     pub func: UidFunction,
@@ -302,6 +348,8 @@ pub union UidControlBlockNext {
 
 /// The UID list representation.
 #[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias("SceSysmemUidList"))]
 pub struct UidList {
     pub root: *mut UidControlBlock,
     pub root_kind: *mut UidControlBlock,
@@ -312,6 +360,7 @@ pub struct UidList {
 /// The game information loaded to the system.
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("SceGameInfo"))]
 pub struct GameInfo {
     /// The size of the structure,
     pub size: SceSize,
@@ -342,7 +391,7 @@ pub struct GameInfo {
 /// A bitmask value with the information to what fields are set in a [`GameInfo`].
 #[bitflag(u32)]
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub enum GameInfoFlags {
     /// [`GameInfo::umd_param_sfo`] was set.
     UmdParamSfo = 0x00001,
@@ -1668,5 +1717,92 @@ impl crate::private::Sealed for HeapCreateFlag {}
 unsafe impl SceResultOk for HeapCreateFlag {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         Ok(Self::from_bits_retain(ok_value))
+    }
+}
+
+impl Default for MemoryPartitionInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            start_addr: Default::default(),
+            mem_size: Default::default(),
+            attributes: Default::default(),
+        }
+    }
+}
+
+impl Default for HeapInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            name: Default::default(),
+            permission: Default::default(),
+            attribute: Default::default(),
+            heap_size: Default::default(),
+            total_size: Default::default(),
+            total_free_size: Default::default(),
+            max_free_size: Default::default(),
+            num_heaps: Default::default(),
+            heap_blocks: Default::default(),
+        }
+    }
+}
+
+impl Default for LowHeapInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            heap_size: Default::default(),
+            used_size: Default::default(),
+            total_free_size: Default::default(),
+            max_free_size: Default::default(),
+            block_count: Default::default(),
+            info_block: Default::default(),
+        }
+    }
+}
+
+impl Default for MemoryBlockAllocOptions {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+        }
+    }
+}
+
+impl Default for HeapAllocOptions {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            align: 1,
+        }
+    }
+}
+
+impl Default for GameInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            flags: Default::default(),
+            umd_param_sfo: Default::default(),
+            expect_umd_data: Default::default(),
+            qtgp2: Default::default(),
+            qtgp3: Default::default(),
+            allow_replace_umd: Default::default(),
+            title_id: Default::default(),
+            parental_level: Default::default(),
+            vsh_version: Default::default(),
+            umd_cache_on: Default::default(),
+            compiled_sdk_version: Default::default(),
+            compiler_version: Default::default(),
+            dnas: Default::default(),
+            utility_location: Default::default(),
+            vsh_bootfilename: [0; 64],
+            gamedata_id: Default::default(),
+            app_ver: Default::default(),
+            subscription_validity: Default::default(),
+            bootable: Default::default(),
+            opnssmp_ver: Default::default(),
+        }
     }
 }

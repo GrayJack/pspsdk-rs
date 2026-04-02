@@ -12,12 +12,19 @@ pub struct HprmCallbackSlot(u32);
 
 #[bitflag(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias("SceHprmKeys", "PspHprmKeys"))]
 pub enum HprmKey {
+    #[doc(alias("SCE_HPRM_PLAYPAUSE", "PSP_HPRM_PLAYPAUSE"))]
     PlayPause = 0x01,
+    #[doc(alias("SCE_HPRM_FORWARD", "PSP_HPRM_FORWARD"))]
     Forward = 0x04,
+    #[doc(alias("SCE_HPRM_BACK", "PSP_HPRM_BACK"))]
     Back = 0x08,
+    #[doc(alias("SCE_HPRM_VOL_UP", "PSP_HPRM_VOL_UP"))]
     VolumeUp = 0x10,
+    #[doc(alias("SCE_HPRM_VOL_DOWN", "PSP_HPRM_VOL_DOWN"))]
     VolumeDown = 0x20,
+    #[doc(alias("SCE_HPRM_HOLD", "PSP_HPRM_HOLD"))]
     Hold = 0x80,
 }
 
