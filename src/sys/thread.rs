@@ -483,6 +483,75 @@ pub struct MsgBoxInfo {
     pub top_msg: *mut MsgPacket,
 }
 
+/// The message pipe UID.
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct MsgPipeId(SceUid);
+
+/// Message pipe options.
+#[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceKernelMppOptParam")]
+pub struct MsgPipeOptions {
+    /// The size of this structure.
+    pub size: SceSize,
+}
+
+/// Attributes for message pipe creation.
+#[bitflag(u32)]
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum MsgPipeAttributes {
+    /// Uses FIFO logic in the sender thread wait queue.
+    #[default]
+    SenderWaitByFIFO = 0x0000,
+    /// Uses thread priority logic in the sender thread wait queue.
+    SenderWaitByPriority = 0x0100,
+    /// Uses FIFO logic in the receiver thread wait queue.
+    ReceiverWaitByFIFO = 0x0000,
+    /// Uses thread priority logic in the receiver thread wait queue.
+    ReceiverWaitByPriority = 0x1000,
+    /// Allocates a message box closest to memory bottom (i.e. High address).
+    MemBottom = 0x4000,
+    BothWaitByFIFO = SenderWaitByFIFO | ReceiverWaitByFIFO,
+    BothWaitByPriority = SenderWaitByPriority | ReceiverWaitByPriority,
+}
+
+/// Possible wait strategies for message pipe.
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum MsgPipeWaitKind {
+    /// On send, waits until all data is received. While on receive, waits until the receive buffer
+    /// is full.
+    #[default]
+    Entire = 0x00,
+    /// On send, waits until one byte can be send. While on receive, waits until one byte can be
+    /// received.
+    Imediate = 0x01,
+}
+
+/// The information of the current state of a message pipe.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelMppInfo")]
+pub struct MsgPipeInfo {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The name of the message pipe.
+    pub name: [u8; 32],
+    /// The attributes for of the message pipe.
+    pub attr: MsgPipeAttributes,
+    /// The size of the message pipe buffer.
+    pub buf_size: SceSize,
+    /// The unused size of the message pipe buffer.
+    pub buf_free_size: SceSize,
+    /// The number of send threads waiting on the message pipe.
+    pub num_send_wait_threads: u32,
+    /// The number of receiver threads waiting on the message pipe.
+    pub num_recv_wait_threads: u32,
+}
+
+
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
 extern "C" {
     /// Create a thread.
@@ -1713,6 +1782,212 @@ extern "C" {
     #[nid(0xA8E8C846)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelReferMbxStatus(id: MsgBoxId, info: &mut MsgBoxInfo) -> SceResult<()>;
+
+    /// Creates a new message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new message pipe. Only used for
+    ///   debug.
+    /// - `partition_id`: The memory partition ID.
+    /// - `attr`: The attribute for the message pipe.
+    /// - `buf_size`: The size of the message pipe buffer. Zero is allowed.
+    /// - `options` **[[In parameter]]**: The options configuring the message pipe behavior. If
+    ///   [`None`], the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the message pipe UID on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0x7C0DC2A0)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelCreateMsgPipe(
+        name: *const u8, partition_id: MemoryPartitionId, attr: MsgPipeAttributes,
+        buf_size: SceSize, options: Option<&SemaphoreOptions>,
+    ) -> SceResult<MsgPipeId>;
+
+    /// Deletes a message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xF0B7DA1C)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelDeleteMsgPipe(id: MsgPipeId) -> SceResult<()>;
+
+    /// Sends a message to a message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `msg_buf` **[[In parameter]]**: A pointer to data to send as a message.
+    /// - `msg_size`: The size of `msg_buf`.
+    /// - `wait_kind`: The wait strategy to use.
+    /// - `data_send_size` **[[Out parameter]]**: A reference to receive the number of bytes send.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i6)]
+    #[nid(0x876DBFAD)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelSendMsgPipe(
+        id: MsgPipeId, msg_buf: *const c_void, msg_size: SceSize, wait_kind: MsgPipeWaitKind,
+        data_send_size: &mut u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Sends a message to a message pipe, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `msg_buf` **[[In parameter]]**: A pointer to data to send as a message.
+    /// - `msg_size`: The size of `msg_buf`.
+    /// - `wait_kind`: The wait strategy to use.
+    /// - `data_send_size` **[[Out parameter]]**: A reference to receive the number of bytes send.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i6)]
+    #[nid(0x7C41F2C2)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelSendMsgPipeCB(
+        id: MsgPipeId, msg_buf: *const c_void, msg_size: SceSize, wait_kind: MsgPipeWaitKind,
+        data_send_size: &mut u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+
+    /// Tries to send a message to a message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `msg_buf` **[[In parameter]]**: A pointer to data to send as a message.
+    /// - `msg_size`: The size of `msg_buf`.
+    /// - `wait_kind`: The wait strategy to use.
+    /// - `data_send_size` **[[Out parameter]]**: A reference to receive the number of bytes send.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0x884C9F90)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelTrySendMsgPipe(
+        id: MsgPipeId, msg_buf: *const c_void, msg_size: SceSize, wait_kind: MsgPipeWaitKind,
+        data_send_size: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Waits to receive a message from a message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `msg_buf` **[[Out parameter]]**: A pointer to data buffer to receive as a message.
+    /// - `msg_size`: The size of `msg_buf`.
+    /// - `wait_kind`: The wait strategy to use.
+    /// - `data_send_size` **[[Out parameter]]**: A reference to receive the number of bytes send.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i6)]
+    #[nid(0x74829B76)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelReceiveMsgPipe(
+        id: MsgPipeId, msg_buf: *mut c_void, msg_size: SceSize, wait_kind: MsgPipeWaitKind,
+        data_send_size: &mut u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Waits to receive a message from a message pipe, but service any callbacks as necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `msg_buf` **[[Out parameter]]**: A pointer to data buffer to receive as a message.
+    /// - `msg_size`: The size of `msg_buf`.
+    /// - `wait_kind`: The wait strategy to use.
+    /// - `data_send_size` **[[Out parameter]]**: A reference to receive the number of bytes send.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i6)]
+    #[nid(0xFBFA697D)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelReceiveMsgPipeCB(
+        id: MsgPipeId, msg_buf: *mut c_void, msg_size: SceSize, wait_kind: MsgPipeWaitKind,
+        data_send_size: &mut u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Tries to receive a message from a message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `msg_buf` **[[Out parameter]]**: A pointer to data buffer to receive as a message.
+    /// - `msg_size`: The size of `msg_buf`.
+    /// - `wait_kind`: The wait strategy to use.
+    /// - `data_send_size` **[[Out parameter]]**: A reference to receive the number of bytes send.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0xDF52098F)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelTryReceiveMsgPipe(
+        id: MsgPipeId, msg_buf: *mut c_void, msg_size: SceSize, wait_kind: MsgPipeWaitKind,
+        data_send_size: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Cancels the wait of message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `num_send_wait_threads` **[[Out parameter]]**: A reference to receive the number of sender
+    ///   threads that were waiting on the specified message pipe.
+    /// - `num_recv_wait_threads` **[[Out parameter]]**: A reference to receive the number of
+    ///   receiver threads that were waiting on the specified message pipe.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x349B864D)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelCancelMsgPipe(
+        id: MsgPipeId, num_send_wait_threads: &mut u32, num_recv_wait_threads: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Gets the current state of a message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`MsgPipeInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x33BE4024)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferMsgPipeStatus(id: MsgPipeId, info: &mut MsgPipeInfo) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
@@ -2789,6 +3064,202 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xA8E8C846)]
     pub fn sceKernelReferMbxStatus(id: MsgBoxId, info: &mut MsgBoxInfo) -> SceResult<()>;
+
+    /// Creates a new message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new message pipe. Only used for
+    ///   debug.
+    /// - `partition_id`: The memory partition ID.
+    /// - `attr`: The attribute for the message pipe.
+    /// - `buf_size`: The size of the message pipe buffer. Zero is allowed.
+    /// - `options` **[[In parameter]]**: The options configuring the message pipe behavior. If
+    ///   [`None`], the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the message pipe UID on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0x7C0DC2A0)]
+    pub unsafe fn sceKernelCreateMsgPipe(
+        name: *const u8, partition_id: MemoryPartitionId, attr: MsgPipeAttributes,
+        buf_size: SceSize, options: Option<&SemaphoreOptions>,
+    ) -> SceResult<MsgPipeId>;
+
+    /// Deletes a message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xF0B7DA1C)]
+    pub fn sceKernelDeleteMsgPipe(id: MsgPipeId) -> SceResult<()>;
+
+    /// Sends a message to a message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `msg_buf` **[[In parameter]]**: A pointer to data to send as a message.
+    /// - `msg_size`: The size of `msg_buf`.
+    /// - `wait_kind`: The wait strategy to use.
+    /// - `data_send_size` **[[Out parameter]]**: A reference to receive the number of bytes send.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i6)]
+    #[nid(0x876DBFAD)]
+    pub unsafe fn sceKernelSendMsgPipe(
+        id: MsgPipeId, msg_buf: *const c_void, msg_size: SceSize, wait_kind: MsgPipeWaitKind,
+        data_send_size: &mut u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Sends a message to a message pipe, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `msg_buf` **[[In parameter]]**: A pointer to data to send as a message.
+    /// - `msg_size`: The size of `msg_buf`.
+    /// - `wait_kind`: The wait strategy to use.
+    /// - `data_send_size` **[[Out parameter]]**: A reference to receive the number of bytes send.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i6)]
+    #[nid(0x7C41F2C2)]
+    pub unsafe fn sceKernelSendMsgPipeCB(
+        id: MsgPipeId, msg_buf: *const c_void, msg_size: SceSize, wait_kind: MsgPipeWaitKind,
+        data_send_size: &mut u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+
+    /// Tries to send a message to a message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `msg_buf` **[[In parameter]]**: A pointer to data to send as a message.
+    /// - `msg_size`: The size of `msg_buf`.
+    /// - `wait_kind`: The wait strategy to use.
+    /// - `data_send_size` **[[Out parameter]]**: A reference to receive the number of bytes send.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0x884C9F90)]
+    pub unsafe fn sceKernelTrySendMsgPipe(
+        id: MsgPipeId, msg_buf: *const c_void, msg_size: SceSize, wait_kind: MsgPipeWaitKind,
+        data_send_size: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Waits to receive a message from a message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `msg_buf` **[[Out parameter]]**: A pointer to data buffer to receive as a message.
+    /// - `msg_size`: The size of `msg_buf`.
+    /// - `wait_kind`: The wait strategy to use.
+    /// - `data_send_size` **[[Out parameter]]**: A reference to receive the number of bytes send.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i6)]
+    #[nid(0x74829B76)]
+    pub unsafe fn sceKernelReceiveMsgPipe(
+        id: MsgPipeId, msg_buf: *mut c_void, msg_size: SceSize, wait_kind: MsgPipeWaitKind,
+        data_send_size: &mut u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Waits to receive a message from a message pipe, but service any callbacks as necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `msg_buf` **[[Out parameter]]**: A pointer to data buffer to receive as a message.
+    /// - `msg_size`: The size of `msg_buf`.
+    /// - `wait_kind`: The wait strategy to use.
+    /// - `data_send_size` **[[Out parameter]]**: A reference to receive the number of bytes send.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i6)]
+    #[nid(0xFBFA697D)]
+    pub unsafe fn sceKernelReceiveMsgPipeCB(
+        id: MsgPipeId, msg_buf: *mut c_void, msg_size: SceSize, wait_kind: MsgPipeWaitKind,
+        data_send_size: &mut u32, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Tries to receive a message from a message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `msg_buf` **[[Out parameter]]**: A pointer to data buffer to receive as a message.
+    /// - `msg_size`: The size of `msg_buf`.
+    /// - `wait_kind`: The wait strategy to use.
+    /// - `data_send_size` **[[Out parameter]]**: A reference to receive the number of bytes send.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0xDF52098F)]
+    pub unsafe fn sceKernelTryReceiveMsgPipe(
+        id: MsgPipeId, msg_buf: *mut c_void, msg_size: SceSize, wait_kind: MsgPipeWaitKind,
+        data_send_size: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Cancels the wait of message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The message pipe UID.
+    /// - `num_send_wait_threads` **[[Out parameter]]**: A reference to receive the number of sender
+    ///   threads that were waiting on the specified message pipe.
+    /// - `num_recv_wait_threads` **[[Out parameter]]**: A reference to receive the number of
+    ///   receiver threads that were waiting on the specified message pipe.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x349B864D)]
+    pub fn sceKernelCancelMsgPipe(
+        id: MsgPipeId, num_send_wait_threads: &mut u32, num_recv_wait_threads: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Gets the current state of a message pipe.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The semaphore UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`MsgPipeInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x33BE4024)]
+    pub fn sceKernelReferMsgPipeStatus(id: MsgPipeId, info: &mut MsgPipeInfo) -> SceResult<()>;
 }
 
 
@@ -3232,6 +3703,67 @@ impl Default for MsgBoxInfo {
             num_wait_threads: Default::default(),
             num_messages: Default::default(),
             top_msg: Default::default(),
+        }
+    }
+}
+
+impl MsgPipeId {
+    /// Create a new lightweight mutex ID from a raw value.
+    ///
+    /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
+    /// values used by the PSP OS, returning an [`None`] otherwise.
+    pub const fn new(raw: u32) -> Option<Self> {
+        if let 0..=0x7FFFFFFF = raw {
+            Some(unsafe { Self::new_unchecked(raw) })
+        } else {
+            None
+        }
+    }
+
+    /// Create a new thread ID structure from a raw value without checking value range.
+    ///
+    /// # Safety
+    ///
+    /// Immediate language UB if `val` is not within the valid range for this
+    /// type, as it violates the validity invariant.
+    #[inline]
+    pub const unsafe fn new_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::new_unchecked(raw) })
+    }
+
+    #[inline]
+    pub const fn as_inner(self) -> u32 {
+        // SAFETY: pattern types are always legal values of their base type
+        // (Not using `.0` because that has perf regressions.)
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl crate::private::Sealed for MsgPipeId {}
+unsafe impl SceResultOk for MsgPipeId {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
+    }
+}
+
+impl Default for MsgPipeOptions {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+        }
+    }
+}
+
+impl Default for MsgPipeInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            name: Default::default(),
+            attr: Default::default(),
+            buf_size: Default::default(),
+            buf_free_size: Default::default(),
+            num_send_wait_threads: Default::default(),
+            num_recv_wait_threads: Default::default(),
         }
     }
 }
