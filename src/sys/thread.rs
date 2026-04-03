@@ -551,6 +551,55 @@ pub struct MsgPipeInfo {
     pub num_recv_wait_threads: u32,
 }
 
+/// The variable-sized memory pool UID.
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct VplId(SceUid);
+
+/// Variable-sized memory pool options.
+#[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceKernelVplOptParam")]
+pub struct VplOptions {
+    /// The size of this structure.
+    pub size: SceSize,
+}
+
+/// Attributes for variable-sized memory pool creation.
+#[bitflag(u32)]
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum VplAttributes {
+    /// Uses FIFO logic in the thread wait queue.
+    #[default]
+    WaitByFIFO = 0x0000,
+    /// Uses thread priority logic in the thread wait queue.
+    WaitByPriority = 0x0100,
+    /// Threads with smaller memory requirements may be serviced ahead of queued threads with
+    /// larger requirements.
+    ThreadPass = 0x0200,
+    /// Allocates a variable-sized memory pool  closest to memory bottom (i.e. High address).
+    MemBottom = 0x4000,
+}
+
+/// The information of the current state of a variable-sized memory pool.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelVplInfo")]
+pub struct VplInfo {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The name of the memory pool.
+    pub name: [u8; 32],
+    /// The attributes for of the memory pool.
+    pub attr: VplAttributes,
+    /// The size of the memory pool buffer.
+    pub pool_size: SceSize,
+    /// The unused size of the memory pool buffer.
+    pub pool_free_size: SceSize,
+    /// The number of threads waiting on the memory pool.
+    pub num_wait_threads: u32,
+}
 
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
 extern "C" {
@@ -1988,6 +2037,139 @@ extern "C" {
     #[nid(0x33BE4024)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelReferMsgPipeStatus(id: MsgPipeId, info: &mut MsgPipeInfo) -> SceResult<()>;
+
+    /// Creates a new variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new VPL. Only used for debug.
+    /// - `partition_id`: The memory partition ID.
+    /// - `attr`: The attribute for the variable-sized memory pool.
+    /// - `size`: The size of the memory pool, in bytes.
+    /// - `options` **[[In parameter]]**: The options configuring the variable-sized memory pool
+    ///   behavior. If [`None`], the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the variable-sized memory pool UID on success, error value otherwise.
+    #[nid(0x56C039B5)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelCreateVpl(
+        name: *const u8, partition_id: MemoryPartitionId, attr: VplAttributes, size: SceSize,
+        options: Option<&VplOptions>,
+    ) -> SceResult<VplId>;
+
+    /// Deletes a variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x89B3D48C)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelDeleteVpl(id: VplId) -> SceResult<()>;
+
+    /// Allocates a memory block from a variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    /// - `size`: The size to allocate.
+    /// - `mem_block` **[[Out parameter]]**: A pointer to receive the address of the allocated data.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xBED27435)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelAllocateVpl(
+        id: VplId, size: SceSize, mem_block: *mut *mut c_void, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Allocates a memory block from a variable-sized memory pool, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    /// - `size`: The size to allocate.
+    /// - `mem_block` **[[Out parameter]]**: A pointer to receive the address of the allocated data.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xEC0A693F)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelAllocateVplCB(
+        id: VplId, size: SceSize, mem_block: *mut *mut c_void, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Tries to allocates a memory block from a variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    /// - `size`: The size to allocate.
+    /// - `mem_block` **[[Out parameter]]**: A pointer to receive the address of the allocated data.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xAF36D708)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelTryAllocateVpl(
+        id: VplId, size: SceSize, mem_block: *mut *mut c_void,
+    ) -> SceResult<()>;
+
+    /// Deallocates a memory block from a variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    /// - `mem_block` **[[In parameter]]**: A pointer of the address of the allocated data.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelFreeVpl(id: VplId, mem_block: *mut c_void) -> SceResult<()>;
+
+    /// Cancels the wait of a variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
+    ///   that were waiting on the specified semaphore.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x1D371B8A)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelCancelVpl(id: VplId, num_wait_threads: &mut u32) -> SceResult<()>;
+
+    /// Gets the current state of a variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x39810265)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferVplStatus(id: VplId, info: &mut VplInfo) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
@@ -3260,6 +3442,131 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x33BE4024)]
     pub fn sceKernelReferMsgPipeStatus(id: MsgPipeId, info: &mut MsgPipeInfo) -> SceResult<()>;
+
+    /// Creates a new variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new VPL. Only used for debug.
+    /// - `partition_id`: The memory partition ID.
+    /// - `attr`: The attribute for the variable-sized memory pool.
+    /// - `size`: The size of the memory pool, in bytes.
+    /// - `options` **[[In parameter]]**: The options configuring the variable-sized memory pool
+    ///   behavior. If [`None`], the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the variable-sized memory pool UID on success, error value otherwise.
+    #[nid(0x56C039B5)]
+    pub unsafe fn sceKernelCreateVpl(
+        name: *const u8, partition_id: MemoryPartitionId, attr: VplAttributes, size: SceSize,
+        options: Option<&VplOptions>,
+    ) -> SceResult<VplId>;
+
+    /// Deletes a variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x89B3D48C)]
+    pub fn sceKernelDeleteVpl(id: VplId) -> SceResult<()>;
+
+    /// Allocates a memory block from a variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    /// - `size`: The size to allocate.
+    /// - `mem_block` **[[Out parameter]]**: A pointer to receive the address of the allocated data.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xBED27435)]
+    pub unsafe fn sceKernelAllocateVpl(
+        id: VplId, size: SceSize, mem_block: *mut *mut c_void, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Allocates a memory block from a variable-sized memory pool, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    /// - `size`: The size to allocate.
+    /// - `mem_block` **[[Out parameter]]**: A pointer to receive the address of the allocated data.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xEC0A693F)]
+    pub unsafe fn sceKernelAllocateVplCB(
+        id: VplId, size: SceSize, mem_block: *mut *mut c_void, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Tries to allocates a memory block from a variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    /// - `size`: The size to allocate.
+    /// - `mem_block` **[[Out parameter]]**: A pointer to receive the address of the allocated data.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xAF36D708)]
+    pub unsafe fn sceKernelTryAllocateVpl(
+        id: VplId, size: SceSize, mem_block: *mut *mut c_void,
+    ) -> SceResult<()>;
+
+    /// Deallocates a memory block from a variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    /// - `mem_block` **[[In parameter]]**: A pointer of the address of the allocated data.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    pub unsafe fn sceKernelFreeVpl(id: VplId, mem_block: *mut c_void) -> SceResult<()>;
+
+    /// Cancels the wait of a variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
+    ///   that were waiting on the specified semaphore.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x1D371B8A)]
+    pub fn sceKernelCancelVpl(id: VplId, num_wait_threads: &mut u32) -> SceResult<()>;
+
+    /// Gets the current state of a variable-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The variable-sized memory pool UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x39810265)]
+    pub fn sceKernelReferVplStatus(id: VplId, info: &mut VplInfo) -> SceResult<()>;
 }
 
 
@@ -3764,6 +4071,53 @@ impl Default for MsgPipeInfo {
             buf_free_size: Default::default(),
             num_send_wait_threads: Default::default(),
             num_recv_wait_threads: Default::default(),
+        }
+    }
+}
+
+impl VplId {
+    /// Create a new lightweight mutex ID from a raw value.
+    ///
+    /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
+    /// values used by the PSP OS, returning an [`None`] otherwise.
+    pub const fn new(raw: u32) -> Option<Self> {
+        if let 0..=0x7FFFFFFF = raw {
+            Some(unsafe { Self::new_unchecked(raw) })
+        } else {
+            None
+        }
+    }
+
+    /// Create a new thread ID structure from a raw value without checking value range.
+    ///
+    /// # Safety
+    ///
+    /// Immediate language UB if `val` is not within the valid range for this
+    /// type, as it violates the validity invariant.
+    #[inline]
+    pub const unsafe fn new_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::new_unchecked(raw) })
+    }
+
+    #[inline]
+    pub const fn as_inner(self) -> u32 {
+        // SAFETY: pattern types are always legal values of their base type
+        // (Not using `.0` because that has perf regressions.)
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl crate::private::Sealed for VplId {}
+unsafe impl SceResultOk for VplId {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
+    }
+}
+
+impl Default for VplOptions {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
         }
     }
 }
