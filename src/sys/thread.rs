@@ -601,6 +601,59 @@ pub struct VplInfo {
     pub num_wait_threads: u32,
 }
 
+/// The fixed-sized memory pool UID.
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct FplId(SceUid);
+
+/// Fixed-sized memory pool options.
+#[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceKernelFplOptParam")]
+pub struct FplOptions {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The alignment to use for the memory pool.
+    ///
+    /// Zero defaults to 4 bytes aligned (?).
+    pub alignment: SceSize,
+}
+
+/// Attributes for fixed-sized memory pool creation.
+#[bitflag(u32)]
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum FplAttributes {
+    /// Uses FIFO logic in the thread wait queue.
+    #[default]
+    WaitByFIFO = 0x0000,
+    /// Uses thread priority logic in the thread wait queue.
+    WaitByPriority = 0x0100,
+    /// Allocates a fixed-sized memory pool closest to memory bottom (i.e. High address).
+    MemBottom = 0x4000,
+}
+
+/// The information of the current state of a fixed-sized memory pool.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelFplInfo")]
+pub struct FplInfo {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The name of the memory pool.
+    pub name: [u8; 32],
+    /// The attributes for of the memory pool.
+    pub attr: FplAttributes,
+    /// The size of one block in bytes for the memory pool.
+    pub block_size: SceSize,
+    /// The number of blocks of the memory pool
+    pub num_blocks: SceSize,
+    /// The number of unused blocks in the memory pool.
+    pub free_blocks: SceSize,
+    /// The number of threads waiting on the memory pool.
+    pub num_wait_threads: u32,
+}
+
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
 extern "C" {
     /// Create a thread.
@@ -1838,7 +1891,7 @@ extern "C" {
     ///
     /// - `name` **[[In parameter]]**: The name assigned to the new message pipe. Only used for
     ///   debug.
-    /// - `partition_id`: The memory partition ID.
+    /// - `partition_id`: The memory partition ID to use for allocations.
     /// - `attr`: The attribute for the message pipe.
     /// - `buf_size`: The size of the message pipe buffer. Zero is allowed.
     /// - `options` **[[In parameter]]**: The options configuring the message pipe behavior. If
@@ -2043,7 +2096,7 @@ extern "C" {
     /// # Parameters
     ///
     /// - `name` **[[In parameter]]**: The name assigned to the new VPL. Only used for debug.
-    /// - `partition_id`: The memory partition ID.
+    /// - `partition_id`: The memory partition ID to use for allocations.
     /// - `attr`: The attribute for the variable-sized memory pool.
     /// - `size`: The size of the memory pool, in bytes.
     /// - `options` **[[In parameter]]**: The options configuring the variable-sized memory pool
@@ -2147,7 +2200,7 @@ extern "C" {
     ///
     /// - `id`: The variable-sized memory pool UID.
     /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
-    ///   that were waiting on the specified semaphore.
+    ///   that were waiting on the specified ID.
     ///
     /// # Return Value
     ///
@@ -2170,6 +2223,137 @@ extern "C" {
     #[nid(0x39810265)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelReferVplStatus(id: VplId, info: &mut VplInfo) -> SceResult<()>;
+
+    /// Creates a new fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new FPL. Only used for debug.
+    /// - `partition_id`: The memory partition ID to use for allocations.
+    /// - `attr`: The attribute for the fixed-sized memory pool.
+    /// - `block_size`: The size of a memory block to use, in bytes.
+    /// - `num_blocks`: The number of blocks to allocate.
+    /// - `options` **[[In parameter]]**: The options configuring the variable-sized memory pool
+    ///   behavior. If [`None`], the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the fixed-sized memory pool UID on success, error value otherwise.
+    #[eabi(i6)]
+    #[nid(0xC07BB470)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelCreateFpl(
+        name: *const u8, partition_id: MemoryPartitionId, attr: FplAttributes, block_size: SceSize,
+        num_blocks: SceSize, options: Option<&FplOptions>,
+    ) -> SceResult<FplId>;
+
+    /// Deletes a fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xED1410E0)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelDeleteFpl(id: FplId) -> SceResult<()>;
+
+    /// Allocates a memory block from a fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    /// - `mem_block` **[[Out parameter]]**: A pointer to receive the address of the allocated data.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xD979E9BF)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelAllocateFpl(
+        id: FplId, mem_block: *mut *mut c_void, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Allocates a memory block from a fixed-sized memory pool, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    /// - `mem_block` **[[Out parameter]]**: A pointer to receive the address of the allocated data.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xE7282CB6)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelAllocateFplCB(
+        id: FplId, mem_block: *mut *mut c_void, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Tries to allocates a memory block from a fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    /// - `mem_block` **[[Out parameter]]**: A pointer to receive the address of the allocated data.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x623AE665)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelTryAllocateFpl(id: FplId, mem_block: *mut *mut c_void) -> SceResult<()>;
+
+    /// Deallocates a memory block from a fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    /// - `mem_block` **[[In parameter]]**: A pointer of the address of the allocated data.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xF6414A71)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelFreeFpl(id: FplId, mem_block: *mut c_void) -> SceResult<()>;
+
+    /// Cancels the wait of a fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
+    ///   that were waiting on the specified ID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xA8AA591F)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelCancelFpl(id: FplId, num_wait_threads: &mut u32) -> SceResult<()>;
+
+    /// Gets the current state of a fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xD8199E4C)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferFplStatus(id: FplId, info: &mut FplInfo) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
@@ -3253,7 +3437,7 @@ extern "C" {
     ///
     /// - `name` **[[In parameter]]**: The name assigned to the new message pipe. Only used for
     ///   debug.
-    /// - `partition_id`: The memory partition ID.
+    /// - `partition_id`: The memory partition ID to use for allocations.
     /// - `attr`: The attribute for the message pipe.
     /// - `buf_size`: The size of the message pipe buffer. Zero is allowed.
     /// - `options` **[[In parameter]]**: The options configuring the message pipe behavior. If
@@ -3448,7 +3632,7 @@ extern "C" {
     /// # Parameters
     ///
     /// - `name` **[[In parameter]]**: The name assigned to the new VPL. Only used for debug.
-    /// - `partition_id`: The memory partition ID.
+    /// - `partition_id`: The memory partition ID to use for allocations.
     /// - `attr`: The attribute for the variable-sized memory pool.
     /// - `size`: The size of the memory pool, in bytes.
     /// - `options` **[[In parameter]]**: The options configuring the variable-sized memory pool
@@ -3546,7 +3730,7 @@ extern "C" {
     ///
     /// - `id`: The variable-sized memory pool UID.
     /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
-    ///   that were waiting on the specified semaphore.
+    ///   that were waiting on the specified ID.
     ///
     /// # Return Value
     ///
@@ -3567,6 +3751,129 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x39810265)]
     pub fn sceKernelReferVplStatus(id: VplId, info: &mut VplInfo) -> SceResult<()>;
+
+    /// Creates a new fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new FPL. Only used for debug.
+    /// - `partition_id`: The memory partition ID to use for allocations.
+    /// - `attr`: The attribute for the fixed-sized memory pool.
+    /// - `block_size`: The size of a memory block to use, in bytes.
+    /// - `num_blocks`: The number of blocks to allocate.
+    /// - `options` **[[In parameter]]**: The options configuring the variable-sized memory pool
+    ///   behavior. If [`None`], the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the fixed-sized memory pool UID on success, error value otherwise.
+    #[eabi(i6)]
+    #[nid(0xC07BB470)]
+    pub unsafe fn sceKernelCreateFpl(
+        name: *const u8, partition_id: MemoryPartitionId, attr: FplAttributes, block_size: SceSize,
+        num_blocks: SceSize, options: Option<&FplOptions>,
+    ) -> SceResult<FplId>;
+
+    /// Deletes a fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xED1410E0)]
+    pub fn sceKernelDeleteFpl(id: FplId) -> SceResult<()>;
+
+    /// Allocates a memory block from a fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    /// - `mem_block` **[[Out parameter]]**: A pointer to receive the address of the allocated data.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xD979E9BF)]
+    pub unsafe fn sceKernelAllocateFpl(
+        id: FplId, mem_block: *mut *mut c_void, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Allocates a memory block from a fixed-sized memory pool, but service any callbacks as
+    /// necessary.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    /// - `mem_block` **[[Out parameter]]**: A pointer to receive the address of the allocated data.
+    /// - `timeout` **[[InOut parameter]]**: Timeout in microseconds (?). If a timeout is specified
+    ///   and the specified thread finished before the timeout, the remaining timeout is set.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xE7282CB6)]
+    pub unsafe fn sceKernelAllocateFplCB(
+        id: FplId, mem_block: *mut *mut c_void, timeout: Option<&mut u32>,
+    ) -> SceResult<()>;
+
+    /// Tries to allocates a memory block from a fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    /// - `mem_block` **[[Out parameter]]**: A pointer to receive the address of the allocated data.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x623AE665)]
+    pub unsafe fn sceKernelTryAllocateFpl(id: FplId, mem_block: *mut *mut c_void) -> SceResult<()>;
+
+    /// Deallocates a memory block from a fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    /// - `mem_block` **[[In parameter]]**: A pointer of the address of the allocated data.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xF6414A71)]
+    pub unsafe fn sceKernelFreeFpl(id: FplId, mem_block: *mut c_void) -> SceResult<()>;
+
+    /// Cancels the wait of a fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    /// - `num_wait_threads` **[[Out parameter]]**: A reference to receive the number of threads
+    ///   that were waiting on the specified ID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xA8AA591F)]
+    pub fn sceKernelCancelFpl(id: FplId, num_wait_threads: &mut u32) -> SceResult<()>;
+
+    /// Gets the current state of a fixed-sized memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The fixed-sized memory pool UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xD8199E4C)]
+    pub fn sceKernelReferFplStatus(id: FplId, info: &mut FplInfo) -> SceResult<()>;
 }
 
 
@@ -4118,6 +4425,54 @@ impl Default for VplOptions {
     fn default() -> Self {
         Self {
             size: size_of::<Self>(),
+        }
+    }
+}
+
+impl FplId {
+    /// Create a new lightweight mutex ID from a raw value.
+    ///
+    /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
+    /// values used by the PSP OS, returning an [`None`] otherwise.
+    pub const fn new(raw: u32) -> Option<Self> {
+        if let 0..=0x7FFFFFFF = raw {
+            Some(unsafe { Self::new_unchecked(raw) })
+        } else {
+            None
+        }
+    }
+
+    /// Create a new thread ID structure from a raw value without checking value range.
+    ///
+    /// # Safety
+    ///
+    /// Immediate language UB if `val` is not within the valid range for this
+    /// type, as it violates the validity invariant.
+    #[inline]
+    pub const unsafe fn new_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::new_unchecked(raw) })
+    }
+
+    #[inline]
+    pub const fn as_inner(self) -> u32 {
+        // SAFETY: pattern types are always legal values of their base type
+        // (Not using `.0` because that has perf regressions.)
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl crate::private::Sealed for FplId {}
+unsafe impl SceResultOk for FplId {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
+    }
+}
+
+impl Default for FplOptions {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            alignment: Default::default(),
         }
     }
 }
