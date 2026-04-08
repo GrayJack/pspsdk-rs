@@ -43,9 +43,9 @@ impl SceUid {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible SceUid
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -58,7 +58,7 @@ impl SceUid {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
         // SAFETY: Caller promised that `val` is within the valid range.
         unsafe { Self(raw) }
     }
@@ -75,7 +75,7 @@ impl crate::private::Sealed for SceUid {}
 
 impl Default for SceUid {
     fn default() -> Self {
-        unsafe { Self::new_unchecked(0) }
+        unsafe { Self::from_raw_unchecked(0) }
     }
 }
 
@@ -123,7 +123,9 @@ impl<T: SceResultOk> SceResult<T> {
     pub fn into_result(self) -> Result<T, SceError> {
         match self.as_inner() {
             0..=0x7FFFFFFF => unsafe { T::handle_ok_value(self.as_inner()) },
-            0x80000001..=0xFFFFFFFF => Err(unsafe { SceError::new_unchecked(self.as_inner()) }),
+            0x80000001..=0xFFFFFFFF => {
+                Err(unsafe { SceError::from_raw_unchecked(self.as_inner()) })
+            },
             0x80000000 => Err(SceError::INVALID_VALUE),
         }
     }
@@ -238,7 +240,7 @@ impl<T: SceResultOk> SceResult<T> {
     {
         if self.is_err() {
             // SAFETY: we know it is an error
-            f(unsafe { SceError::new_unchecked(self.as_inner()) })
+            f(unsafe { SceError::from_raw_unchecked(self.as_inner()) })
         }
 
         self
@@ -317,7 +319,7 @@ unsafe impl SceResultOk for SceUid {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         debug_assert!(ok_value <= 0x7FFFFFFF);
         // SAFETY: SceUid is always on the ok value range
-        Ok(unsafe { Self::new_unchecked(ok_value) })
+        Ok(unsafe { Self::from_raw_unchecked(ok_value) })
     }
 }
 

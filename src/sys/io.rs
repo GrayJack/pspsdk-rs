@@ -2099,9 +2099,9 @@ impl FileId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceAtracId`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -2114,8 +2114,8 @@ impl FileId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]

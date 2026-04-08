@@ -101,31 +101,31 @@ pub const fn audio_sample_align(sample_count: i32) -> i32 {
 
 impl AudioChannelId {
     /// Channel 0
-    pub const CHANNEL_0: AudioChannelId = unsafe { Self::new_unchecked(0) };
+    pub const CHANNEL_0: AudioChannelId = unsafe { Self::from_raw_unchecked(0) };
     /// Channel 1
-    pub const CHANNEL_1: AudioChannelId = unsafe { Self::new_unchecked(1) };
+    pub const CHANNEL_1: AudioChannelId = unsafe { Self::from_raw_unchecked(1) };
     /// Channel 2
-    pub const CHANNEL_2: AudioChannelId = unsafe { Self::new_unchecked(2) };
+    pub const CHANNEL_2: AudioChannelId = unsafe { Self::from_raw_unchecked(2) };
     /// Channel 3
-    pub const CHANNEL_3: AudioChannelId = unsafe { Self::new_unchecked(3) };
+    pub const CHANNEL_3: AudioChannelId = unsafe { Self::from_raw_unchecked(3) };
     /// Channel 4
-    pub const CHANNEL_4: AudioChannelId = unsafe { Self::new_unchecked(4) };
+    pub const CHANNEL_4: AudioChannelId = unsafe { Self::from_raw_unchecked(4) };
     /// Channel 5
-    pub const CHANNEL_5: AudioChannelId = unsafe { Self::new_unchecked(5) };
+    pub const CHANNEL_5: AudioChannelId = unsafe { Self::from_raw_unchecked(5) };
     /// Channel 6
-    pub const CHANNEL_6: AudioChannelId = unsafe { Self::new_unchecked(6) };
+    pub const CHANNEL_6: AudioChannelId = unsafe { Self::from_raw_unchecked(6) };
     /// Channel 7
-    pub const CHANNEL_7: AudioChannelId = unsafe { Self::new_unchecked(7) };
+    pub const CHANNEL_7: AudioChannelId = unsafe { Self::from_raw_unchecked(7) };
     /// Channel value to request a the next channel on functions like [`sceAudioChReserve`].
-    pub const NEXT: AudioChannelId = unsafe { Self::new_unchecked(0xFFFFFFFF) };
+    pub const NEXT: AudioChannelId = unsafe { Self::from_raw_unchecked(0xFFFFFFFF) };
 
     /// Create a new channel number from a raw value.
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceChannel`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         match raw {
-            0u32..=7 => Some(unsafe { Self::new_unchecked(raw) }),
+            0u32..=7 => Some(unsafe { Self::from_raw_unchecked(raw) }),
             0xFFFFFFFF => Some(Self::NEXT),
             _ => None,
         }
@@ -138,7 +138,7 @@ impl AudioChannelId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
         Self(raw)
     }
 
@@ -155,7 +155,7 @@ unsafe impl SceResultOk for AudioChannelId {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         // On result Channel is never 0xFFFFFFFF
         match ok_value {
-            0..=7 => Ok(unsafe { Self::new_unchecked(ok_value) }),
+            0..=7 => Ok(unsafe { Self::from_raw_unchecked(ok_value) }),
             _ => Err(SceError::INVALID_VALUE),
         }
     }

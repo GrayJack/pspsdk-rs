@@ -380,9 +380,9 @@ impl AtracId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceAtracId`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..6 = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -395,8 +395,8 @@ impl AtracId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
@@ -411,7 +411,7 @@ impl crate::private::Sealed for AtracId {}
 unsafe impl SceResultOk for AtracId {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         match ok_value {
-            0..6 => Ok(unsafe { Self::new_unchecked(ok_value) }),
+            0..6 => Ok(unsafe { Self::from_raw_unchecked(ok_value) }),
             _ => Err(SceError::INVALID_VALUE),
         }
     }

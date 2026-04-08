@@ -4348,15 +4348,15 @@ extern "C" {
 
 impl ThreadId {
     /// Represent the calling thread UID in some functions.
-    pub const CALLING: Self = unsafe { Self::new_unchecked(0) };
+    pub const CALLING: Self = unsafe { Self::from_raw_unchecked(0) };
 
     /// Create a new thread ID from a raw value.
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceAtracId`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -4369,8 +4369,8 @@ impl ThreadId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
@@ -4393,9 +4393,9 @@ impl SemaId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceAtracId`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -4408,8 +4408,8 @@ impl SemaId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
@@ -4432,9 +4432,9 @@ impl EventFlagId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceAtracId`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -4447,8 +4447,8 @@ impl EventFlagId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
@@ -4471,9 +4471,9 @@ impl CallbackId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceAtracId`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -4486,8 +4486,8 @@ impl CallbackId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
@@ -4517,9 +4517,9 @@ impl MutexId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -4532,8 +4532,8 @@ impl MutexId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
@@ -4674,9 +4674,9 @@ impl LwMutexId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -4689,8 +4689,8 @@ impl LwMutexId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
@@ -4713,10 +4713,10 @@ impl LwMutexWorkArea {
     pub const fn default_new() -> Self {
         Self {
             lock_count: 0,
-            lock_thread: unsafe { ThreadId::new_unchecked(0) },
+            lock_thread: unsafe { ThreadId::from_raw_unchecked(0) },
             attr: MutexAttributes::from_bits_retain(0),
             num_wait_threads: 0,
-            uid: unsafe { LwMutexId::new_unchecked(0) },
+            uid: unsafe { LwMutexId::from_raw_unchecked(0) },
             pad: [0; 3],
         }
     }
@@ -4743,9 +4743,9 @@ impl MsgBoxId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -4758,8 +4758,8 @@ impl MsgBoxId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
@@ -4795,9 +4795,9 @@ impl MsgPipeId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -4810,8 +4810,8 @@ impl MsgPipeId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
@@ -4856,9 +4856,9 @@ impl VplId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -4871,8 +4871,8 @@ impl VplId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
@@ -4903,9 +4903,9 @@ impl FplId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -4918,8 +4918,8 @@ impl FplId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
@@ -4951,9 +4951,9 @@ impl TlsPoolId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -4966,8 +4966,8 @@ impl TlsPoolId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
@@ -5013,9 +5013,9 @@ impl AlarmId {
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn new(raw: u32) -> Option<Self> {
+    pub const fn from_raw(raw: u32) -> Option<Self> {
         if let 0..=0x7FFFFFFF = raw {
-            Some(unsafe { Self::new_unchecked(raw) })
+            Some(unsafe { Self::from_raw_unchecked(raw) })
         } else {
             None
         }
@@ -5028,8 +5028,8 @@ impl AlarmId {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn new_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::new_unchecked(raw) })
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
     }
 
     #[inline]
