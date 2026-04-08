@@ -1,6 +1,4 @@
-#[cfg(feature = "kernel")]
-use core::mem::MaybeUninit;
-use core::{ffi::c_void, fmt};
+use core::{ffi::c_void, mem::MaybeUninit};
 
 use bitflag_attr::bitflag;
 use pspsdk_macros::psp_stub;
@@ -705,6 +703,30 @@ pub struct TlsPoolInfo {
     pub free_blocks: SceSize,
     /// The number of threads waiting on the memory pool.
     pub num_wait_threads: u32,
+}
+
+/// The alarm UID.
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct AlarmId(SceUid);
+
+/// The alarm entry function.
+#[doc(alias("SceKernelAlarmHandler"))]
+pub type AlarmHandler = unsafe extern "C" fn(common: *mut c_void) -> SceResult<u32>;
+
+/// The information of the current state of a alarm timer.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelAlarmInfo")]
+pub struct AlarmInfo {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The schedule time to call the registered [`AlarmHandler`].
+    pub schedule: SystemClock,
+    /// The alarm registered handler function.
+    pub handler: Option<AlarmHandler>,
+    /// The argument passed to `handler`.
+    pub common: *mut c_void,
 }
 
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
@@ -2484,6 +2506,161 @@ extern "C" {
     #[nid(0x721067F3)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelReferTlsplStatus(id: TlsPoolId, info: &mut TlsPoolInfo) -> SceResult<()>;
+
+    /// Gets the system time.
+    ///
+    /// # Parameters
+    ///
+    /// - `clock`  **[[Out parameter]]**: A reference to [`SystemClock`] to receive the information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xDB738F35)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelGetSystemTime(clock: &mut SystemClock) -> SceResult<()>;
+
+    /// Gets the system time as raw wide integer.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the system time.
+    #[nid(0x82BC5777)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelGetSystemTimeWide() -> u64;
+
+    /// Gets the low part of the system time.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the system time low bits.
+    #[nid(0x369ED59D)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelGetSystemTimeLow() -> u32;
+
+    /// Creates an alarm.
+    ///
+    /// # Parameters
+    ///
+    /// - `microsec`: The microseconds until the `handler` is called.
+    /// - `handler` **[[In parameter]]**: The function pointer set as entry point.
+    /// - `common` **[[InOut parameter]]**: A pointer to memory shared with the alarm handler.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the alarm UID on success, error value otherwise.
+    #[nid(0x6652B8CA)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelSetAlarm(
+        microsec: u32, handler: AlarmHandler, common: *mut c_void,
+    ) -> SceResult<AlarmId>;
+
+    /// Creates an alarm using [`SystemClock`].
+    ///
+    /// # Parameters
+    ///
+    /// - `clock` **[[In parameter]]**: A reference to a [`SystemClock`] as the time until the
+    ///   `handler` is called.
+    /// - `handler` **[[In parameter]]**: The function pointer set as entry point.
+    /// - `common` **[[InOut parameter]]**: A pointer to memory shared with the alarm handler.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the alarm UID on success, error value otherwise.
+    #[nid(0xB2C25152)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelSetSysClockAlarm(
+        clock: &SystemClock, handler: AlarmHandler, common: *mut c_void,
+    ) -> SceResult<AlarmId>;
+
+    /// Cancels an alarm.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The alarm UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x7E65B999)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelCancelAlarm(id: AlarmId) -> SceResult<()>;
+
+    /// Gets the current state of a alarm.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The alarm UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xDAA3F564)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferAlarmStatus(id: AlarmId, info: &mut AlarmInfo) -> SceResult<()>;
+
+    /// Converts time in microseconds to [`SystemClock`].
+    ///
+    /// # Parameters
+    ///
+    /// - `microsec`: The time in microseconds.
+    /// - `clock` **[[Out parameter]]**: A reference to [`SystemClock`] to receive the information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x110DEC9A)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelUSec2SysClock(microsec: u32, clock: &mut SystemClock) -> SceResult<()>;
+
+    /// Converts time in [`SystemClock`] to seconds and microseconds.
+    ///
+    /// # Parameters
+    ///
+    /// - `clock` **[[In parameter]]**: A reference to [`SystemClock`] to give the time information.
+    /// - `sec` **[[Out parameter]]**: A reference to receive the seconds information.
+    /// - `microsec` **[[Out parameter]]**: A reference to receive the microseconds information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xBA6B92E2)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelSysClock2USec(
+        clock: &SystemClock, sec: &mut u32, microsec: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Converts time in microseconds to raw system clock.
+    ///
+    /// # Parameters
+    ///
+    /// - `microsec`: The time in microseconds.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the clock in raw format.
+    #[nid(0xC8CD158C)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelUSec2SysClockWide(microsec: u32) -> u64;
+
+    /// Converts raw system time to seconds and microseconds.
+    ///
+    /// # Parameters
+    ///
+    /// - `raw_clock`: The raw system clock.
+    /// - `sec` **[[Out parameter]]**: A reference to receive the seconds information.
+    /// - `microsec` **[[Out parameter]]**: A reference to receive the microseconds information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xE1619D7C)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelSysClock2USecWide(
+        raw_clock: u64, sec: &mut u32, microsec: &mut u32,
+    ) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
@@ -4022,6 +4199,150 @@ extern "C" {
     /// This API was introduced on PSP firmware version 5.70.
     #[nid(0x721067F3)]
     pub fn sceKernelReferTlsplStatus(id: TlsPoolId, info: &mut TlsPoolInfo) -> SceResult<()>;
+
+    /// Gets the system time.
+    ///
+    /// # Parameters
+    ///
+    /// - `clock` **[[Out parameter]]**: A reference to [`SystemClock`] to receive the information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xDB738F35)]
+    pub fn sceKernelGetSystemTime(clock: &mut SystemClock) -> SceResult<()>;
+
+    /// Gets the system time as raw wide integer.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the system time.
+    #[nid(0x82BC5777)]
+    pub fn sceKernelGetSystemTimeWide() -> u64;
+
+    /// Gets the low part of the system time.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the system time low bits.
+    #[nid(0x369ED59D)]
+    pub fn sceKernelGetSystemTimeLow() -> u32;
+
+    /// Creates an alarm.
+    ///
+    /// # Parameters
+    ///
+    /// - `microsec`: The microseconds until the `handler` is called.
+    /// - `handler` **[[In parameter]]**: The function pointer set as entry point.
+    /// - `common` **[[InOut parameter]]**: A pointer to memory shared with the alarm handler.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the alarm UID on success, error value otherwise.
+    #[nid(0x6652B8CA)]
+    pub fn sceKernelSetAlarm(
+        microsec: u32, handler: AlarmHandler, common: *mut c_void,
+    ) -> SceResult<AlarmId>;
+
+    /// Creates an alarm using [`SystemClock`].
+    ///
+    /// # Parameters
+    ///
+    /// - `clock` **[[In parameter]]**: A reference to a [`SystemClock`] as the time until the
+    ///   `handler` is called.
+    /// - `handler` **[[In parameter]]**: The function pointer set as entry point.
+    /// - `common` **[[InOut parameter]]**: A pointer to memory shared with the alarm handler.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the alarm UID on success, error value otherwise.
+    #[nid(0xB2C25152)]
+    pub fn sceKernelSetSysClockAlarm(
+        clock: &SystemClock, handler: AlarmHandler, common: *mut c_void,
+    ) -> SceResult<AlarmId>;
+
+    /// Cancels an alarm.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The alarm UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x7E65B999)]
+    pub fn sceKernelCancelAlarm(id: AlarmId) -> SceResult<()>;
+
+    /// Gets the current state of a alarm.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The alarm UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xDAA3F564)]
+    pub fn sceKernelReferAlarmStatus(id: AlarmId, info: &mut AlarmInfo) -> SceResult<()>;
+
+    /// Converts time in microseconds to [`SystemClock`].
+    ///
+    /// # Parameters
+    ///
+    /// - `microsec`: The time in microseconds.
+    /// - `clock` **[[Out parameter]]**: A reference to [`SystemClock`] to receive the information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x110DEC9A)]
+    pub fn sceKernelUSec2SysClock(microsec: u32, clock: &mut SystemClock) -> SceResult<()>;
+
+    /// Converts time in [`SystemClock`] to seconds and microseconds.
+    ///
+    /// # Parameters
+    ///
+    /// - `clock` **[[In parameter]]**: A reference to [`SystemClock`] to give the time information.
+    /// - `sec` **[[Out parameter]]**: A reference to receive the seconds information.
+    /// - `microsec` **[[Out parameter]]**: A reference to receive the microseconds information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xBA6B92E2)]
+    pub fn sceKernelSysClock2USec(
+        clock: &SystemClock, sec: &mut u32, microsec: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Converts time in microseconds to raw system clock.
+    ///
+    /// # Parameters
+    ///
+    /// - `microsec`: The time in microseconds.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the clock in raw format.
+    #[nid(0xC8CD158C)]
+    pub fn sceKernelUSec2SysClockWide(microsec: u32) -> u64;
+
+    /// Converts raw system time to seconds and microseconds.
+    ///
+    /// # Parameters
+    ///
+    /// - `raw_clock`: The raw system clock.
+    /// - `sec` **[[Out parameter]]**: A reference to receive the seconds information.
+    /// - `microsec` **[[Out parameter]]**: A reference to receive the microseconds information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xE1619D7C)]
+    pub fn sceKernelSysClock2USecWide(
+        raw_clock: u64, sec: &mut u32, microsec: &mut u32,
+    ) -> SceResult<()>;
 }
 
 
@@ -4683,6 +5004,56 @@ impl Default for TlsPoolInfo {
             num_blocks: Default::default(),
             free_blocks: Default::default(),
             num_wait_threads: Default::default(),
+        }
+    }
+}
+
+impl AlarmId {
+    /// Create a new lightweight mutex ID from a raw value.
+    ///
+    /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
+    /// values used by the PSP OS, returning an [`None`] otherwise.
+    pub const fn new(raw: u32) -> Option<Self> {
+        if let 0..=0x7FFFFFFF = raw {
+            Some(unsafe { Self::new_unchecked(raw) })
+        } else {
+            None
+        }
+    }
+
+    /// Create a new thread ID structure from a raw value without checking value range.
+    ///
+    /// # Safety
+    ///
+    /// Immediate language UB if `val` is not within the valid range for this
+    /// type, as it violates the validity invariant.
+    #[inline]
+    pub const unsafe fn new_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::new_unchecked(raw) })
+    }
+
+    #[inline]
+    pub const fn as_inner(self) -> u32 {
+        // SAFETY: pattern types are always legal values of their base type
+        // (Not using `.0` because that has perf regressions.)
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl crate::private::Sealed for AlarmId {}
+unsafe impl SceResultOk for AlarmId {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
+    }
+}
+
+impl Default for AlarmInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            schedule: Default::default(),
+            handler: Default::default(),
+            common: Default::default(),
         }
     }
 }
