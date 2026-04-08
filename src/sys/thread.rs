@@ -654,6 +654,59 @@ pub struct FplInfo {
     pub num_wait_threads: u32,
 }
 
+/// The user TLS pool UID.
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct TlsPoolId(SceUid);
+
+/// TLS memory pool options.
+#[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceKernelTlsplOptParam")]
+pub struct TlsPoolOptions {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The alignment to use for the memory pool.
+    ///
+    /// Zero defaults to 4 bytes aligned (?).
+    pub alignment: SceSize,
+}
+
+/// Attributes for TLS memory pool creation.
+#[bitflag(u32)]
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum TlsPoolAttributes {
+    /// Uses FIFO logic in the thread wait queue.
+    #[default]
+    WaitByFIFO = 0x0000,
+    /// Uses thread priority logic in the thread wait queue.
+    WaitByPriority = 0x0100,
+    /// Allocates a TLS memory pool closest to memory bottom (i.e. High address).
+    MemBottom = 0x4000,
+}
+
+/// The information of the current state of a TLS memory pool.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelTlsplInfo")]
+pub struct TlsPoolInfo {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The name of the memory pool.
+    pub name: [u8; 32],
+    /// The attributes for of the memory pool.
+    pub attr: TlsPoolAttributes,
+    /// The size of one block in bytes for the memory pool.
+    pub block_size: SceSize,
+    /// The number of blocks of the memory pool
+    pub num_blocks: SceSize,
+    /// The number of unused blocks in the memory pool.
+    pub free_blocks: SceSize,
+    /// The number of threads waiting on the memory pool.
+    pub num_wait_threads: u32,
+}
+
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
 extern "C" {
     /// Create a thread.
@@ -2233,7 +2286,7 @@ extern "C" {
     /// - `attr`: The attribute for the fixed-sized memory pool.
     /// - `block_size`: The size of a memory block to use, in bytes.
     /// - `num_blocks`: The number of blocks to allocate.
-    /// - `options` **[[In parameter]]**: The options configuring the variable-sized memory pool
+    /// - `options` **[[In parameter]]**: The options configuring the fixed-sized memory pool
     ///   behavior. If [`None`], the function will assume default behavior.
     ///
     /// # Return Value
@@ -2354,6 +2407,83 @@ extern "C" {
     #[nid(0xD8199E4C)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelReferFplStatus(id: FplId, info: &mut FplInfo) -> SceResult<()>;
+
+    /// Creates a new user TLS memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new TLP pool. Only used for debug.
+    /// - `partition_id`: The memory partition ID to use for allocations.
+    /// - `attr`: The attribute for the TLP memory pool.
+    /// - `block_size`: The size of a memory block to use, in bytes.
+    /// - `num_blocks`: The number of blocks to allocate.
+    /// - `options` **[[In parameter]]**: The options configuring the TLP memory pool behavior. If
+    ///   [`None`], the function will assume default behavior.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the user TLS memory pool UID on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 5.70.
+    #[eabi(i6)]
+    #[nid(0x8DAFF657)]
+    pub unsafe fn sceKernelCreateTlspl(
+        name: *const u8, partition_id: MemoryPartitionId, attr: TlsPoolAttributes,
+        block_size: SceSize, num_blocks: SceSize, options: Option<&TlsPoolOptions>,
+    ) -> SceResult<TlsPoolId>;
+
+    /// Deletes a user TLS memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The user TLS memory pool UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 5.70.
+    #[nid(0x32BF938E)]
+    pub fn sceKernelDeleteTlspl(id: TlsPoolId) -> SceResult<()>;
+
+    /// Gets the address of a user TLS memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The user TLS memory pool UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns a pointer to the user TLS memory pool on success, null value on error.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 5.70.
+    #[nid(0xFA835CDE)]
+    pub fn sceKernelGetTlsAddr(id: TlsPoolId) -> *mut c_void;
+
+    /// Gets the current state of a user TLS memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The user TLS memory pool UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 5.70.
+    #[nid(0x721067F3)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferTlsplStatus(id: TlsPoolId, info: &mut TlsPoolInfo) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
@@ -3761,7 +3891,7 @@ extern "C" {
     /// - `attr`: The attribute for the fixed-sized memory pool.
     /// - `block_size`: The size of a memory block to use, in bytes.
     /// - `num_blocks`: The number of blocks to allocate.
-    /// - `options` **[[In parameter]]**: The options configuring the variable-sized memory pool
+    /// - `options` **[[In parameter]]**: The options configuring the fixed-sized memory pool
     ///   behavior. If [`None`], the function will assume default behavior.
     ///
     /// # Return Value
@@ -3874,6 +4004,24 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xD8199E4C)]
     pub fn sceKernelReferFplStatus(id: FplId, info: &mut FplInfo) -> SceResult<()>;
+
+    /// Gets the current state of a user TLS memory pool.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The user TLS memory pool UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`SemaphoreInfo`] to receive the semaphore
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 5.70.
+    #[nid(0x721067F3)]
+    pub fn sceKernelReferTlsplStatus(id: TlsPoolId, info: &mut TlsPoolInfo) -> SceResult<()>;
 }
 
 
@@ -4473,6 +4621,68 @@ impl Default for FplOptions {
         Self {
             size: size_of::<Self>(),
             alignment: Default::default(),
+        }
+    }
+}
+
+impl TlsPoolId {
+    /// Create a new lightweight mutex ID from a raw value.
+    ///
+    /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
+    /// values used by the PSP OS, returning an [`None`] otherwise.
+    pub const fn new(raw: u32) -> Option<Self> {
+        if let 0..=0x7FFFFFFF = raw {
+            Some(unsafe { Self::new_unchecked(raw) })
+        } else {
+            None
+        }
+    }
+
+    /// Create a new thread ID structure from a raw value without checking value range.
+    ///
+    /// # Safety
+    ///
+    /// Immediate language UB if `val` is not within the valid range for this
+    /// type, as it violates the validity invariant.
+    #[inline]
+    pub const unsafe fn new_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::new_unchecked(raw) })
+    }
+
+    #[inline]
+    pub const fn as_inner(self) -> u32 {
+        // SAFETY: pattern types are always legal values of their base type
+        // (Not using `.0` because that has perf regressions.)
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl crate::private::Sealed for TlsPoolId {}
+unsafe impl SceResultOk for TlsPoolId {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
+    }
+}
+
+impl Default for TlsPoolOptions {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            alignment: Default::default(),
+        }
+    }
+}
+
+impl Default for TlsPoolInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            name: Default::default(),
+            attr: Default::default(),
+            block_size: Default::default(),
+            num_blocks: Default::default(),
+            free_blocks: Default::default(),
+            num_wait_threads: Default::default(),
         }
     }
 }
