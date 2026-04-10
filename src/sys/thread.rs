@@ -729,6 +729,72 @@ pub struct AlarmInfo {
     pub common: *mut c_void,
 }
 
+/// The virtual timer UID.
+#[repr(transparent)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct VirtualTimerId(SceUid);
+
+/// The virtual timer entry function.
+#[doc(alias("SceKernelVTimerHandler"))]
+pub type VirtualTimerHandler = unsafe extern "C" fn(
+    id: VirtualTimerId,
+    schedule: *mut SystemClock,
+    actual: *mut SystemClock,
+    common: *mut c_void,
+) -> SceResult<u32>;
+
+/// The virtual timer entry function.
+#[doc(alias("SceKernelVTimerHandlerWide"))]
+pub type VirtualTimerHandlerWide = unsafe extern "C" fn(
+    id: VirtualTimerId,
+    schedule: *mut u64,
+    actual: *mut u64,
+    common: *mut c_void,
+) -> SceResult<u32>;
+
+/// Virtual Timer options.
+#[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceKernelVTimerOptParam")]
+pub struct VirtualTimerOptions {
+    /// The size of this structure.
+    pub size: SceSize,
+}
+
+/// The possible running states of a virtual timer.
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum VirtualTimerState {
+    /// The timer is/was not running.
+    #[default]
+    NotRunning = 0,
+    /// The timer is/was running.
+    Running = 1,
+}
+
+/// The information of the current state of a alarm timer.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelVTimerInfo")]
+pub struct VirtualTimerInfo {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The name of the virtual timer.
+    pub name: [u8; 32],
+    /// The current running state of the virtual timer.
+    pub state: VirtualTimerState,
+    /// The base time of the virtual timer.
+    pub base: SystemClock,
+    /// The current timer of the virtual timer.
+    pub current: SystemClock,
+    /// The schedule time to call the registered [`VirtualTimerHandler`].
+    pub schedule: SystemClock,
+    /// The virtual timer registered handler function.
+    pub handler: Option<VirtualTimerHandler>,
+    /// The argument passed to `handler`.
+    pub common: *mut c_void,
+}
+
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
 extern "C" {
     /// Create a thread.
@@ -2551,7 +2617,7 @@ extern "C" {
     /// Returns the alarm UID on success, error value otherwise.
     #[nid(0x6652B8CA)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelSetAlarm(
+    pub unsafe fn sceKernelSetAlarm(
         microsec: u32, handler: AlarmHandler, common: *mut c_void,
     ) -> SceResult<AlarmId>;
 
@@ -2569,7 +2635,7 @@ extern "C" {
     /// Returns the alarm UID on success, error value otherwise.
     #[nid(0xB2C25152)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelSetSysClockAlarm(
+    pub unsafe fn sceKernelSetSysClockAlarm(
         clock: &SystemClock, handler: AlarmHandler, common: *mut c_void,
     ) -> SceResult<AlarmId>;
 
@@ -2660,6 +2726,215 @@ extern "C" {
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelSysClock2USecWide(
         raw_clock: u64, sec: &mut u32, microsec: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Creates a new virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new virtual timer. Only used for
+    ///   debug.
+    /// - `options` **[[In parameter]]**: The options configuring the virtual timer behavior. If
+    ///   [`None`], the function will assume default behavior.
+    ///
+    /// # Returns Value
+    ///
+    /// Returns the virtual timer UID on success, error value otherwise.
+    #[nid(0x20FFF560)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelCreateVTimer(
+        name: *const u8, options: Option<&VirtualTimerOptions>,
+    ) -> SceResult<VirtualTimerId>;
+
+    /// Deletes a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x328F9E52)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelDeleteVTimer(id: VirtualTimerId) -> SceResult<()>;
+
+    /// Gets the base time of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `base` **[[Out parameter]]**: A reference to receive the base time.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xB3A59970)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelGetVTimerBase(id: VirtualTimerId, base: &mut SystemClock) -> SceResult<()>;
+
+    /// Gets the base time of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns base time in raw format on success, `0xFFFFFFFFFFFFFFFF` (`-1 as u64`) on error.
+    #[nid(0xB7C18B77)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelGetVTimerBaseWide(id: VirtualTimerId) -> u64;
+
+    /// Gets the current time of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `time` **[[Out parameter]]**: A reference to receive the current time.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x034A921F)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelGetVTimerTime(id: VirtualTimerId, time: &mut SystemClock) -> SceResult<()>;
+
+    /// Gets the current time of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns current time in raw format on success, `0xFFFFFFFFFFFFFFFF` (`-1 as u64`) on error.
+    #[nid(0xC0B3FFD2)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelGetVTimerTimeWide(id: VirtualTimerId) -> u64;
+
+    /// Sets the current time of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `time` **[[InOut parameter]]**: A reference to the time to set and also to receive the
+    ///   previous set value of the current time.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x542AD630)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelSetVTimerTime(id: VirtualTimerId, time: &mut SystemClock) -> SceResult<()>;
+
+    /// Sets the current time of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `time`: The raw time to set.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the previous current time in raw format on success, `0xFFFFFFFFFFFFFFFF` (`-1 as
+    /// u64`) on error.
+    #[nid(0xFB6425C3)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelSetVTimerTimeWide(id: VirtualTimerId, time: u64) -> u64;
+
+    /// Starts a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the previous timer state on success, error value otherwise.
+    #[nid(0xC68D9437)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelStartVTimer(id: VirtualTimerId) -> SceResult<VirtualTimerState>;
+
+    /// Stops a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the previous timer state on success, error value otherwise.
+    #[nid(0xD0AEEE87)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelStopVTimer(id: VirtualTimerId) -> SceResult<VirtualTimerState>;
+
+    /// Sets the virtual time handler and the schedule to execute it.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `schedule` **[[In parameter]]**: A reference to a time as the schedule time to execute the
+    ///   `handler`.
+    /// - `handler` **[[In parameter]]**: The function pointer of the handler to set.
+    /// - `common` **[[InOut parameter]]**: A pointer to memory shared with the handler.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xD8B299AE)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelSetVTimerHandler(
+        id: VirtualTimerId, schedule: &mut SystemClock, handler: VirtualTimerHandler,
+        common: *mut c_void,
+    ) -> SceResult<()>;
+
+    /// Sets the virtual time handler and the schedule to execute it.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `schedule`: The time as the schedule time to execute the `handler` in raw format.
+    /// - `handler` **[[In parameter]]**: The function pointer of the handler to set.
+    /// - `common` **[[InOut parameter]]**: A pointer to memory shared with the handler.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x53B00E9A)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelSetVTimerHandlerWide(
+        id: VirtualTimerId, schedule: u64, handler: VirtualTimerHandlerWide, common: *mut c_void,
+    ) -> SceResult<()>;
+
+    /// Cancels the handler set for a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xD2D615EF)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelCancelVTimerHandler(id: VirtualTimerId) -> SceResult<()>;
+
+    /// Gets the current state of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`VirtualTimerInfo`] to receive the virtual
+    ///   timer information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x5F32BEAA)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferVTimerStatus(
+        id: VirtualTimerId, info: &mut VirtualTimerInfo,
     ) -> SceResult<()>;
 }
 
@@ -4240,7 +4515,7 @@ extern "C" {
     ///
     /// Returns the alarm UID on success, error value otherwise.
     #[nid(0x6652B8CA)]
-    pub fn sceKernelSetAlarm(
+    pub unsafe fn sceKernelSetAlarm(
         microsec: u32, handler: AlarmHandler, common: *mut c_void,
     ) -> SceResult<AlarmId>;
 
@@ -4257,7 +4532,7 @@ extern "C" {
     ///
     /// Returns the alarm UID on success, error value otherwise.
     #[nid(0xB2C25152)]
-    pub fn sceKernelSetSysClockAlarm(
+    pub unsafe fn sceKernelSetSysClockAlarm(
         clock: &SystemClock, handler: AlarmHandler, common: *mut c_void,
     ) -> SceResult<AlarmId>;
 
@@ -4342,6 +4617,201 @@ extern "C" {
     #[nid(0xE1619D7C)]
     pub fn sceKernelSysClock2USecWide(
         raw_clock: u64, sec: &mut u32, microsec: &mut u32,
+    ) -> SceResult<()>;
+
+    /// Creates a new virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new virtual timer. Only used for
+    ///   debug.
+    /// - `options` **[[In parameter]]**: The options configuring the virtual timer behavior. If
+    ///   [`None`], the function will assume default behavior.
+    ///
+    /// # Returns Value
+    ///
+    /// Returns the virtual timer UID on success, error value otherwise.
+    #[nid(0x20FFF560)]
+    pub unsafe fn sceKernelCreateVTimer(
+        name: *const u8, options: Option<&VirtualTimerOptions>,
+    ) -> SceResult<VirtualTimerId>;
+
+    /// Deletes a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x328F9E52)]
+    pub fn sceKernelDeleteVTimer(id: VirtualTimerId) -> SceResult<()>;
+
+    /// Gets the base time of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `base` **[[Out parameter]]**: A reference to receive the base time.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xB3A59970)]
+    pub fn sceKernelGetVTimerBase(id: VirtualTimerId, base: &mut SystemClock) -> SceResult<()>;
+
+    /// Gets the base time of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns base time in raw format on success, `0xFFFFFFFFFFFFFFFF` (`-1 as u64`) on error.
+    #[nid(0xB7C18B77)]
+    pub fn sceKernelGetVTimerBaseWide(id: VirtualTimerId) -> u64;
+
+    /// Gets the current time of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `time` **[[Out parameter]]**: A reference to receive the current time.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x034A921F)]
+    pub fn sceKernelGetVTimerTime(id: VirtualTimerId, time: &mut SystemClock) -> SceResult<()>;
+
+    /// Gets the current time of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns current time in raw format on success, `0xFFFFFFFFFFFFFFFF` (`-1 as u64`) on error.
+    #[nid(0xC0B3FFD2)]
+    pub fn sceKernelGetVTimerTimeWide(id: VirtualTimerId) -> u64;
+
+    /// Sets the current time of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `time` **[[InOut parameter]]**: A reference to the time to set and also to receive the
+    ///   previous set value of the current time.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x542AD630)]
+    pub fn sceKernelSetVTimerTime(id: VirtualTimerId, time: &mut SystemClock) -> SceResult<()>;
+
+    /// Sets the current time of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `time`: The raw time to set.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the previous current time in raw format on success, `0xFFFFFFFFFFFFFFFF` (`-1 as
+    /// u64`) on error.
+    #[nid(0xFB6425C3)]
+    pub fn sceKernelSetVTimerTimeWide(id: VirtualTimerId, time: u64) -> u64;
+
+    /// Starts a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the previous timer state on success, error value otherwise.
+    #[nid(0xC68D9437)]
+    pub fn sceKernelStartVTimer(id: VirtualTimerId) -> SceResult<VirtualTimerState>;
+
+    /// Stops a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the previous timer state on success, error value otherwise.
+    #[nid(0xD0AEEE87)]
+    pub fn sceKernelStopVTimer(id: VirtualTimerId) -> SceResult<VirtualTimerState>;
+
+    /// Sets the virtual time handler and the schedule to execute it.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `schedule` **[[In parameter]]**: A reference to a time as the schedule time to execute the
+    ///   `handler`.
+    /// - `handler` **[[In parameter]]**: The function pointer of the handler to set.
+    /// - `common` **[[InOut parameter]]**: A pointer to memory shared with the handler.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xD8B299AE)]
+    pub unsafe fn sceKernelSetVTimerHandler(
+        id: VirtualTimerId, schedule: &mut SystemClock, handler: VirtualTimerHandler,
+        common: *mut c_void,
+    ) -> SceResult<()>;
+
+    /// Sets the virtual time handler and the schedule to execute it.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `schedule`: The time as the schedule time to execute the `handler` in raw format.
+    /// - `handler` **[[In parameter]]**: The function pointer of the handler to set.
+    /// - `common` **[[InOut parameter]]**: A pointer to memory shared with the handler.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x53B00E9A)]
+    pub unsafe fn sceKernelSetVTimerHandlerWide(
+        id: VirtualTimerId, schedule: u64, handler: VirtualTimerHandlerWide, common: *mut c_void,
+    ) -> SceResult<()>;
+
+    /// Cancels the handler set for a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xD2D615EF)]
+    pub fn sceKernelCancelVTimerHandler(id: VirtualTimerId) -> SceResult<()>;
+
+    /// Gets the current state of a virtual timer.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The virtual timer UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`VirtualTimerInfo`] to receive the virtual
+    ///   timer information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x5F32BEAA)]
+    pub fn sceKernelReferVTimerStatus(
+        id: VirtualTimerId, info: &mut VirtualTimerInfo,
     ) -> SceResult<()>;
 }
 
@@ -5054,6 +5524,79 @@ impl Default for AlarmInfo {
             schedule: Default::default(),
             handler: Default::default(),
             common: Default::default(),
+        }
+    }
+}
+
+impl VirtualTimerId {
+    /// Create a new lightweight mutex ID from a raw value.
+    ///
+    /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
+    /// values used by the PSP OS, returning an [`None`] otherwise.
+    pub const fn from_raw(raw: u32) -> Option<Self> {
+        if let 0..=0x7FFFFFFF = raw {
+            Some(unsafe { Self::from_raw_unchecked(raw) })
+        } else {
+            None
+        }
+    }
+
+    /// Create a new thread ID structure from a raw value without checking value range.
+    ///
+    /// # Safety
+    ///
+    /// Immediate language UB if `val` is not within the valid range for this
+    /// type, as it violates the validity invariant.
+    #[inline]
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
+    }
+
+    #[inline]
+    pub const fn as_inner(self) -> u32 {
+        // SAFETY: pattern types are always legal values of their base type
+        // (Not using `.0` because that has perf regressions.)
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl crate::private::Sealed for VirtualTimerId {}
+unsafe impl SceResultOk for VirtualTimerId {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
+    }
+}
+
+impl Default for VirtualTimerOptions {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+        }
+    }
+}
+
+impl Default for VirtualTimerInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            name: Default::default(),
+            state: Default::default(),
+            base: Default::default(),
+            current: Default::default(),
+            schedule: Default::default(),
+            handler: Default::default(),
+            common: Default::default(),
+        }
+    }
+}
+
+impl crate::private::Sealed for VirtualTimerState {}
+unsafe impl SceResultOk for VirtualTimerState {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        match ok_value {
+            0x00 => Ok(Self::NotRunning),
+            0x01 => Ok(Self::Running),
+            _ => Err(SceError::INVALID_VALUE),
         }
     }
 }
