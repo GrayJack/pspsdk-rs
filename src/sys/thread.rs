@@ -12,21 +12,6 @@ use crate::sys::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct ThreadId(SceUid);
 
-/// The semaphore UID, created with [`sceKernelCreateSema`].
-#[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub struct SemaId(SceUid);
-
-/// The event flag UID, created with [`sceKernelCreateEventFlag`].
-#[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub struct EventFlagId(SceUid);
-
-/// The callback UID, created with [`sceKernelCreateCallback`].
-#[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub struct CallbackId(SceUid);
-
 /// The thread entry function.
 ///
 /// The returns value will be the end result of the function of the status of
@@ -212,6 +197,11 @@ pub struct ThreadRunStatus {
     pub notify_callback: u32,
 }
 
+/// The semaphore UID, created with [`sceKernelCreateSema`].
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct SemaId(SceUid);
+
 /// Semaphore options.
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -253,6 +243,11 @@ pub struct SemaphoreInfo {
     /// The number of threads waiting on the semaphore.
     pub num_wait_threads: u32,
 }
+
+/// The event flag UID, created with [`sceKernelCreateEventFlag`].
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct EventFlagId(SceUid);
 
 /// Event Flag options.
 #[repr(C)]
@@ -711,8 +706,17 @@ pub struct TlsPoolInfo {
 pub struct AlarmId(SceUid);
 
 /// The alarm entry function.
+///
+/// # Parameters
+///
+/// - `common` **[[InOut parameter]]**: A pointer to memory shared with the handler.
+///
+/// # Return Value
+///
+/// Returns in how much time the handler must be called again (`>= 1`), or zero if the alarm should
+/// be deleted.
 #[doc(alias("SceKernelAlarmHandler"))]
-pub type AlarmHandler = unsafe extern "C" fn(common: *mut c_void) -> SceResult<u32>;
+pub type AlarmHandler = unsafe extern "C" fn(common: *mut c_void) -> u32;
 
 /// The information of the current state of a alarm timer.
 #[repr(C)]
@@ -735,22 +739,48 @@ pub struct AlarmInfo {
 pub struct VirtualTimerId(SceUid);
 
 /// The virtual timer entry function.
+///
+/// # Parameters
+///
+/// - `id`: The virtual timer UID.
+/// - `schedule` **[[In parameter]]**: A reference to a time as the schedule time to execute the
+///   `handler`.
+/// - `actual` **[[InOut parameter]]** A reference to the actual start time.
+/// - `common` **[[InOut parameter]]**: A pointer to memory shared with the handler.
+///
+/// # Return Value
+///
+/// Returns the microseconds that the handler will be called again (`>= 1`), or zero if the handler
+/// is cancelled.
 #[doc(alias("SceKernelVTimerHandler"))]
 pub type VirtualTimerHandler = unsafe extern "C" fn(
     id: VirtualTimerId,
     schedule: *mut SystemClock,
     actual: *mut SystemClock,
     common: *mut c_void,
-) -> SceResult<u32>;
+) -> u32;
 
 /// The virtual timer entry function.
+///
+/// # Parameters
+///
+/// - `id`: The virtual timer UID.
+/// - `schedule` **[[In parameter]]**: A reference to a time as the schedule time to execute the
+///   `handler`.
+/// - `actual` **[[InOut parameter]]** A reference to the actual start time.
+/// - `common` **[[InOut parameter]]**: A pointer to memory shared with the handler.
+///
+/// # Return Value
+///
+/// Returns the microseconds that the handler will be called again (`>= 1`), or zero if the handler
+/// is cancelled.
 #[doc(alias("SceKernelVTimerHandlerWide"))]
 pub type VirtualTimerHandlerWide = unsafe extern "C" fn(
     id: VirtualTimerId,
     schedule: *mut u64,
     actual: *mut u64,
     common: *mut c_void,
-) -> SceResult<u32>;
+) -> u32;
 
 /// Virtual Timer options.
 #[repr(C)]
@@ -793,6 +823,69 @@ pub struct VirtualTimerInfo {
     pub handler: Option<VirtualTimerHandler>,
     /// The argument passed to `handler`.
     pub common: *mut c_void,
+}
+
+/// The callback UID, created with [`sceKernelCreateCallback`].
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct CallbackId(SceUid);
+
+/// The termination state of a `CallbackFunction`.
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum CallbackTermState {
+    /// Function had a normal termination.
+    #[default]
+    NormalTermination = 0x00,
+    /// The function self deleted the callback deleted.
+    DeletedCallback = 0x01,
+}
+
+/// The callback entry function.
+///
+/// # Parameters
+///
+/// - `count`: The number of times [`sceKernelNotifyCallback`] was called before this callback
+///   functions was called.
+/// - `arg`: The argument from [`sceKernelNotifyCallback`].
+/// - `common` **[[InOut parameter]]**: A pointer to memory shared with this function.
+///
+/// # Return Value
+///
+/// The termination state of the callback on success, error value otherwise.
+#[doc(alias = "SceKernelCallbackFunction")]
+pub type CallbackFunction =
+    unsafe extern "C" fn(count: u32, arg: i32, common: *mut c_void) -> CallbackTermState;
+
+/// The information of the current state of a callback.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelCallbackInfo")]
+pub struct CallbackInfo {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The name of the callback.
+    pub name: [u8; 32],
+    /// The thread UID to be notified by the callback.
+    pub thread_id: ThreadId,
+    /// The registered callback entry function.
+    pub entry: Option<CallbackFunction>,
+    /// The number of times the callback notify was delayed without calling the entry function.
+    pub notify_count: u32,
+    /// The argument for the callback.
+    pub notify_arg: i32,
+}
+
+/// The possible return values of [`sceKernelCheckCallback`].
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum CallbackCheckStatus {
+    /// No callback reported.
+    #[default]
+    NoCallback = 0x00,
+
+    /// Callback reported and called.
+    CallbackCalled = 0x01,
 }
 
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
@@ -2936,6 +3029,100 @@ extern "C" {
     pub fn sceKernelReferVTimerStatus(
         id: VirtualTimerId, info: &mut VirtualTimerInfo,
     ) -> SceResult<()>;
+
+    /// Creates a new callback.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new callback. Only used for debug.
+    /// - `entry` **[[In parameter]]**: The function pointer of the entry function to set.
+    /// - `common` **[[InOut parameter]]**: A pointer to memory shared with the handler.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the callback UID on success, error value otherwise.
+    #[nid(0xE81CAF8F)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelCreateCallback(
+        name: *const u8, entry: CallbackFunction, common: *mut c_void,
+    ) -> SceResult<CallbackId>;
+
+    /// Deletes a callback.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The callback UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xEDBA5844)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelDeleteCallback(id: CallbackId) -> SceResult<()>;
+
+    /// Notifies a callback.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The callback UID.
+    /// - `arg`: The argument to be passed to the callback function.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xC11BA8C4)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelNotifyCallback(id: CallbackId, arg: i32) -> SceResult<()>;
+
+    /// Cancels all notifications that were reported to a callback.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The callback UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xBA4051D6)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelCancelCallback(id: CallbackId) -> SceResult<()>;
+
+    /// Gets the notification count of a callback.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The callback UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the number of notification send to the callback on success, error value otherwise.
+    #[nid(0x2A3D44FF)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelGetCallbackCount(id: CallbackId) -> SceResult<u32>;
+
+    /// Checks if a callback by the calling thread has been notified.
+    ///
+    /// If it was notified, the callback is called.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the check status on success, error value otherwise.
+    #[nid(0x349D6D6C)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelCheckCallback() -> SceResult<CallbackCheckStatus>;
+
+    /// Gets the current state of a callback.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The callback UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x730ED8BC)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferCallbackStatus(id: CallbackId, info: &mut CallbackInfo) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
@@ -4813,6 +5000,93 @@ extern "C" {
     pub fn sceKernelReferVTimerStatus(
         id: VirtualTimerId, info: &mut VirtualTimerInfo,
     ) -> SceResult<()>;
+
+    /// Creates a new callback.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new callback. Only used for debug.
+    /// - `entry` **[[In parameter]]**: The function pointer of the entry function to set.
+    /// - `common` **[[InOut parameter]]**: A pointer to memory shared with the handler.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the callback UID on success, error value otherwise.
+    #[nid(0xE81CAF8F)]
+    pub unsafe fn sceKernelCreateCallback(
+        name: *const u8, entry: CallbackFunction, common: *mut c_void,
+    ) -> SceResult<CallbackId>;
+
+    /// Deletes a callback.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The callback UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xEDBA5844)]
+    pub fn sceKernelDeleteCallback(id: CallbackId) -> SceResult<()>;
+
+    /// Notifies a callback.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The callback UID.
+    /// - `arg`: The argument to be passed to the callback function.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xC11BA8C4)]
+    pub fn sceKernelNotifyCallback(id: CallbackId, arg: i32) -> SceResult<()>;
+
+    /// Cancels all notifications that were reported to a callback.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The callback UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xBA4051D6)]
+    pub fn sceKernelCancelCallback(id: CallbackId) -> SceResult<()>;
+
+    /// Gets the notification count of a callback.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The callback UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the number of notification send to the callback on success, error value otherwise.
+    #[nid(0x2A3D44FF)]
+    pub fn sceKernelGetCallbackCount(id: CallbackId) -> SceResult<u32>;
+
+    /// Checks if a callback by the calling thread has been notified.
+    ///
+    /// If it was notified, the callback is called.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the check status on success, error value otherwise.
+    #[nid(0x349D6D6C)]
+    pub fn sceKernelCheckCallback() -> SceResult<CallbackCheckStatus>;
+
+    /// Gets the current state of a callback.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The callback UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x730ED8BC)]
+    pub fn sceKernelReferCallbackStatus(id: CallbackId, info: &mut CallbackInfo) -> SceResult<()>;
 }
 
 
@@ -5596,6 +5870,41 @@ unsafe impl SceResultOk for VirtualTimerState {
         match ok_value {
             0x00 => Ok(Self::NotRunning),
             0x01 => Ok(Self::Running),
+            _ => Err(SceError::INVALID_VALUE),
+        }
+    }
+}
+
+impl crate::private::Sealed for CallbackTermState {}
+unsafe impl SceResultOk for CallbackTermState {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        match ok_value {
+            0x00 => Ok(Self::NormalTermination),
+            0x01 => Ok(Self::DeletedCallback),
+            _ => Err(SceError::INVALID_VALUE),
+        }
+    }
+}
+
+impl Default for CallbackInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            name: Default::default(),
+            thread_id: Default::default(),
+            entry: Default::default(),
+            notify_count: Default::default(),
+            notify_arg: Default::default(),
+        }
+    }
+}
+
+impl crate::private::Sealed for CallbackCheckStatus {}
+unsafe impl SceResultOk for CallbackCheckStatus {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        match ok_value {
+            0x00 => Ok(Self::NoCallback),
+            0x01 => Ok(Self::CallbackCalled),
             _ => Err(SceError::INVALID_VALUE),
         }
     }
