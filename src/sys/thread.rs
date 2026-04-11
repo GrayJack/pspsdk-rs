@@ -1018,6 +1018,9 @@ pub struct ThreadEventInfo {
     pub common: *mut c_void,
 }
 
+/// Function of a ExtendStack functions
+pub type ExtendStackFunc = unsafe extern "C" fn(common: *mut c_void) -> SceResult<u32>;
+
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
 extern "C" {
     /// Create a thread.
@@ -3355,6 +3358,26 @@ extern "C" {
     pub fn sceKernelReferThreadEventHandlerStatus(
         id: ThreadEventId, info: &mut ThreadEventInfo,
     ) -> SceResult<()>;
+
+    /// Temporarily extends the thread stack an executes a function with extended stack size.
+    ///
+    /// # Parameters
+    ///
+    /// - `stack_size`: The stack size (in bytes) to temporarily extend.
+    /// - `func` **[[In parameter]]**: A pointer to the function to call with extended stack.
+    /// - `common` **[[InOut parameter]]** A pointer to memory shared with the `func`.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the result of the `func` on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 5.70.
+    #[nid(0xBC80EC7C)]
+    pub fn sceKernelExtendThreadStack(
+        stack_size: SceSize, func: ExtendStackFunc, common: *mut c_void,
+    ) -> SceResult<u32>;
 }
 
 #[cfg(feature = "kernel")]
@@ -5417,6 +5440,51 @@ extern "C" {
     pub fn sceKernelReferThreadEventHandlerStatus(
         id: ThreadEventId, info: &mut ThreadEventInfo,
     ) -> SceResult<()>;
+
+    /// Gets the available stack space on a kernel thread.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The kernel thread UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the available stack size in bytes on success, error value otherwise.
+    #[nid(0xD890B370)]
+    pub fn sceKernelGetThreadKernelStackFreeSize(id: ThreadId) -> SceResult<u32>;
+
+    /// Checks the calling kernel thread stack.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the check status of the calling kernel thread stack on success, error value
+    /// otherwise.
+    #[nid(0x4FE44D5E)]
+    pub fn sceKernelCheckThreadKernelStack() -> SceResult<i32>;
+
+    /// Temporarily extends the kernel thread stack an executes a function with extended stack size.
+    ///
+    /// # Parameters
+    ///
+    /// - `stack_size`: The stack size (in bytes) to temporarily extend.
+    /// - `func` **[[In parameter]]**: A pointer to the function to call with extended stack.
+    /// - `common` **[[InOut parameter]]** A pointer to memory shared with the `func`.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the result of the `func` on success, error value otherwise.
+    #[nid(0xBC31C1B9)]
+    pub fn sceKernelExtendKernelStack(
+        stack_size: SceSize, func: ExtendStackFunc, common: *mut c_void,
+    ) -> SceResult<u32>;
+
+    /// Gets the system status flag.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the system status flag.
+    #[nid(0xFCB5EB49)]
+    pub fn sceKernelGetSystemStatusFlag() -> u32;
 }
 
 
