@@ -32,11 +32,13 @@ pub type SceIsize = isize;
 pub type SceIsize = i32;
 
 /// Identification number for several kernel objects.
-#[rustc_layout_scalar_valid_range_start(0)]
-#[rustc_layout_scalar_valid_range_end(0x7FFFFFFF)]
+// #[rustc_layout_scalar_valid_range_start(0)]
+// #[rustc_layout_scalar_valid_range_end(0x7FFFFFFF)]
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SceUid(u32);
+
+pub type SceRawUid = u32;
 
 impl SceUid {
     /// Create a new SceUid structure from a raw value.

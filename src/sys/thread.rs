@@ -948,6 +948,76 @@ pub enum ThreadIdKind {
     DormantThread = 67,
 }
 
+/// The thread event UID.
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct ThreadEventId(SceUid);
+
+/// The thread events that an thread event handler may be called.
+#[bitflag(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ThreadEvents {
+    /// When a thread is created.
+    Create = 0x01,
+    /// When a thread is started.
+    Start  = 0x02,
+    /// When a thread terminates.
+    Exit   = 0x04,
+    /// When a thread is deleted.
+    Delete = 0x08,
+
+    /// On all events.
+    All    = Create | Start | Exit | Delete,
+}
+
+/// The termination state of a `ThreadEventHandler`.
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum ThreadEventHandlerTermState {
+    /// Function had a normal termination.
+    #[default]
+    NormalTermination = 0x00,
+    /// The event handler will be released.
+    Release = 0x01,
+}
+
+/// The thread event entry function.
+///
+/// # Parameters
+///
+/// - `kind`: The kind of event. One of [`ThreadEvents`].
+/// - `id`: The thread UID of the thread that caused the thread event.
+/// - `common` **[[InOut parameter]]**: A pointer to memory shared with this function.
+///
+/// # Return Value
+///
+/// The termination state of the thread event on success, error value otherwise.
+#[doc(alias = "SceKernelThreadEventHandler")]
+pub type ThreadEventHandler = unsafe extern "C" fn(
+    kind: ThreadEvents,
+    id: ThreadId,
+    common: *mut c_void,
+) -> ThreadEventHandlerTermState;
+
+/// The information of the current state of a thread event.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelThreadEventHandlerInfo")]
+pub struct ThreadEventInfo {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The name of the callback.
+    pub name: [u8; 32],
+    /// The thread UID of the target thread.
+    pub thread_id: ThreadId,
+    /// The thread events which the handler is executed.
+    pub event_mask: ThreadEvents,
+    /// The registered thread event handler function.
+    pub handler: Option<ThreadEventHandler>,
+    /// The argument passed to `handler`.
+    pub common: *mut c_void,
+}
+
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
 extern "C" {
     /// Create a thread.
@@ -3230,6 +3300,61 @@ extern "C" {
     #[nid(0x57CF62DD)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelGetThreadmanIdType(id: SceUid) -> SceResult<ThreadIdKind>;
+
+    /// Registers a thread event handler.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new thread event. Only used for
+    ///   debug.
+    /// - `thread_id`: The thread UID of the thread which the handler should be called. The
+    ///   [`ThreadId::CALLING`] can be used to specify the calling thread UID and the
+    ///   [`ThreadId::ALL_USER`] can be used to set to be called for all user threads.
+    /// - `event_mask`: The thread events which the handler should be called.
+    /// - `handler` **[[In parameter]]**: A function pointer to the entry function for the handler.
+    /// - `common` **[[InOut parameter]]**: A pointer to memory shared with the thread event
+    ///   handler.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the thread event UID on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0x0C106E53)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelRegisterThreadEventHandler(
+        name: *const u8, thread_id: ThreadId, event_mask: ThreadEvents,
+        handler: ThreadEventHandler, common: *mut c_void,
+    ) -> SceResult<ThreadEventId>;
+
+    /// Releases a thread event handler.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The thread event UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x72F3C145)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReleaseThreadEventHandler(id: ThreadEventId) -> SceResult<()>;
+
+    /// Gets the current state of a thread event handler.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The thread event UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`ThreadEventInfo`] to receive the thread
+    ///   event handler information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x369EEB6B)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferThreadEventHandlerStatus(
+        id: ThreadEventId, info: &mut ThreadEventInfo,
+    ) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
@@ -5240,10 +5365,64 @@ extern "C" {
     /// Returns the UID kind on success, error value otherwise.
     #[nid(0x57CF62DD)]
     pub fn sceKernelGetThreadmanIdType(id: SceUid) -> SceResult<ThreadIdKind>;
+
+    /// Registers a thread event handler.
+    ///
+    /// # Parameters
+    ///
+    /// - `name` **[[In parameter]]**: The name assigned to the new thread event. Only used for
+    ///   debug.
+    /// - `thread_id`: The thread UID of the thread which the handler should be called. The
+    ///   [`ThreadId::CALLING`] can be used to specify the calling thread UID and the
+    ///   [`ThreadId::ALL_USER`] can be used to set to be called for all user threads.
+    /// - `event_mask`: The thread events which the handler should be called.
+    /// - `handler` **[[In parameter]]**: A function pointer to the entry function for the handler.
+    /// - `common` **[[InOut parameter]]**: A pointer to memory shared with the thread event
+    ///   handler.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the thread event UID on success, error value otherwise.
+    #[eabi(i5)]
+    #[nid(0x0C106E53)]
+    pub unsafe fn sceKernelRegisterThreadEventHandler(
+        name: *const u8, thread_id: ThreadId, event_mask: ThreadEvents,
+        handler: ThreadEventHandler, common: *mut c_void,
+    ) -> SceResult<ThreadEventId>;
+
+    /// Releases a thread event handler.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The thread event UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x72F3C145)]
+    pub fn sceKernelReleaseThreadEventHandler(id: ThreadEventId) -> SceResult<()>;
+
+    /// Gets the current state of a thread event handler.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The thread event UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`ThreadEventInfo`] to receive the thread
+    ///   event handler information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x369EEB6B)]
+    pub fn sceKernelReferThreadEventHandlerStatus(
+        id: ThreadEventId, info: &mut ThreadEventInfo,
+    ) -> SceResult<()>;
 }
 
 
 impl ThreadId {
+    /// Special value to use on some functions for all user-threads.
+    pub const ALL_USER: Self = unsafe { Self::from_raw_unchecked(0xFFFFFFF0) };
     /// Represent the calling thread UID in some functions.
     pub const CALLING: Self = unsafe { Self::from_raw_unchecked(0) };
 
@@ -6099,6 +6278,19 @@ unsafe impl SceResultOk for ThreadIdKind {
             66 => Ok(Self::SuspendThread),
             67 => Ok(Self::DormantThread),
             _ => Err(SceError::INVALID_VALUE),
+        }
+    }
+}
+
+impl Default for ThreadEventInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            name: Default::default(),
+            thread_id: Default::default(),
+            event_mask: Default::default(),
+            handler: Default::default(),
+            common: Default::default(),
         }
     }
 }
