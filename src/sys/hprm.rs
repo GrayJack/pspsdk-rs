@@ -222,7 +222,7 @@ extern "C" {
     /// - `slot`: The slot to register the callback function. Use [`HprmCallbackSlot::AVAILABLE`] to
     ///   register to a available slot and receive the slot value back.
     /// - `callback_id`: The callback ID from calling
-    ///   [`sceKernelCreateCallback`](crate::thread::sceKernelCreateCallback).
+    ///   [`sceKernelCreateCallback`](crate::sys::thread::sceKernelCreateCallback).
     ///
     /// # Return Value
     ///

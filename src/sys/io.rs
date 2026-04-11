@@ -1683,6 +1683,8 @@ extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// [`sceKernelCreateCallback`]: crate::sys::thread::sceKernelCreateCallback
     #[nid(0xA12A0514)]
     pub unsafe fn sceIoSetAsyncCallback(
         fd: FileId, callback_id: CallbackId, argp: *mut c_void,

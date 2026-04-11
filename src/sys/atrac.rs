@@ -30,6 +30,7 @@ pub struct AtracBufferInfo {
 /// This information than be received from [`sceAtracGetLoopStatus`].
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[doc(alias = "SceAtracLoopStatus")]
 pub enum AtracLoopStatus {
     /// The Atrac object is not set to loop or currently looping.
     NotLooping = 0x0,
@@ -222,7 +223,7 @@ extern "C" {
     ///
     /// - `atrac_id`: The Atrac ID.
     /// - `sample`: The sample to get the buffer information.
-    /// - `buffer_info` **[[Out parameter]]**: A reference to a [`SceAtracBufferInfo`] structure to
+    /// - `buffer_info` **[[Out parameter]]**: A reference to a [`AtracBufferInfo`] structure to
     ///   receive the buffer information.
     ///
     /// # Return Value
@@ -268,8 +269,8 @@ extern "C" {
     ///
     /// - `atrac_id`: The Atrac ID.
     /// - `loop_num` **[[Out parameter]]**: A reference to a integer to receive the loop counter.
-    /// - `loop_status` **[[Out parameter]]**: A reference to a [`SceAtracLoopStatus`] ti receive
-    ///   the loop status information.
+    /// - `loop_status` **[[Out parameter]]**: A reference to a [`AtracLoopStatus`] ti receive the
+    ///   loop status information.
     ///
     /// # Return Value
     ///
