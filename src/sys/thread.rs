@@ -888,6 +888,66 @@ pub enum CallbackCheckStatus {
     CallbackCalled = 0x01,
 }
 
+#[bitflag(u32)]
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum SystemStatus {
+    /// Thread executing with dispatch and interrupt enabled.
+    #[default]
+    AllEnabled = 0x00,
+    /// Dispatch is disabled.
+    DisabledDispatch = 0x01,
+    /// Interrupts are disabled.
+    DisabledInterrupt = 0x03,
+    /// Thread-independent execution happening.
+    NoThread = 0x04,
+}
+
+/// The information of the current state of the system.
+#[repr(C)]
+#[derive(Debug, Clone)]
+#[doc(alias = "SceKernelSystemStatus")]
+pub struct SystemInfo {
+    /// The size of this structure.
+    pub size: SceSize,
+    /// The current status of the system.
+    pub status: SystemStatus,
+    /// The number of CPU clocks when thread are not executing.
+    pub idle_clocks: SystemClock,
+    /// The number of times transitioned out of idle.
+    pub comes_out_of_idle_count: u32,
+    /// The number of times the system switch contexts for threads.
+    pub thread_switch_count: u32,
+    /// The number of times the system switch contexts with VFPU.
+    pub vfpu_switch_count: u32,
+}
+
+/// The kinds of possible thread ID
+#[repr(u32)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[doc(alias = "SceKernelIdListType")]
+pub enum ThreadIdKind {
+    #[default]
+    Any   = 1,
+    Semaphore = 2,
+    EventFlag = 3,
+    MessageBox = 4,
+    VariablepMemoryPool = 5,
+    FixeMemoryPool = 6,
+    MessagePipe = 7,
+    Callback = 8,
+    ThreadEventHandler = 9,
+    Alarm = 10,
+    VirtualTimer = 11,
+    Mutex = 12,
+    LightweightMutex = 13,
+    TlsMemoryPool = 14,
+    SleepThread = 64,
+    DelayThread = 65,
+    SuspendThread = 66,
+    DormantThread = 67,
+}
+
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
 extern "C" {
     /// Create a thread.
@@ -3123,6 +3183,53 @@ extern "C" {
     #[nid(0x730ED8BC)]
     #[cfg(not(feature = "kernel"))]
     pub fn sceKernelReferCallbackStatus(id: CallbackId, info: &mut CallbackInfo) -> SceResult<()>;
+
+    /// Gets the current state of the system.
+    ///
+    /// # Parameters
+    ///
+    /// - `info` **[[InOut parameter]]**: A reference to [`SystemInfo`] to receive the system
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x627E6F3A)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelReferSystemStatus(info: &mut SystemInfo) -> SceResult<()>;
+
+    /// Gets a list of UIDs from threadman module.
+    ///
+    /// # Parameters
+    ///
+    /// - `kind`: The kind of resource to get in the list. Use [`ThreadIdKind::Any`] to get all of
+    ///   them.
+    /// - `buf` **[[Out parameter]]**: A pointer to a buffer list to receive the UIDs.
+    /// - `buf_size`: The size of the `buf`.
+    /// - `id_count` **[[Out parameter]]**: A optional reference to receive the number of UIDs of
+    ///   the specified `kind` in the system.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the number of UIDs added to the buffer on success, error value otherwise.
+    #[nid(0x94416130)]
+    #[cfg(not(feature = "kernel"))]
+    pub unsafe fn sceKernelGetThreadmanIdList(
+        kind: ThreadIdKind, buf: *mut SceUid, buf_size: SceSize, id_cound: Option<&mut u32>,
+    ) -> SceResult<u32>;
+
+    /// Gets the threadman UID kind of an ID.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The UID to get the kind.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the UID kind on success, error value otherwise.
+    #[nid(0x57CF62DD)]
+    #[cfg(not(feature = "kernel"))]
+    pub fn sceKernelGetThreadmanIdType(id: SceUid) -> SceResult<ThreadIdKind>;
 }
 
 #[cfg(feature = "kernel")]
@@ -5081,12 +5188,58 @@ extern "C" {
     /// # Parameters
     ///
     /// - `id`: The callback UID.
+    /// - `info` **[[InOut parameter]]**: A reference to [`CallbackInfo`] to receive the callback
+    ///   information.
     ///
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x730ED8BC)]
     pub fn sceKernelReferCallbackStatus(id: CallbackId, info: &mut CallbackInfo) -> SceResult<()>;
+
+    /// Gets the current state of the system.
+    ///
+    /// # Parameters
+    ///
+    /// - `info` **[[InOut parameter]]**: A reference to [`SystemInfo`] to receive the system
+    ///   information.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0x627E6F3A)]
+    pub fn sceKernelReferSystemStatus(info: &mut SystemInfo) -> SceResult<()>;
+
+    /// Gets a list of UIDs from threadman module.
+    ///
+    /// # Parameters
+    ///
+    /// - `kind`: The kind of resource to get in the list. Use [`ThreadIdKind::Any`] to get all of
+    ///   them.
+    /// - `buf` **[[Out parameter]]**: A pointer to a buffer list to receive the UIDs.
+    /// - `buf_size`: The size of the `buf`.
+    /// - `id_count` **[[Out parameter]]**: A optional reference to receive the number of UIDs of
+    ///   the specified `kind` in the system.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the number of UIDs added to the buffer on success, error value otherwise.
+    #[nid(0x94416130)]
+    pub unsafe fn sceKernelGetThreadmanIdList(
+        kind: ThreadIdKind, buf: *mut SceUid, buf_size: SceSize, id_cound: Option<&mut u32>,
+    ) -> SceResult<u32>;
+
+    /// Gets the threadman UID kind of an ID.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The UID to get the kind.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the UID kind on success, error value otherwise.
+    #[nid(0x57CF62DD)]
+    pub fn sceKernelGetThreadmanIdType(id: SceUid) -> SceResult<ThreadIdKind>;
 }
 
 
@@ -5905,6 +6058,46 @@ unsafe impl SceResultOk for CallbackCheckStatus {
         match ok_value {
             0x00 => Ok(Self::NoCallback),
             0x01 => Ok(Self::CallbackCalled),
+            _ => Err(SceError::INVALID_VALUE),
+        }
+    }
+}
+
+impl Default for SystemInfo {
+    fn default() -> Self {
+        Self {
+            size: size_of::<Self>(),
+            status: Default::default(),
+            idle_clocks: Default::default(),
+            comes_out_of_idle_count: Default::default(),
+            thread_switch_count: Default::default(),
+            vfpu_switch_count: Default::default(),
+        }
+    }
+}
+
+impl crate::private::Sealed for ThreadIdKind {}
+unsafe impl SceResultOk for ThreadIdKind {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        match ok_value {
+            1 => Ok(Self::Any),
+            2 => Ok(Self::Semaphore),
+            3 => Ok(Self::EventFlag),
+            4 => Ok(Self::MessageBox),
+            5 => Ok(Self::VariablepMemoryPool),
+            6 => Ok(Self::FixeMemoryPool),
+            7 => Ok(Self::MessagePipe),
+            8 => Ok(Self::Callback),
+            9 => Ok(Self::ThreadEventHandler),
+            10 => Ok(Self::Alarm),
+            11 => Ok(Self::VirtualTimer),
+            12 => Ok(Self::Mutex),
+            13 => Ok(Self::LightweightMutex),
+            14 => Ok(Self::TlsMemoryPool),
+            64 => Ok(Self::SleepThread),
+            65 => Ok(Self::DelayThread),
+            66 => Ok(Self::SuspendThread),
+            67 => Ok(Self::DormantThread),
             _ => Err(SceError::INVALID_VALUE),
         }
     }
