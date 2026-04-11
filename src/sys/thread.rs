@@ -1021,6 +1021,23 @@ pub struct ThreadEventInfo {
 /// Function of a ExtendStack functions
 pub type ExtendStackFunc = unsafe extern "C" fn(common: *mut c_void) -> SceResult<u32>;
 
+/// The kernel TLS UID.
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct KtlsId(SceUid);
+
+/// The KTLS allocation function.
+///
+/// # Parameters
+///
+/// - `size`: The allocation size.
+/// - `common` **[[InOut parameter]]**: A pointer to memory shared with this function.
+///
+/// # Return Value
+///
+/// Returns unknown value on success, error value otherwise.
+pub type KtlsAllocFunc = unsafe extern "C" fn(size: SceSize, common: *mut c_void) -> SceResult<u32>;
+
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001)]
 extern "C" {
     /// Create a thread.
@@ -5485,6 +5502,61 @@ extern "C" {
     /// Returns the system status flag.
     #[nid(0xFCB5EB49)]
     pub fn sceKernelGetSystemStatusFlag() -> u32;
+
+    /// Setup the KTLS allocator.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The ID of the allocator.
+    /// - `func` **[[In parameter]]**: A function pointer to the allocation function.
+    /// - `common` **[[InOut parameter]]** A pointer to memory shared with the `func`.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the KTLS UID on success, error value otherwise.
+    #[nid(0x04E72261)]
+    pub unsafe fn sceKernelAllocateKTLS(
+        id: SceUid, func: KtlsAllocFunc, common: *mut c_void,
+    ) -> SceResult<KtlsId>;
+
+    /// Deallocates a KTLS allocator.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The KTLS allocator UID.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
+    #[nid(0xD198B811)]
+    pub fn sceKernelFreeKTLS(id: KtlsId) -> SceResult<()>;
+
+    /// Gets the KTLS of the calling thread.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The KTLS allocator UID.
+    ///
+    /// # Return Value
+    ///
+    /// Returns a pointer to the KTLS on success, null pointer on error.
+    #[nid(0xA249EAAE)]
+    pub fn sceKernelGetKTLS(id: KtlsId) -> *mut c_void;
+
+    /// Gets the KTLS of a thread.
+    ///
+    /// # Parameters
+    ///
+    /// - `id`: The KTLS allocator UID.
+    /// - `thread_id`: The thread UID to get the KTLS. The [`ThreadId::CALLING`] can be used to
+    ///   specify the calling thread UID.
+    /// - `mode`: Unknown purpose. Reverse engineer show it being passed `0` and `1`.
+    ///
+    /// # Return Value
+    ///
+    /// Returns a pointer to the KTLS on success, null pointer on error.
+    #[nid(0x3AD875C3)]
+    pub fn sceKernelGetThreadKTLS(id: KtlsId, thread_id: ThreadId, mode: u32) -> *mut c_void;
 }
 
 
@@ -6360,5 +6432,44 @@ impl Default for ThreadEventInfo {
             handler: Default::default(),
             common: Default::default(),
         }
+    }
+}
+
+impl KtlsId {
+    /// Create a new lightweight mutex ID from a raw value.
+    ///
+    /// This functions checks for the value of `raw` to be a in the range of possible `SceUid`
+    /// values used by the PSP OS, returning an [`None`] otherwise.
+    pub const fn from_raw(raw: u32) -> Option<Self> {
+        if let 0..=0x7FFFFFFF = raw {
+            Some(unsafe { Self::from_raw_unchecked(raw) })
+        } else {
+            None
+        }
+    }
+
+    /// Create a new thread ID structure from a raw value without checking value range.
+    ///
+    /// # Safety
+    ///
+    /// Immediate language UB if `val` is not within the valid range for this
+    /// type, as it violates the validity invariant.
+    #[inline]
+    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+        Self(unsafe { SceUid::from_raw_unchecked(raw) })
+    }
+
+    #[inline]
+    pub const fn as_inner(self) -> u32 {
+        // SAFETY: pattern types are always legal values of their base type
+        // (Not using `.0` because that has perf regressions.)
+        unsafe { core::mem::transmute(self) }
+    }
+}
+
+impl crate::private::Sealed for KtlsId {}
+unsafe impl SceResultOk for KtlsId {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
