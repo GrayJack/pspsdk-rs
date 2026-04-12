@@ -4,13 +4,14 @@ use bitflag_attr::bitflag;
 use pspsdk_macros::psp_stub;
 
 use crate::sys::{
-    mem::MemoryPartitionId, time::SystemClock, SceError, SceResult, SceResultOk, SceSize, SceUid,
+    mem::MemoryPartitionId, time::SystemClock, SceError, SceRawUid, SceResult, SceResultOk,
+    SceSize, SceUid,
 };
 
 /// The thread UID, created with [`sceKernelCreateThread`].
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub struct ThreadId(SceUid);
+pub struct ThreadId(SceRawUid);
 
 /// The thread entry function.
 ///
@@ -955,7 +956,7 @@ pub struct ThreadEventId(SceUid);
 
 /// The thread events that an thread event handler may be called.
 #[bitflag(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub enum ThreadEvents {
     /// When a thread is created.
     Create = 0x01,
@@ -5586,7 +5587,7 @@ impl ThreadId {
     /// type, as it violates the validity invariant.
     #[inline]
     pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
-        Self(unsafe { SceUid::from_raw_unchecked(raw) })
+        Self(raw)
     }
 
     #[inline]
@@ -5600,7 +5601,9 @@ impl ThreadId {
 impl crate::private::Sealed for ThreadId {}
 unsafe impl SceResultOk for ThreadId {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
-        unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
+        unsafe {
+            SceUid::handle_ok_value(ok_value).map(|id| Self::from_raw_unchecked(id.as_inner()))
+        }
     }
 }
 
