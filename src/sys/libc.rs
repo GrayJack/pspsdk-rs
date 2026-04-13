@@ -246,7 +246,7 @@ extern "C" {
 // Libc functions that we need for user-space without using CFW's `SysclibForUser`
 
 #[unsafe(no_mangle)]
-#[cfg(all(not(feature = "stub-only"), not(feature = "kernel")))]
+#[cfg(all(feature = "non-stub-code", not(feature = "kernel")))]
 #[cfg(not(feature = "cfw-api"))]
 unsafe extern "C" fn memset(ptr: *mut u8, value: u32, num: SceSize) -> *mut u8 {
     unsafe {
@@ -262,7 +262,7 @@ unsafe extern "C" fn memset(ptr: *mut u8, value: u32, num: SceSize) -> *mut u8 {
 }
 
 #[unsafe(no_mangle)]
-#[cfg(all(not(feature = "stub-only"), not(feature = "kernel")))]
+#[cfg(all(feature = "non-stub-code", not(feature = "kernel")))]
 #[cfg(not(feature = "cfw-api"))]
 unsafe extern "C" fn memcpy(dst: *mut u8, src: *const u8, num: SceSize) -> *mut u8 {
     unsafe {
@@ -278,7 +278,7 @@ unsafe extern "C" fn memcpy(dst: *mut u8, src: *const u8, num: SceSize) -> *mut 
 }
 
 #[unsafe(no_mangle)]
-#[cfg(all(not(feature = "stub-only"), not(feature = "kernel")))]
+#[cfg(all(feature = "non-stub-code", not(feature = "kernel")))]
 #[cfg(not(feature = "cfw-api"))]
 unsafe extern "C" fn memcmp(ptr1: *mut u8, ptr2: *mut u8, num: SceSize) -> i32 {
     unsafe {
@@ -301,7 +301,7 @@ unsafe extern "C" fn memcmp(ptr1: *mut u8, ptr2: *mut u8, num: SceSize) -> i32 {
 }
 
 #[unsafe(no_mangle)]
-#[cfg(all(not(feature = "stub-only"), not(feature = "kernel")))]
+#[cfg(all(feature = "non-stub-code", not(feature = "kernel")))]
 #[cfg(not(feature = "cfw-api"))]
 unsafe extern "C" fn memmove(dst: *mut u8, src: *mut u8, num: SceSize) -> *mut u8 {
     unsafe {
@@ -326,7 +326,7 @@ unsafe extern "C" fn memmove(dst: *mut u8, src: *mut u8, num: SceSize) -> *mut u
 }
 
 #[unsafe(no_mangle)]
-#[cfg(all(not(feature = "stub-only"), not(feature = "kernel")))]
+#[cfg(all(feature = "non-stub-code", not(feature = "kernel")))]
 #[cfg(not(feature = "cfw-api"))]
 unsafe extern "C" fn strlen(s: *mut u8) -> SceSize {
     unsafe {

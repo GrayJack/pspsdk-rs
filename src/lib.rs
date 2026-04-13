@@ -6,7 +6,7 @@
 pub mod sys;
 
 #[cfg(target_os = "psp")]
-#[cfg(not(feature = "stub-only"))]
+#[cfg(feature = "non-stub-code")]
 pub mod alloc;
 
 #[doc(hidden)]
@@ -33,7 +33,7 @@ mod private {
 
 
 // Setup things
-#[cfg(all(target_os = "psp", not(feature = "stub-only")))]
+#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
 core::arch::global_asm!(
     r#"
         .section .lib.ent.top, "a", @progbits

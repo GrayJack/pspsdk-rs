@@ -21,6 +21,9 @@ pub mod openpsid;
 pub mod thread;
 pub mod time;
 
+
+pub mod sync;
+
 #[cfg(target_os = "psp")]
 pub type SceSize = usize;
 #[cfg(not(target_os = "psp"))]

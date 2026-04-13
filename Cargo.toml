@@ -9,14 +9,17 @@ bitflag-attr = { version = "0.13.0", features = ["const-mut-ref"] }
 pspsdk-macros = { path = "pspsdk-macros", features = ["use_crate"] }
 
 [features]
+default = ["non-stub-code"]
 # Enable kernel modules.
 kernel = []
 # Enable CFW modules.
 cfw-api = []
 
-# Compile this library as a stub provider. Useful to compile this as a static
-# library for other projects.
-stub-only = []
+# Includes code that is not stub definition.
+#
+# Compile this library without this feature to have it as a stub provider.
+# Useful to compile this as a static library for other projects.
+non-stub-code = []
 
 # For the following features, you can't enable more than one of them
 # Also, they are more beneficial for CFW implementation, as the SystemControl
@@ -27,8 +30,6 @@ stub-only = []
 #
 # It may be required for signed homebrew apps (homebrew that works on OFW), but
 # that is an edge case.
-
-# FIXME: Figure what firmware ranges didn't had any NID number change, then add feature for all ranges that had NID change
 
 # Use PSP 1.00~3.73 NID on kernel modules
 psp_100 = []
