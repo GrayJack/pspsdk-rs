@@ -9,6 +9,7 @@ use syn::{
 pub struct PspStub {
     lib_info: LibInfo,
     items: Vec<PspExternItemInfo>,
+    use_crate: bool,
 }
 
 impl PspStub {
@@ -31,6 +32,7 @@ impl PspStub {
                     minor_version: args.minor_version,
                 },
                 items,
+                use_crate: args.use_crate,
             })
         } else {
             Err(Error::new(
@@ -52,9 +54,10 @@ impl ToTokens for PspStub {
                     minor_version,
                 },
             items,
+            use_crate,
         } = self;
 
-        let crate_path = if cfg!(feature = "use_crate") {
+        let crate_path = if *use_crate {
             quote! {crate}
         } else {
             quote! {::pspsdk}
@@ -571,6 +574,7 @@ pub struct StubArgs {
     flags: Option<LitInt>,
     major_version: LitInt,
     minor_version: LitInt,
+    use_crate: bool,
 }
 
 impl StubArgs {
@@ -615,6 +619,8 @@ impl StubArgs {
                     ));
                 },
             }
+        } else if meta.path.is_ident("use_crate") {
+            self.use_crate = true;
         } else {
             return Err(Error::new(meta.path.span(), "invalid parameter for `psp_stub`"));
         }
@@ -630,6 +636,7 @@ impl Default for StubArgs {
             flags: Default::default(),
             major_version: LitInt::new("0", Span::call_site()),
             minor_version: LitInt::new("0", Span::call_site()),
+            use_crate: false,
         }
     }
 }
