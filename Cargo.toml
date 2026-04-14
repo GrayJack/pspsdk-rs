@@ -15,6 +15,9 @@ kernel = []
 # Enable CFW modules.
 cfw-api = []
 
+# Build with std support
+std = []
+
 # Includes code that is not stub definition.
 #
 # Compile this library without this feature to have it as a stub provider.

@@ -3,6 +3,10 @@
 #![feature(rustc_attrs, asm_experimental_arch, c_variadic, allocator_api)]
 #![allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
 
+// Re-export proc-macros
+pub use pspsdk_macros::{export, exports, psp_stub};
+
+
 pub mod sys;
 
 #[cfg(target_os = "psp")]
@@ -59,3 +63,35 @@ core::arch::global_asm!(
         .word 0
     "#
 );
+/// Declare a PSP module info.
+///
+/// This **does not** include basic `syslib`` export like [`module`].
+#[macro_export]
+macro_rules! module_info {
+    ($name:expr, $version_major:expr, $version_minor:expr) => {
+        #[used]
+        #[unsafe(no_mangle)]
+        #[unsafe(link_section = ".rodata.sceModuleInfo")]
+        static module_info: $crate::Align16<$crate::sys::library::ModuleInfo> =
+            $crate::Align16($crate::sys::library::ModuleInfo {
+                attributes: $crate::sys::library::ModuleAttributes::from_bits_retain(0),
+                version: ($version_major, $version_minor),
+                name: $crate::sys::library::ModuleInfo::name_from_str($name),
+                terminal_char: b'\0',
+                gp: unsafe { (&raw const _gp).cast_mut().cast() },
+                stub_top: unsafe { (&raw const __lib_stub_top).cast_mut().cast() },
+                stub_end: unsafe { (&raw const __lib_stub_bottom).cast_mut().cast() },
+                entry_top: unsafe { (&raw const __lib_ent_top).cast_mut().cast() },
+                entry_end: unsafe { (&raw const __lib_ent_bottom).cast_mut().cast() },
+            });
+
+        unsafe extern "C" {
+            static _gp: u8;
+            static __lib_ent_bottom: u8;
+            static __lib_ent_top: u8;
+            static __lib_stub_bottom: u8;
+            static __lib_stub_top: u8;
+        }
+    };
+}
+
