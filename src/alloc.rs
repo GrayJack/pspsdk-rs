@@ -11,6 +11,9 @@ use crate::sys::{
     SceUid,
 };
 
+#[global_allocator]
+static GLOBAL_ALLOC: SystemAlloc = SystemAlloc;
+
 const DEFAULT_PARTITION_ID: MemoryPartitionId = if cfg!(feature = "kernel") {
     MemoryPartitionId::MainKernel
 } else {
@@ -237,5 +240,13 @@ unsafe impl Allocator for PartitionAlloc {
                 let _res = sceKernelFreePartitionMemory(id);
             }
         }
+    }
+}
+
+#[alloc_error_handler]
+#[cfg(not(feature = "std"))]
+fn aeh(_: core::alloc::Layout) -> ! {
+    loop {
+        core::hint::spin_loop()
     }
 }
