@@ -49,7 +49,7 @@ pub enum AtracCodecKind {
 }
 
 // FIXME: Add missing docs and missing function
-#[psp_stub(libname = "sceAtrac3plus", flags = 0x0009)]
+#[psp_stub(libname = "sceAtrac3plus", flags = 0x0009, use_crate)]
 extern "C" {
     /// Get the Atrac ID for an available/released Atrac object with the specified `codec_kind`.
     ///

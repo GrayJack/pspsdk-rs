@@ -19,7 +19,7 @@ pub struct ProductCode {
     pub unk: [u8; 2],
 }
 
-#[psp_stub(libname = "sceOpenPSID", flags = 0x4001, version = (0x00, 0x11))]
+#[psp_stub(libname = "sceOpenPSID", flags = 0x4001, version = (0x00, 0x11), use_crate)]
 extern "C" {
     /// Get the open PS ID.
     ///
@@ -49,7 +49,7 @@ extern "C" {
 }
 
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "sceOpenPSID_driver", flags = 0x0001, version = (0x00, 0x11))]
+#[psp_stub(libname = "sceOpenPSID_driver", flags = 0x0001, version = (0x00, 0x11), use_crate)]
 extern "C" {
     /// Get the open PS ID.
     ///

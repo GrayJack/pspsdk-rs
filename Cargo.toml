@@ -6,7 +6,7 @@ edition = "2024"
 
 [dependencies]
 bitflag-attr = { version = "0.13.0", features = ["const-mut-ref"] }
-pspsdk-macros = { path = "pspsdk-macros", features = ["use_crate"] }
+pspsdk-macros = { path = "pspsdk-macros", features = [] }
 
 [features]
 default = ["non-stub-code"]

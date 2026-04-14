@@ -421,7 +421,7 @@ pub enum GameInfoFlags {
     SfoData = 0x00100,
 }
 
-#[psp_stub(libname = "SysMemUserForUser", flags = 0x4000)]
+#[psp_stub(libname = "SysMemUserForUser", flags = 0x4000, use_crate)]
 extern "C" {
     /// Allocates a memory block from a memory partition.
     ///
@@ -681,7 +681,7 @@ extern "C" {
 // s32 sceKernelCallGprofFunction();
 // int sceKernelCheckDebugHandler();
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "SysMemForKernel", flags = 0x0001)]
+#[psp_stub(libname = "SysMemForKernel", flags = 0x0001, use_crate)]
 extern "C" {
     /// Allocates a memory block from a memory partition.
     ///

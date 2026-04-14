@@ -22,7 +22,7 @@ use crate::sys::{SceIsize, SceSize};
 // - (look_ctype_table, 0x32C767F2)
 // - (prnt, 0x87C78FB6)
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "SysclibForKernel", flags = 0x0001, version = (0x00, 0x11))]
+#[psp_stub(libname = "SysclibForKernel", flags = 0x0001, version = (0x00, 0x11), use_crate)]
 extern "C" {
     #[nid(0x7F8A6F23)]
     unsafe fn bcmp(source: *const u8, other: *const u8, len: SceSize) -> i32;
@@ -119,7 +119,7 @@ extern "C" {
 }
 
 #[cfg(all(not(feature = "kernel"), feature = "cfw-api"))]
-#[psp_stub(libname = "SysclibForUser", flags = 0x4001, version = (0x00, 0x00))]
+#[psp_stub(libname = "SysclibForUser", flags = 0x4001, version = (0x00, 0x00), use_crate)]
 extern "C" {
     #[nid(0x7F8A6F23)]
     unsafe fn bcmp(source: *const u8, other: *const u8, len: SceSize) -> i32;
@@ -315,7 +315,7 @@ unsafe extern "C" fn memmove(dst: *mut u8, src: *mut u8, num: SceSize) -> *mut u
         } else {
             let mut i = num - 1;
 
-            while i >= 0 {
+            while i > 0 {
                 *((dst as SceSize + i) as *mut u8) = *((src as SceSize + i) as *mut u8);
                 i -= 1;
             }
