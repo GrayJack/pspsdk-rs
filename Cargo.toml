@@ -56,4 +56,4 @@ psp_660 = []
 vita_365 = ["psp_660"]
 
 [workspace]
-members = ["pspsdk-macros"]
+exclude = ["cargo-pspbuild"]

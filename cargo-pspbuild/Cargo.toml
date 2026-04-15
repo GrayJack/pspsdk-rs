@@ -1,0 +1,37 @@
+[package]
+name = "cargo-pspbuild"
+version = "0.2.8"
+description = "`cargo build` wrapper for creating Sony PSP executables"
+repository = "https://github.com/overdrivenpotato/rust-psp"
+license = "MIT"
+authors = [
+    "Marko Mijalkovic <marko.mijalkovic97@gmail.com>",
+    "Paul Sajna <sajattack@gmail.com>",
+    "Josh Wood <sk83rjosh@gmail.com>",
+    "GrayJack <gr41.j4ck@gmail.com>",
+]
+edition = "2018"
+default-run = "cargo-pspbuild"
+
+[[bin]]
+name = "prxgen"
+
+[[bin]]
+name = "pack-pbp"
+
+[[bin]]
+name = "mksfo"
+
+[[bin]]
+name = "prxmin"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+goblin = "0.10"
+scroll = "0.13"
+cargo_metadata = "0.23.1"
+rustc_version = "0.4"
+serde = "1.0"
+serde_derive = "1.0"
+bincode = "1.3"
+toml = "1"
