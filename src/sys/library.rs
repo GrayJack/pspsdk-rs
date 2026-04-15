@@ -48,7 +48,7 @@ pub struct StubLibraryEntry {
     pub func_stub_table: *const FunctionStub,
     /// A pointer to an array of imported variable stubs.
     pub var_stub_table: *const VariableStub,
-    pub unk: u16,
+    pub unk: u32,
 }
 
 unsafe impl Sync for StubLibraryEntry {}

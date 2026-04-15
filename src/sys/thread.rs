@@ -122,6 +122,7 @@ pub struct ThreadOptions {
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[doc(alias = "SceKernelThreadInfo")]
+#[allow(unpredictable_function_pointer_comparisons)]
 pub struct ThreadInfo {
     /// The size of this structure.
     pub size: SceSize,
