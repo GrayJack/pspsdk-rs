@@ -51,8 +51,6 @@ pub struct StubLibraryEntry {
     pub unk: u32,
 }
 
-unsafe impl Sync for StubLibraryEntry {}
-
 #[repr(C)]
 #[derive(Clone, Copy)]
 #[doc(alias("SceStub"))]
@@ -255,7 +253,7 @@ impl ModuleInfo {
 }
 
 unsafe impl Sync for ModuleInfo {}
-
+unsafe impl Sync for StubLibraryEntry {}
 unsafe impl Sync for ResidentLibraryEntryItem {}
 unsafe impl Sync for ResidentLibraryEntry {}
 

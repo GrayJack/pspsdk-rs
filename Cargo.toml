@@ -2,7 +2,9 @@
 name = "pspsdk"
 authors = ["GrayJack <gr41.j4ck@gmail.com>"]
 version = "0.1.0"
+license = "MPL-2.0-no-copyleft-exception"
 edition = "2024"
+build = "build.rs"
 
 [dependencies]
 bitflag-attr = { version = "0.13.0", features = ["const-mut-ref"] }

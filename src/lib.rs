@@ -1,7 +1,22 @@
 #![no_std]
 #![allow(internal_features)]
-#![feature(rustc_attrs, asm_experimental_arch, c_variadic, allocator_api)]
 #![allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
+#![feature(
+    rustc_attrs,
+    asm_experimental_arch,
+    c_variadic,
+    allocator_api,
+    alloc_error_handler,
+    std_internals,
+    core_intrinsics,
+    lang_items,
+    panic_unwind
+)]
+
+#[cfg(feature = "non-stub-code")]
+extern crate alloc;
+#[cfg(feature = "non-stub-code")]
+extern crate panic_unwind;
 
 // Re-export proc-macros
 pub use pspsdk_macros::{export, exports, psp_stub};
@@ -9,7 +24,10 @@ pub use pspsdk_macros::{export, exports, psp_stub};
 
 pub mod sys;
 
-#[cfg(target_os = "psp")]
+#[cfg(feature = "non-stub-code")]
+pub mod allocators;
+#[cfg(feature = "non-stub-code")]
+pub mod panic;
 #[cfg(feature = "non-stub-code")]
 pub mod alloc;
 
@@ -70,7 +88,7 @@ core::arch::global_asm!(
 pub struct Align16<T>(pub T);
 
 #[cfg(feature = "std")]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "main"]
     #[doc(hidden)]
     pub fn c_main(argc: isize, argv: *const *const u8) -> isize;
@@ -83,7 +101,7 @@ extern "C" {
 #[macro_export]
 macro_rules! _start {
     ($_:expr, $argc:expr, $argv:expr) => {
-        ::core::mem::tranmute(unsafe { $crate::c_main($argc as _, $argv as _) as _ })
+        unsafe { ::core::mem::transmute(unsafe { $crate::c_main($argc as _, $argv as _) as _ }) }
     };
 }
 #[cfg(not(feature = "std"))]
@@ -105,7 +123,7 @@ macro_rules! _start {
             if len > 0 {
                 let tmp = *arg0.add(len);
                 *arg0.add(len) = 0;
-                $crate::sys::io::sceIoChdir(arg0 as *const u8);
+                let _res = $crate::sys::io::sceIoChdir(arg0 as *const u8);
                 *arg0.add(len) = tmp;
             }
         }
@@ -115,8 +133,8 @@ macro_rules! _start {
         }
 
         // TODO: Maybe print any error to debug screen?
-        // let _ = $crate::catch_unwind($psp_main);
-        let _ = $psp_main();
+        let _ = $crate::panic::catch_unwind($psp_main);
+        // let _ = $psp_main();
 
         $crate::sys::SceResult::new(0)
     }};
@@ -137,11 +155,11 @@ macro_rules! module_info {
                 version: ($version_major, $version_minor),
                 name: $crate::sys::library::ModuleInfo::name_from_str($name),
                 terminal_char: b'\0',
-                gp: unsafe { (&raw const _gp).cast_mut().cast() },
-                stub_top: unsafe { (&raw const __lib_stub_top).cast_mut().cast() },
-                stub_end: unsafe { (&raw const __lib_stub_bottom).cast_mut().cast() },
-                entry_top: unsafe { (&raw const __lib_ent_top).cast_mut().cast() },
-                entry_end: unsafe { (&raw const __lib_ent_bottom).cast_mut().cast() },
+                gp: (&raw const _gp).cast_mut().cast(),
+                stub_top: (&raw const __lib_stub_top).cast_mut().cast(),
+                stub_end: (&raw const __lib_stub_bottom).cast_mut().cast(),
+                entry_top: (&raw const __lib_ent_top).cast_mut().cast(),
+                entry_end: (&raw const __lib_ent_bottom).cast_mut().cast(),
             });
 
         unsafe extern "C" {
@@ -191,7 +209,7 @@ macro_rules! module {
                         return -1;
                     };
 
-                    $crate::sys::thread::sceKernelStartThread(id, argc_bytes, argv);
+                    let _res = $crate::sys::thread::sceKernelStartThread(id, argc_bytes, argv);
                 }
 
                 0
