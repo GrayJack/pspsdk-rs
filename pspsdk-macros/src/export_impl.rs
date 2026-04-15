@@ -1,9 +1,7 @@
 use proc_macro2::Span;
 use quote::{quote, ToTokens};
 use sha1::{Digest, Sha1};
-use syn::{
-    parse::Parse, punctuated::Punctuated, Expr, ExprLit, Ident, Lit, LitInt, LitStr, PatLit, Token,
-};
+use syn::{parse::Parse, punctuated::Punctuated, Expr, ExprLit, Ident, Lit, LitInt, LitStr, Token};
 
 
 pub struct ExportArgs {

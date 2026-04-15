@@ -1,6 +1,6 @@
 //! Module for types related to libraries.
 
-use core::{default, ffi::c_void};
+use core::ffi::c_void;
 
 use bitflag_attr::bitflag;
 
