@@ -373,6 +373,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0xDBA6C4C4 }
         else if cfg!(feature = "psp_395") { 0x4D1414AF }
         else if cfg!(feature = "psp_380") { 0x1EF4432A }
+        else if cfg!(feature = "psp_370") { 0x13AA96B7 }
         else { 0xDBA6C4C4 }
     )]
     pub fn sceDisplayGetFramePerSec() -> f32;
@@ -399,6 +400,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x289D82FE }
         else if cfg!(feature = "psp_395") { 0xC28EFAA7 }
         else if cfg!(feature = "psp_380") { 0x3749CDA0 }
+        else if cfg!(feature = "psp_370") { 0x4AB7497F }
         else { 0x289D82FE }
     )]
     pub unsafe fn sceDisplaySetFrameBuf(
@@ -429,6 +431,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0xEEDA2E54 }
         else if cfg!(feature = "psp_395") { 0xCFB91094 }
         else if cfg!(feature = "psp_380") { 0x3E954D17 }
+        else if cfg!(feature = "psp_370") { 0xE56B11BA }
         else { 0xEEDA2E54 }
     )]
     pub unsafe fn sceDisplayGetFrameBuf(
@@ -453,6 +456,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0xB4F378FA }
         else if cfg!(feature = "psp_395") { 0x2D634972 }
         else if cfg!(feature = "psp_380") { 0x6668FCDF }
+        else if cfg!(feature = "psp_370") { 0x044FF282 }
         else { 0xB4F378FA }
     )]
     pub fn sceDisplayIsForeground() -> bool;
@@ -476,6 +480,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x7ED59BC4 }
         else if cfg!(feature = "psp_395") { 0x2E6AA0AB }
         else if cfg!(feature = "psp_380") { 0xB0D487B3 }
+        else if cfg!(feature = "psp_370") { 0x906281D5 }
         else { 0x7ED59BC4 }
     )]
     pub fn sceDisplaySetHoldMode(mode: DisplayHoldMode) -> SceResult<()>;
@@ -493,6 +498,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x9C6EAAD7 }
         else if cfg!(feature = "psp_395") { 0x6E57C773 }
         else if cfg!(feature = "psp_380") { 0xF5EEEFEF }
+        else if cfg!(feature = "psp_370") { 0xE8466BC2 }
         else { 0x9C6EAAD7 }
     )]
     pub fn sceDisplayGetVcount() -> SceResult<u32>;
@@ -510,6 +516,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x4D4E10EC }
         else if cfg!(feature = "psp_395") { 0x93CA8A9B }
         else if cfg!(feature = "psp_380") { 0x93596B96 }
+        else if cfg!(feature = "psp_370") { 0x8BE19BF8 }
         else { 0x4D4E10EC }
     )]
     pub fn sceDisplayIsVblank() -> SceResult<bool>;
@@ -529,6 +536,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x36CDFADE }
         else if cfg!(feature = "psp_395") { 0xC922270C }
         else if cfg!(feature = "psp_380") { 0xC89E1F1D }
+        else if cfg!(feature = "psp_370") { 0x7FBA941A }
         else { 0x36CDFADE }
     )]
     pub fn sceDisplayWaitVblank() -> SceResult<()>;
@@ -549,6 +557,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x8EB9EC49 }
         else if cfg!(feature = "psp_395") { 0x9C67EA53 }
         else if cfg!(feature = "psp_380") { 0x0C92A897 }
+        else if cfg!(feature = "psp_370") { 0x16FD49DC }
         else { 0x8EB9EC49 }
     )]
     pub fn sceDisplayWaitVblankCB() -> SceResult<()>;
@@ -569,6 +578,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x984C27E7 }
         else if cfg!(feature = "psp_395") { 0x9C268F30 }
         else if cfg!(feature = "psp_380") { 0x3A730F7F }
+        else if cfg!(feature = "psp_370") { 0xB685BA36 }
         else { 0x984C27E7 }
     )]
     pub fn sceDisplayWaitVblankStart() -> SceResult<()>;
@@ -589,6 +599,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x46F186C3 }
         else if cfg!(feature = "psp_395") { 0x661CB78C }
         else if cfg!(feature = "psp_380") { 0x1B0D8989 }
+        else if cfg!(feature = "psp_370") { 0x792E8018 }
         else { 0x46F186C3 }
     )]
     pub fn sceDisplayWaitVblankStartCB() -> SceResult<()>;
@@ -654,6 +665,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x773DD3A3 }
         else if cfg!(feature = "psp_395") { 0xDB559C60 }
         else if cfg!(feature = "psp_380") { 0x51CE9C76 }
+        else if cfg!(feature = "psp_370") { 0x689C0CC2 }
         else { 0x773DD3A3 }
     )]
     pub fn sceDisplayGetCurrentHcount() -> SceResult<u32>;
@@ -671,6 +683,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x210EAB3A }
         else if cfg!(feature = "psp_395") { 0xCAC9C43D }
         else if cfg!(feature = "psp_380") { 0x34662DEA }
+        else if cfg!(feature = "psp_370") { 0xA99B94A3 }
         else { 0x210EAB3A }
     )]
     pub fn sceDisplayGetAccumulatedHcount() -> SceResult<u32>;
@@ -694,6 +707,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x9E3C6DC6 }
         else if cfg!(feature = "psp_395") { 0x1380A62E }
         else if cfg!(feature = "psp_380") { 0x267BF9F7 }
+        else if cfg!(feature = "psp_370") { 0x776ADFDB }
         else { 0x9E3C6DC6 }
     )]
     pub fn sceDisplaySetBrightness(level: u32, mode: u32) -> SceResult<()>;
@@ -717,6 +731,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x31C4BAA8 }
         else if cfg!(feature = "psp_395") { 0xB0B1C399 }
         else if cfg!(feature = "psp_380") { 0x14C854AA }
+        else if cfg!(feature = "psp_370") { 0x1CB8CB47 }
         else { 0x31C4BAA8 }
     )]
     pub fn sceDisplayGetBrightness(level: &mut u32, mode: &mut u32) -> SceResult<()>;
@@ -781,6 +796,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x681EE6A7 }
         else if cfg!(feature = "psp_395") { 0xDB98F049 }
         else if cfg!(feature = "psp_380") { 0x1A4E0C25 }
+        else if cfg!(feature = "psp_370") { 0x32B67781 }
         else { 0x681EE6A7 }
     )]
     pub fn sceDisplayDisable() -> DisplayState;
@@ -798,6 +814,7 @@ extern "C" {
         // else if cfg!(feature = "psp_420") { 0x432D133F }
         else if cfg!(feature = "psp_395") { 0xEB6C2BA3 }
         else if cfg!(feature = "psp_380") { 0x7E67BFCF }
+        else if cfg!(feature = "psp_370") { 0x946155FD }
         else { 0x432D133F }
     )]
     pub fn sceDisplayEnable() -> DisplayState;

@@ -38,6 +38,8 @@ non-stub-code = []
 
 # Use PSP 1.00~3.73 NID on kernel modules
 psp_100 = []
+# Use PSP 3.70~3.73 NID on kernel modules. Not all modules had this one, so far only sceGE and sceDisplay
+psp_370 = []
 # Use PSP 3.80~3.93 NID on kernel modules
 psp_380 = []
 # Use PSP 3.95~4.05 NID on kernel modules
