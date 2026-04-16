@@ -20,8 +20,9 @@ pub mod mem;
 pub mod openpsid;
 pub mod thread;
 pub mod time;
+pub mod display;
 
-
+#[cfg(feature = "non-stub-code")]
 pub mod sync;
 
 #[cfg(target_os = "psp")]

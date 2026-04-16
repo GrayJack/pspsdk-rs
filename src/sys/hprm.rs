@@ -7,7 +7,7 @@ use pspsdk_macros::psp_stub;
 use crate::sys::{SceError, SceResult, SceResultOk, SceUid};
 
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct HprmCallbackSlot(u32);
 
 #[bitflag(u32)]
