@@ -18,6 +18,7 @@ pub mod hprm;
 pub mod io;
 pub mod libc;
 pub mod library;
+pub mod loadexec;
 pub mod mem;
 pub mod openpsid;
 pub mod thread;
