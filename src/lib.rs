@@ -10,13 +10,17 @@
     std_internals,
     core_intrinsics,
     lang_items,
-    panic_unwind
+    negative_impls
 )]
+#![cfg_attr(feature = "non-stub-code", feature(panic_unwind))]
+#![cfg_attr(feature = "std", feature(psp_std))]
 
 #[cfg(feature = "non-stub-code")]
 extern crate alloc;
 #[cfg(feature = "non-stub-code")]
 extern crate panic_unwind;
+#[cfg(all(feature = "std", feature = "non-stub-code"))]
+extern crate std;
 
 // Re-export proc-macros
 pub use pspsdk_macros::{export, exports, psp_stub};
@@ -28,8 +32,12 @@ pub mod sys;
 pub mod allocators;
 #[cfg(feature = "non-stub-code")]
 pub mod panic;
+
 #[cfg(feature = "non-stub-code")]
-pub mod alloc;
+pub mod sync;
+
+#[cfg(feature = "non-stub-code")]
+pub mod io;
 
 #[doc(hidden)]
 pub mod eabi;

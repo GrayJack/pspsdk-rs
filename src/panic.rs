@@ -135,6 +135,12 @@ fn rust_panic_with_hook(payload: &mut dyn panic::PanicPayload) -> ! {
     rust_panic(payload)
 }
 
+/// Determines whether the current thread is unwinding because of panic.
+#[inline]
+pub fn panicking() -> bool {
+    todo!()
+}
+
 fn update_panic_count(amt: isize) -> usize {
     // TODO: Make this thread local
     static mut PANIC_COUNT: usize = 0;
