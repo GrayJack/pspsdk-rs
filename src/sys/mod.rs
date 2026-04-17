@@ -12,6 +12,8 @@ pub use error::{ErrorFacility, SceError};
 
 pub mod atrac;
 pub mod audio;
+pub mod display;
+pub mod ge;
 pub mod hprm;
 pub mod io;
 pub mod libc;
@@ -20,7 +22,6 @@ pub mod mem;
 pub mod openpsid;
 pub mod thread;
 pub mod time;
-pub mod display;
 
 #[cfg(feature = "non-stub-code")]
 pub mod sync;
