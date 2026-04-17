@@ -1,4 +1,4 @@
-use std::os::raw::c_void;
+use core::ffi::c_void;
 
 use pspsdk_macros::psp_stub;
 
@@ -328,6 +328,7 @@ extern "C" {
 //
 // - `sceDisplaySetFrameBufferInternal` (not real cracked name)
 // - `sceDisplayGetFrameBufferInternal` (not real cracked name)
+#[cfg(feature = "kernel")]
 #[psp_stub(libname = "sceDisplay_driver", flags = 0x0001, use_crate)]
 extern "C" {
     /// Sets the display mode.

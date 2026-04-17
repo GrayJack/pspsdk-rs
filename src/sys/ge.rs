@@ -24,6 +24,7 @@ extern "C" {
     pub fn sceGeEdramGetAddr() -> *mut u8;
 }
 
+#[cfg(feature = "kernel")]
 #[psp_stub(libname = "sceGe_driver", flags = 0x0001, use_crate)]
 extern "C" {
     /// Gets the size of eDRAM.
