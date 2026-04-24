@@ -158,8 +158,7 @@ fn main() {
     if rustc_version.channel > Channel::Nightly {
         println!("cargo-psp requires a nightly rustc version.");
         println!(
-            "Please run `rustup override set nightly` to use nightly in the \
-            current directory."
+            "Please run `rustup override set nightly` to use nightly in the current directory."
         );
         process::exit(1);
     }
@@ -176,7 +175,7 @@ fn main() {
         Some(date) => {
             MINIMUM_COMMIT_DATE
                 > CommitDate::parse(&date).expect("could not parse `rustc --version` commit date")
-        }
+        },
     };
 
     if old_version || old_commit {
@@ -201,7 +200,7 @@ fn main() {
                 println!("Failed to read Psp.toml: {}", e);
                 println!("Please ensure that it is formatted correctly.");
                 process::exit(1);
-            }
+            },
         },
         Err(e) if e.kind() == ErrorKind::NotFound => PspConfig::default(),
         Err(e) => panic!("{}", e),
@@ -214,7 +213,7 @@ fn main() {
         Ok(_) => {
             eprintln!("[NOTE]: Detected RUST_PSP_BUILD_STD env var, using \"build-std\".");
             "build-std"
-        }
+        },
         Err(_) => "build-std=core,compiler_builtins,alloc,panic_unwind,panic_abort",
     };
 
@@ -242,10 +241,7 @@ fn main() {
             .unwrap();
 
         if !output.status.success() {
-            panic!(
-                "`cargo metadata` command exited with status: {:?}",
-                output.status
-            );
+            panic!("`cargo metadata` command exited with status: {:?}", output.status);
         }
 
         let metadata = MetadataCommand::parse(
@@ -306,11 +302,7 @@ fn main() {
             ("-s", "DISC_ID", config.disc_id.clone()),
             ("-s", "DISC_VERSION", config.disc_version.clone()),
             ("-s", "LANGUAGE", config.language.clone()),
-            (
-                "-d",
-                "PARENTAL_LEVEL",
-                config.parental_level.as_ref().map(u32::to_string),
-            ),
+            ("-d", "PARENTAL_LEVEL", config.parental_level.as_ref().map(u32::to_string)),
             ("-s", "PSP_SYSTEM_VER", config.psp_system_ver.clone()),
             ("-d", "REGION", config.region.as_ref().map(u32::to_string)),
             ("-s", "TITLE_0", config.title_jp.clone()),
@@ -353,12 +345,7 @@ fn main() {
             .arg(&sfo_path)
             .arg(config.xmb_icon_png.as_deref().unwrap_or("NULL"))
             .arg(config.xmb_icon_pmf.as_deref().unwrap_or("NULL"))
-            .arg(
-                config
-                    .xmb_background_overlay_png
-                    .as_deref()
-                    .unwrap_or("NULL"),
-            )
+            .arg(config.xmb_background_overlay_png.as_deref().unwrap_or("NULL"))
             .arg(config.xmb_background_png.as_deref().unwrap_or("NULL"))
             .arg(config.xmb_music_at3.as_deref().unwrap_or("NULL"))
             .arg(&prx_path)

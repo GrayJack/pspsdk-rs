@@ -24,7 +24,7 @@ unsafe extern "C" {}
 
 #[cfg(not(feature = "std"))]
 fn print_and_die(s: String) -> ! {
-    // dprintln!("{}", s);
+    crate::dprintln!("{}", s);
 
     unsafe {
         let _res = sys::thread::sceKernelExitDeleteThread(1);
