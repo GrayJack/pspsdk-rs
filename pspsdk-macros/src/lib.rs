@@ -88,18 +88,18 @@ pub fn export(input: TokenStream) -> TokenStream {
     for item in table {
         nid_list.push(item.nid);
 
-        let ident = item.ident;
+        let ident = item.item;
         match item.kind {
             export_impl::EntryKind::Function => {
                 func_count += 1;
                 item_list.push(quote! {
-                    ::pspsdk::sys::library::ResidentLibraryEntryItem::new_fn(#ident as *const ())
+                    ::pspsdk::sys::library::ResidentLibraryEntryItem::new_fn((#ident) as *const ())
                 });
             },
             export_impl::EntryKind::Variable => {
                 var_count += 1;
                 item_list.push(quote! {
-                    ::pspsdk::sys::library::ResidentLibraryEntryItem::new_var((&raw const #ident).cast_mut().cast())
+                    ::pspsdk::sys::library::ResidentLibraryEntryItem::new_var((&raw const (#ident)).cast())
                 })
             },
         }
@@ -143,7 +143,7 @@ pub fn export(input: TokenStream) -> TokenStream {
             len: 4,
             var_exp_count: #var_count,
             func_exp_count: #func_count,
-            entry_table: #export_ident.as_ptr().cast_mut(),
+            entry_table: #export_ident.as_ptr(),
             unk1: 0,
             unk2: 0,
             unk3: 0,

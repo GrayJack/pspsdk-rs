@@ -1,7 +1,10 @@
 use proc_macro2::Span;
 use quote::{quote, ToTokens};
 use sha1::{Digest, Sha1};
-use syn::{parse::Parse, punctuated::Punctuated, Expr, ExprLit, Ident, Lit, LitInt, LitStr, Token};
+use syn::{
+    parse::Parse, punctuated::Punctuated, spanned::Spanned, Expr, ExprLit, ExprPath, Ident, Lit,
+    LitInt, LitStr, Token,
+};
 
 
 pub struct ExportArgs {
@@ -43,8 +46,13 @@ impl Parse for ExportArgs {
 
 pub struct TableEntry {
     pub kind: EntryKind,
-    pub ident: Ident,
+    pub item: TableEntryItem,
     pub nid: Expr, // parsed from => <u32 literal>
+}
+
+pub enum TableEntryItem {
+    Ident(Ident),
+    Expr(Expr),
 }
 
 pub enum EntryKind {
@@ -70,45 +78,90 @@ impl Parse for TableEntry {
         } else {
             return Err(syn::Error::new(input.span(), "expected `static` or `fn`"));
         };
-        let item: Ident = input.parse()?;
+
+        let expr: Expr = input.parse()?;
+
+        let item = if let Expr::Path(ExprPath { path, .. }) = expr {
+            let ident = path.require_ident()?;
+            TableEntryItem::Ident(ident.clone())
+        } else {
+            TableEntryItem::Expr(expr)
+        };
 
         let nid = if input.peek(Token![:]) {
             let _a: Token![:] = input.parse()?;
             input.parse()?
         } else {
-            let hash = Sha1::digest(item.to_string());
-            let mut nid = String::from("0x");
-            for byte in hash.iter().take(4).rev() {
-                nid.push_str(&format!("{byte:02X}"));
+            if let Some(ident) = item.get_ident() {
+                let hash = Sha1::digest(ident.to_string());
+                let mut nid = String::from("0x");
+                for byte in hash.iter().take(4).rev() {
+                    nid.push_str(&format!("{byte:02X}"));
+                }
+                Expr::Lit(ExprLit {
+                    lit: Lit::Int(LitInt::new(&nid, item.span())),
+                    attrs: Vec::new(),
+                })
+            } else {
+                return Err(syn::Error::new(
+                    item.span(),
+                    "expression is not a simple identifier, NID specification is required",
+                ));
             }
-            Expr::Lit(ExprLit {
-                lit: Lit::Int(LitInt::new(&nid, item.span())),
-                attrs: Vec::new(),
-            })
         };
 
-        Ok(Self {
-            kind,
-            ident: item,
-            nid,
-        })
+        Ok(Self { kind, item, nid })
     }
 }
 
 impl ToTokens for TableEntry {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let ident = &self.ident;
+        let item = &self.item;
         let nid = &self.nid;
 
         match &self.kind {
             EntryKind::Function => {
                 let kw = syn::token::Fn(Span::mixed_site());
-                tokens.extend(quote! {#kw #ident : #nid});
+                tokens.extend(quote! {#kw #item : #nid});
             },
             EntryKind::Variable => {
                 let kw = syn::token::Static(Span::mixed_site());
-                tokens.extend(quote! {#kw #ident : #nid});
+                tokens.extend(quote! {#kw #item : #nid});
             },
         };
+    }
+}
+
+#[allow(dead_code)]
+impl TableEntryItem {
+    pub fn is_ident(&self) -> bool {
+        matches!(self, Self::Ident(_))
+    }
+
+    pub fn is_expr(&self) -> bool {
+        matches!(self, Self::Expr(_))
+    }
+
+    pub fn get_ident(&self) -> Option<&Ident> {
+        match self {
+            TableEntryItem::Ident(ident) => Some(ident),
+            TableEntryItem::Expr(_) => None,
+        }
+    }
+
+    pub fn spam(&self) -> Span {
+        match self {
+            TableEntryItem::Ident(ident) => ident.span(),
+            TableEntryItem::Expr(expr) => expr.span(),
+        }
+    }
+}
+
+impl ToTokens for TableEntryItem {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        match self {
+            TableEntryItem::Ident(ident) => tokens.extend(ident.to_token_stream()),
+            TableEntryItem::Expr(expr) => tokens.extend(expr.to_token_stream()),
+        }
     }
 }
