@@ -8,6 +8,7 @@ build = "build.rs"
 
 [dependencies]
 bitflag-attr = { version = "0.13.0", features = ["const-mut-ref"] }
+io_core = { version = "0.3.2", features = ["alloc", "nightly"] }
 pspsdk-macros = { path = "pspsdk-macros", features = [] }
 
 [features]
@@ -60,4 +61,5 @@ psp_660 = []
 vita_365 = ["psp_660"]
 
 [workspace]
+members = ["pspsdk-macros", "examples/*"]
 exclude = ["cargo-pspbuild"]

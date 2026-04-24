@@ -171,11 +171,11 @@ macro_rules! module_info {
                 version: ($version_major, $version_minor),
                 name: $crate::sys::library::ModuleInfo::name_from_str($name),
                 terminal_char: b'\0',
-                gp: (&raw const _gp).cast_mut().cast(),
-                stub_top: (&raw const __lib_stub_top).cast_mut().cast(),
-                stub_end: (&raw const __lib_stub_bottom).cast_mut().cast(),
-                entry_top: (&raw const __lib_ent_top).cast_mut().cast(),
-                entry_end: (&raw const __lib_ent_bottom).cast_mut().cast(),
+                gp: unsafe { &_gp },
+                stub_top: unsafe { &__lib_stub_top },
+                stub_end: unsafe { &__lib_stub_bottom },
+                entry_top: unsafe { &__lib_ent_top },
+                entry_end: unsafe { &__lib_ent_bottom },
             });
 
         unsafe extern "C" {
@@ -232,9 +232,9 @@ macro_rules! module {
             }
 
             $crate::exports! {
-                "syslib", 0, 0, 0x8000, [
+                "syslib", $version_major, $version_minor, 0x8000, [
                     fn module_start,
-                    static module_info,
+                    static module_info.0 : 0xF01D73A7,
                 ];
             }
         }
