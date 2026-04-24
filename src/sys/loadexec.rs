@@ -1,8 +1,6 @@
 use pspsdk_macros::psp_stub;
 
-#[cfg(feature = "kernel")]
-use crate::sys::thread::CallbackId;
-use crate::sys::{SceResult, SceSize};
+use crate::sys::{thread::CallbackId, SceResult, SceSize};
 
 /// The load and exec options.
 #[repr(C)]

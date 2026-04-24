@@ -141,7 +141,15 @@ macro_rules! _start {
         }
 
         // TODO: Maybe print any error to debug screen?
-        let _ = $crate::panic::catch_unwind($psp_main);
+        #[cfg(panic = "unwind")]
+        {
+            let _ = $crate::panic::catch_unwind($psp_main);
+        }
+
+        #[cfg(panic = "abort")]
+        {
+            let _ = $psp_main();
+        }
         // let _ = $psp_main();
 
         $crate::sys::SceResult::new(0)

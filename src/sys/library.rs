@@ -97,7 +97,7 @@ pub struct VariableStub {
 pub union ResidentLibraryEntryItem {
     nid: u32,
     func: *const (),
-    var: *mut c_void,
+    var: *const c_void,
 }
 
 /// Represents a single resident export library of a module.
@@ -133,7 +133,7 @@ pub struct ResidentLibraryEntry {
     ///
     /// These arrays are used to correctly perform linking between a resident library and its
     /// corresponding stub libraries.
-    pub entry_table: *mut ResidentLibraryEntryItem,
+    pub entry_table: *const ResidentLibraryEntryItem,
     pub unk1: u16,
     pub unk2: u8,
     pub unk3: u8,
@@ -216,23 +216,23 @@ pub struct ModuleInfo {
     /// It is always `b'\0'`.
     pub terminal_char: u8,
     /// The global pointer of the module.
-    pub gp: *mut c_void,
+    pub gp: *const u8,
     /// A pointer to the first resident library entry table of the module.
     ///
     /// This section is known as ".lib.ent".
-    pub entry_top: *mut c_void,
+    pub entry_top: *const u8,
     /// A pointer to the last line of the ".lib.ent" section.
     ///
     /// This line is always `0` and it is known as ".lib.ent.btm".
-    pub entry_end: *mut c_void,
+    pub entry_end: *const u8,
     /// A pointer to the first stub library entry table of the module.
     ///
     /// This section is known as "lib.stub".
-    pub stub_top: *mut c_void,
+    pub stub_top: *const u8,
     /// A pointer to the last line of the "lib.stub" section.
     ///
     /// This line is always `0`` and is known as ".lib.stub.btm".
-    pub stub_end: *mut c_void,
+    pub stub_end: *const u8,
 }
 
 impl ModuleInfo {
@@ -266,7 +266,7 @@ impl ResidentLibraryEntryItem {
         Self { func }
     }
 
-    pub const fn new_var(var: *mut c_void) -> Self {
+    pub const fn new_var(var: *const c_void) -> Self {
         Self { var }
     }
 }
