@@ -18,7 +18,7 @@ impl From<SceError> for Error {
 
 impl From<Error> for SceError {
     fn from(value: Error) -> Self {
-        let res = value.raw_os_error().and_then(|raw| Self::new(raw as u32));
+        let res = value.raw_os_error().and_then(|raw| Self::from_raw(raw as u32));
         match res {
             Some(raw) => raw,
             None => match value.kind() {
@@ -103,10 +103,8 @@ pub(crate) fn decode_error_kind(error: i32) -> ErrorKind {
             SceError::IS_DIRECTORY => ErrorKind::IsADirectory,
             SceError::DIRECTORY_IS_NOT_EMPTY => ErrorKind::DirectoryNotEmpty,
             SceError::READ_ONLY => ErrorKind::ReadOnlyFilesystem,
-            SceError::TOO_MANY_SYMBOLIC_LINKS => ErrorKind::FilesystemLoop,
             SceError::STALE_NETWORK_HANDLE => ErrorKind::StaleNetworkFileHandle,
             SceError::STD_INVALID_ARGUMENT => ErrorKind::InvalidInput,
-            SceError::STD_INVALID_ARGUMENT => ErrorKind::InvalidData,
             SceError::TIMEOUT => ErrorKind::TimedOut,
             SceError::NO_FREE_BUF_SPACE => ErrorKind::WriteZero,
             SceError::NO_SPACE => ErrorKind::StorageFull,

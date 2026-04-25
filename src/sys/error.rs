@@ -4,7 +4,7 @@
 #[repr(transparent)]
 #[rustc_layout_scalar_valid_range_start(0x80000001)]
 #[rustc_layout_scalar_valid_range_end(0xFFFFFFFF)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SceError(u32);
 
 /// The source facility of an error value.
@@ -616,12 +616,12 @@ impl core::fmt::Debug for SceError {
         let mut d = f.debug_struct("SceError");
 
         d.field("facility", &self.facility())
-            .field("code", format_args!("{:#010X}", self.0));
+            .field("code", &format_args!("{:#010X}", self.0));
 
         let msg = self.error_msg();
 
         if !msg.is_empty() {
-            d.field("message", msg);
+            d.field("message", &msg);
         }
 
         d.finish()

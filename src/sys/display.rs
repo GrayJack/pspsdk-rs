@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 use core::ffi::c_void;
 
 use pspsdk_macros::psp_stub;

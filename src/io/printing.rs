@@ -1,4 +1,8 @@
-use core::{cell::SyncUnsafeCell, fmt};
+use core::{
+    cell::SyncUnsafeCell,
+    fmt,
+    sync::atomic::{AtomicPtr, Ordering},
+};
 
 use crate::{
     sync::nonpoison::Mutex,
@@ -19,7 +23,7 @@ const BUFFER_WIDTH: usize = 512;
 const DISPLAY_HEIGHT: usize = 272;
 const DISPLAY_WIDTH: usize = 480;
 
-static VRAM_BASE: SyncUnsafeCell<u32> = SyncUnsafeCell::new(0);
+static VRAM_BASE: AtomicPtr<u32> = AtomicPtr::new(core::ptr::null_mut());
 
 // TODO: Wrap this in some kind of a mutex.
 // static CHARS: Mutex<SyncUnsafeCell<CharBuffer>> =
@@ -50,8 +54,7 @@ impl Font for MsxFont {
 
     fn put_char(x: usize, y: usize, color: u32, c: u8) {
         unsafe {
-            let vram_base: *mut u32 =
-                core::ptr::with_exposed_provenance_mut((*VRAM_BASE.get()) as usize);
+            let vram_base: *mut u32 = VRAM_BASE.load(Ordering::Relaxed);
             let mut ptr = vram_base.add(x + y * BUFFER_WIDTH);
 
             for i in 0..8 {
@@ -190,13 +193,16 @@ impl<'a> Iterator for LineIter<'a> {
 unsafe fn init() {
     unsafe {
         // The OR operation here specifies the address bypasses cache.
-        let vram_base = VRAM_BASE.get();
-        *vram_base = 0x4000_0000u32 | sceGeEdramGetAddr() as u32;
+        VRAM_BASE.store(
+            (0x4000_0000_usize | sceGeEdramGetAddr() as usize) as *mut _,
+            Ordering::Release,
+        );
+        let vram_base = VRAM_BASE.load(Ordering::Acquire);
 
         // TODO: Change sys types to usize.
         let _res = sceDisplaySetMode(DisplayMode::Lcd, DISPLAY_WIDTH, DISPLAY_HEIGHT);
         let _res = sceDisplaySetFrameBuf(
-            core::ptr::with_exposed_provenance_mut((*vram_base) as usize),
+            vram_base.cast(),
             BUFFER_WIDTH,
             PixelFormat::Psm8888,
             DisplayUpdateSync::NextVsync,
@@ -206,7 +212,7 @@ unsafe fn init() {
 
 unsafe fn clear_screen(color: u32) {
     unsafe {
-        let vram_base = *VRAM_BASE.get();
+        let vram_base = VRAM_BASE.load(Ordering::Relaxed);
         let mut ptr: *mut u32 = core::ptr::with_exposed_provenance_mut(vram_base as usize);
 
         for _ in 0..(BUFFER_WIDTH * DISPLAY_HEIGHT) {
