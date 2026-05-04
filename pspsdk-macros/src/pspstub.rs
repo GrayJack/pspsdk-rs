@@ -148,34 +148,79 @@ impl ToTokens for PspStub {
                     Some(EabiAttr {
                         eabi: EabiKind::Arg5,
                         ..
-                    }) => quote! {
-                        #(#cfg_attrs)*
-                        #[doc(hidden)]
-                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32) -> u32
+                    }) => {
+                        let unsafety = if unsafety.is_some() {
+                            // No need as it will show up in the signature already
+                            quote! {}
+                        } else {
+                            quote! {safe}
+                        };
+
+                        quote! {
+                            #(#cfg_attrs)*
+                            #[doc(hidden)]
+                            #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32) -> u32;
+
+                            #(#attrs)*
+                            #vis #unsafety #sig
+                        }
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::Arg6,
                         ..
-                    }) => quote! {
-                        #(#cfg_attrs)*
-                        #[doc(hidden)]
-                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
+                    }) => {
+                        let unsafety = if unsafety.is_some() {
+                            // No need as it will show up in the signature already
+                            quote! {}
+                        } else {
+                            quote! {safe}
+                        };
+                        quote! {
+                            #(#cfg_attrs)*
+                            #[doc(hidden)]
+                            #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32;
+
+                            #(#attrs)*
+                            #vis #unsafety #sig
+                        }
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::Arg7,
                         ..
-                    }) => quote! {
-                        #(#cfg_attrs)*
-                        #[doc(hidden)]
-                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
+                    }) => {
+                        let unsafety = if unsafety.is_some() {
+                            // No need as it will show up in the signature already
+                            quote! {}
+                        } else {
+                            quote! {safe}
+                        };
+                        quote! {
+                            #(#cfg_attrs)*
+                            #[doc(hidden)]
+                            #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32;
+
+                            #(#attrs)*
+                            #vis #unsafety #sig
+                        }
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::Arg8,
                         ..
-                    }) => quote! {
-                        #(#cfg_attrs)*
-                        #[doc(hidden)]
-                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
+                    }) => {
+                        let unsafety = if unsafety.is_some() {
+                            // No need as it will show up in the signature already
+                            quote! {}
+                        } else {
+                            quote! {safe}
+                        };
+                        quote! {
+                            #(#cfg_attrs)*
+                            #[doc(hidden)]
+                            #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32;
+
+                            #(#attrs)*
+                            #vis #unsafety #sig
+                        }
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::I_II_I_RI,
@@ -183,7 +228,7 @@ impl ToTokens for PspStub {
                     }) => quote! {
                         #(#cfg_attrs)*
                         #[doc(hidden)]
-                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u64, _: u32) -> u32
+                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u64, _: u32) -> u32;
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::I_II_I_RII,
@@ -208,229 +253,138 @@ impl ToTokens for PspStub {
                     },
                 };
 
-                let register = vec![
-                    quote! {"$4"},  // a0
-                    quote! {"$5"},  // a1
-                    quote! {"$6"},  // a2
-                    quote! {"$7"},  // a3
-                    quote! {"$8"},  // t0
-                    quote! {"$9"},  // t1
-                    quote! {"$10"}, // t2
-                    quote! {"$11"}, // t3
-                ];
-
                 let panic = quote! {
                     #[cfg(not(target_os = "psp"))] {
                         panic!("tried to call PSP system function on non-PSP target");
                     }
                 };
+
+                let sig_ident = sig.ident.to_string();
                 let eabi_fn = match eabi.clone() {
                     Some(EabiAttr {
                         eabi: EabiKind::Arg5,
                         ..
                     }) => {
-                        let args: Vec<_> = sig
-                            .inputs
-                            .iter()
-                            .filter_map(|f| match f {
-                                syn::FnArg::Receiver(_) => None,
-                                syn::FnArg::Typed(pat_type) => match *pat_type.pat.clone() {
-                                    syn::Pat::Ident(pat_ident) => Some(pat_ident.ident.clone()),
-                                    _ => None,
-                                },
-                            })
-                            .collect();
-
                         let mut sig = sig.clone();
                         sig.unsafety = None;
 
+                        let asm_string = format!(
+                            r#"
+                            .section .text
+                            .global {0}
+                            {0}:
+                                lw    $t0,16($sp)
+                                addiu $sp, $sp, -24
+                                sw    $ra,0($sp)
+                                jal   {1}
+                                lw    $ra, 0($sp)
+                                addiu $sp, $sp, 24
+                                jr    $ra
+                            "#,
+                            sig_ident,
+                            fn_libname_link.value()
+                        );
                         quote! {
-                            #(#attrs)*
-                            #[cfg(any(target_os = "psp", doc))]
-                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
-                            #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
-                            #vis #unsafety extern "C" #sig {
-                                #[cfg(target_os = "psp")] {
-                                    unsafe {
-                                        // ::core::mem::transmute(#crate_path::eabi::i5(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
-                                        let result: u32;
-                                        ::core::arch::asm!(
-                                            ".set noat",
-                                            // Call the function pointer
-                                            "jalr {func}",
-                                            "nop",
-                                            #(in(#register) ::core::mem::transmute::<_, u32>(#args),)*
-                                            func = in(reg) #fn_stub_var ,
-                                            // Result comes back in v0 register ($2)
-                                            lateout("$2") result,
-                                            // Clobber registers that may be modified by the call
-                                            lateout("$8") _, // t0
-                                        );
-
-                                        ::core::mem::transmute(result)
-                                    }
-                                }
-
-                                #panic
-
-                            }
+                            ::core::arch::global_asm!(
+                                #asm_string
+                            );
                         }
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::Arg6,
                         ..
                     }) => {
-                        let args: Vec<_> = sig
-                            .inputs
-                            .iter()
-                            .filter_map(|f| match f {
-                                syn::FnArg::Receiver(_) => None,
-                                syn::FnArg::Typed(pat_type) => match *pat_type.pat.clone() {
-                                    syn::Pat::Ident(pat_ident) => Some(pat_ident.ident.clone()),
-                                    _ => None,
-                                },
-                            })
-                            .collect();
-
                         let mut sig = sig.clone();
                         sig.unsafety = None;
 
+
+                        let asm_string = format!(
+                            r#"
+                            .section .text
+                            .global {0}
+                            {0}:
+                                lw    $t0,16($sp)
+                                lw    $t1,20($sp)
+                                addiu $sp, $sp, -32
+                                sw    $ra,0($sp)
+                                jal   {1}
+                                lw    $ra, 0($sp)
+                                addiu $sp, $sp, 32
+                                jr    $ra
+                            "#,
+                            sig_ident,
+                            fn_libname_link.value()
+                        );
                         quote! {
-                            #(#attrs)*
-                            #[cfg(any(target_os = "psp", doc))]
-                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
-                            #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
-                            #vis #unsafety extern "C" #sig {
-                                #[cfg(target_os = "psp")] {
-                                    unsafe {
-                                        // ::core::mem::transmute(#crate_path::eabi::i5(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
-                                        let result: u32;
-                                        ::core::arch::asm!(
-                                            ".set noat",
-                                            // Call the function pointer
-                                            "jalr {func}",
-                                            "nop",
-                                            #(in(#register) ::core::mem::transmute::<_, u32>(#args),)*
-                                            func = in(reg) #fn_stub_var ,
-                                            // Result comes back in v0 register ($2)
-                                            lateout("$2") result,
-                                            // Clobber registers that may be modified by the call
-                                            lateout("$8") _, // t0
-                                            lateout("$9") _, // t1
-                                        );
-
-                                        ::core::mem::transmute(result)
-                                    }
-                                }
-
-
-                                #panic
-                            }
-
+                            #[cfg(target_os = "psp")]
+                            ::core::arch::global_asm!(
+                                #asm_string
+                            );
                         }
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::Arg7,
                         ..
                     }) => {
-                        let args: Vec<_> = sig
-                            .inputs
-                            .iter()
-                            .filter_map(|f| match f {
-                                syn::FnArg::Receiver(_) => None,
-                                syn::FnArg::Typed(pat_type) => match *pat_type.pat.clone() {
-                                    syn::Pat::Ident(pat_ident) => Some(pat_ident.ident.clone()),
-                                    _ => None,
-                                },
-                            })
-                            .collect();
-
                         let mut sig = sig.clone();
                         sig.unsafety = None;
 
+                        let asm_string = format!(
+                            r#"
+                            .section .text
+                            .global {0}
+                            {0}:
+                                lw    $t0,16($sp)
+                                lw    $t1,20($sp)
+                                lw    $t2,24($sp)
+                                addiu $sp, $sp, -32
+                                sw    $ra,0($sp)
+                                jal   {1}
+                                lw    $ra, 0($sp)
+                                addiu $sp, $sp, 32
+                                jr    $ra
+                            "#,
+                            sig_ident,
+                            fn_libname_link.value()
+                        );
                         quote! {
-                            #(#attrs)*
-                            #[cfg(any(target_os = "psp", doc))]
-                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
-                            #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
-                            #vis #unsafety extern "C" #sig {
-                                #[cfg(target_os = "psp")] {
-                                    unsafe {
-                                        let result: u32;
-                                        ::core::arch::asm!(
-                                            ".set noat",
-                                            // Call the function pointer
-                                            "jalr {func}",
-                                            "nop",
-                                            #(in(#register) ::core::mem::transmute::<_, u32>(#args),)*
-                                            func = in(reg) #fn_stub_var ,
-                                            // Result comes back in v0 register ($2)
-                                            lateout("$2") result,
-                                            // Clobber registers that may be modified by the call
-                                            lateout("$8") _, // t0
-                                            lateout("$9") _, // t1
-                                            lateout("$10") _, // t2
-                                        );
-
-                                        ::core::mem::transmute(result)
-                                    }
-                                }
-
-                                #panic
-                            }
+                            #[cfg(target_os = "psp")]
+                            ::core::arch::global_asm!(
+                                #asm_string
+                            );
                         }
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::Arg8,
                         ..
                     }) => {
-                        let args: Vec<_> = sig
-                            .inputs
-                            .iter()
-                            .filter_map(|f| match f {
-                                syn::FnArg::Receiver(_) => None,
-                                syn::FnArg::Typed(pat_type) => match *pat_type.pat.clone() {
-                                    syn::Pat::Ident(pat_ident) => Some(pat_ident.ident.clone()),
-                                    _ => None,
-                                },
-                            })
-                            .collect();
-
                         let mut sig = sig.clone();
                         sig.unsafety = None;
 
+                        let asm_string = format!(
+                            r#"
+                            .section .text
+                            .global {0}
+                            {0}:
+                                lw    $t0,16($sp)
+                                lw    $t1,20($sp)
+                                lw    $t2,24($sp)
+                                lw    $t3,28($sp)
+                                addiu $sp, $sp, -40
+                                sw    $ra,0($sp)
+                                jal   {1}
+                                lw    $ra, 0($sp)
+                                addiu $sp, $sp, 40
+                                jr    $ra
+                            "#,
+                            sig_ident,
+                            fn_libname_link.value()
+                        );
                         quote! {
-                            #(#attrs)*
-                            #[cfg(any(target_os = "psp", doc))]
-                            #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
-                            #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
-                            #vis #unsafety extern "C" #sig {
-                                #[cfg(target_os = "psp")] {
-                                    unsafe {
-                                        // ::core::mem::transmute(#crate_path::eabi::i5(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
-                                        let result: u32;
-                                        ::core::arch::asm!(
-                                            ".set noat",
-                                            // Call the function pointer
-                                            "jalr {func}",
-                                            "nop",
-                                            #(in(#register) ::core::mem::transmute::<_, u32>(#args),)*
-                                            func = in(reg) #fn_stub_var ,
-                                            // Result comes back in v0 register ($2)
-                                            lateout("$2") result,
-                                            // Clobber registers that may be modified by the call
-                                            lateout("$8") _, // t0
-                                            lateout("$9") _, // t1
-                                            lateout("$10") _, // t2
-                                            lateout("$11") _, // t3
-                                        );
-
-                                        ::core::mem::transmute(result)
-                                    }
-                                }
-
-                                #panic
-                            }
+                            #[cfg(target_os = "psp")]
+                            ::core::arch::global_asm!(
+                                #asm_string
+                            );
                         }
                     },
                     Some(EabiAttr {
@@ -514,6 +468,26 @@ impl ToTokens for PspStub {
             }
         }
 
+
+        let var_stub = if var_stub_count != 0 {
+            Some(quote! {
+                #[unsafe(link_section = #var_stub_start_section)]
+                static #var_stub_start_var: () = ();
+            })
+        } else {
+            None
+        };
+
+        let var_stub_table = if var_stub_count != 0 {
+            quote! {
+                &#var_stub_start_var as *const () as *const _
+            }
+        } else {
+            quote! {
+                ::core::ptr::null()
+            }
+        };
+
         let generated = quote! {
             #[cfg(target_os = "psp")]
             #[allow(non_snake_case)]
@@ -529,8 +503,7 @@ impl ToTokens for PspStub {
                 #[unsafe(link_section = #fn_stub_start_section)]
                 static #fn_stub_start_var: () = ();
 
-                #[unsafe(link_section = #var_stub_start_section)]
-                static #var_stub_start_var: () = ();
+                #var_stub
 
                 #[unsafe(link_section = #stub_entry_section)]
                 static #stub_entry_var: #crate_path::sys::library::StubLibraryEntry = #crate_path::sys::library::StubLibraryEntry {
@@ -538,11 +511,11 @@ impl ToTokens for PspStub {
                     version: (#major_version, #minor_version),
                     flags: #crate_path::sys::LibFlags::from_bits_retain(#flags),
                     len: #crate_path::sys::library::STUB_LIBRARY_ENTRY_TABLE_OLD_LEN,
-                    var_stub_count: #var_stub_count,
+                    var_stub_count: 0,
                     func_stub_count: #fn_stub_count,
                     nid_table: &#nid_start_var as *const () as *const _,
                     func_stub_table: &#fn_stub_start_var as *const () as *const _,
-                    var_stub_table: &#var_stub_start_var as *const () as *const _,
+                    var_stub_table: #var_stub_table,
                     unk: 0,
                 };
 
