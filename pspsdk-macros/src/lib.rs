@@ -184,7 +184,7 @@ pub fn export(input: TokenStream) -> TokenStream {
 /// pspsdk::exports! {
 ///     "syslib", 0, 0, 0x8000, [
 ///         fn module_start,
-///         static module_info,
+///         static module_info.0 : 0xF01D73A7,
 ///     ];
 ///     "libname", 1, 0, 0, [
 ///         fn example,
