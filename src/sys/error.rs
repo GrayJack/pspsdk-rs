@@ -164,7 +164,7 @@ impl SceError {
 macro_rules! __err_def {
     ($($err:ident = $val:expr;)+) => {
         impl SceError {
-            $(pub const $err: Self = unsafe {Self($val)};)+
+            $(pub const $err: Self = Self($val);)+
         }
     };
 }

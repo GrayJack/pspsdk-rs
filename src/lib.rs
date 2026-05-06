@@ -5,7 +5,6 @@
     rustc_attrs,
     pattern_types,
     pattern_type_macro,
-    pattern_type_range_trait,
     structural_match,
     asm_experimental_arch,
     c_variadic,
