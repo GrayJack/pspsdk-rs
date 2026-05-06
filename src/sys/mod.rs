@@ -38,11 +38,9 @@ pub type SceIsize = isize;
 pub type SceIsize = i32;
 
 /// Identification number for several kernel objects.
-#[rustc_layout_scalar_valid_range_start(0)]
-#[rustc_layout_scalar_valid_range_end(0x7FFFFFFF)]
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct SceUid(SceRawUid);
+#[derive(Clone, Copy)]
+pub struct SceUid(pattern_type!(SceRawUid is 0..=0x7FFFFFFF));
 
 /// Identification number for several kernel objects.
 pub type SceRawUid = u32;
@@ -69,7 +67,7 @@ impl SceUid {
     #[inline]
     pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
         // SAFETY: Caller promised that `val` is within the valid range.
-        unsafe { Self(raw) }
+        unsafe { core::mem::transmute(raw) }
     }
 
     #[inline]
@@ -80,11 +78,19 @@ impl SceUid {
     }
 }
 
+crate::impl_ranged_ty!(SceUid);
+
 impl crate::private::Sealed for SceUid {}
 
 impl Default for SceUid {
     fn default() -> Self {
         unsafe { Self::from_raw_unchecked(0) }
+    }
+}
+
+impl core::fmt::Debug for SceUid {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        f.debug_tuple("SceUid").field(&self.as_inner()).finish()
     }
 }
 
@@ -359,4 +365,42 @@ pub enum LibFlags {
     SyscallExport = 0x4000,
     /// The library is a system library (a mandatory library for all modules).
     IsSystemLib = 0x8000,
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! impl_ranged_ty {
+    ($t:ty) => {
+        impl ::core::marker::StructuralPartialEq for $t {}
+
+        impl Eq for $t {}
+
+        impl PartialEq for $t {
+            #[inline]
+            fn eq(&self, other: &Self) -> bool {
+                self.as_inner() == other.as_inner()
+            }
+        }
+
+        impl Ord for $t {
+            #[inline]
+            fn cmp(&self, other: &Self) -> ::core::cmp::Ordering {
+                Ord::cmp(&self.as_inner(), &other.as_inner())
+            }
+        }
+
+        impl PartialOrd for $t {
+            #[inline]
+            fn partial_cmp(&self, other: &Self) -> Option<::core::cmp::Ordering> {
+                Some(Ord::cmp(self, other))
+            }
+        }
+
+        impl ::core::hash::Hash for $t {
+            // Required method
+            fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
+                ::core::hash::Hash::hash(&self.as_inner(), state);
+            }
+        }
+    };
 }

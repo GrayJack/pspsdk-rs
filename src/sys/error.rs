@@ -2,10 +2,12 @@
 ///
 /// It's valid range is `(0x80000001, 0xFFFFFFFF]`.
 #[repr(transparent)]
-#[rustc_layout_scalar_valid_range_start(0x80000001)]
-#[rustc_layout_scalar_valid_range_end(0xFFFFFFFF)]
+// #[derive(Clone, Copy)]
+// pub struct SceError(pattern_type!(u32 is 0x80000001..=0xFFFFFFFF));
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SceError(u32);
+
+// crate::impl_ranged_ty!(SceError);
 
 /// The source facility of an error value.
 #[repr(u8)]
@@ -92,7 +94,7 @@ impl SceError {
     #[inline]
     pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
         // SAFETY: Caller promised that `val` is within the valid range.
-        unsafe { Self(raw) }
+        unsafe { core::mem::transmute(raw) }
     }
 
     #[inline]
@@ -104,7 +106,7 @@ impl SceError {
 
     /// Get the facility of the error.
     pub const fn facility(self) -> ErrorFacility {
-        match (self.0 >> 16) & 0xFF {
+        match (self.as_inner() >> 16) & 0xFF {
             0x000 => ErrorFacility::Null,
             0x001 => ErrorFacility::Errno,
             0x002 => ErrorFacility::Kernel,
@@ -616,7 +618,7 @@ impl core::fmt::Debug for SceError {
         let mut d = f.debug_struct("SceError");
 
         d.field("facility", &self.facility())
-            .field("code", &format_args!("{:#010X}", self.0));
+            .field("code", &format_args!("{:#010X}", self.as_inner()));
 
         let msg = self.error_msg();
 
