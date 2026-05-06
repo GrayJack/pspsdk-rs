@@ -144,6 +144,8 @@ impl ToTokens for PspStub {
                 };
 
 
+                let wrapper_name = format!("__{}_wrapper", sig.ident);
+
                 let stub_extern = match eabi.clone() {
                     Some(EabiAttr {
                         eabi: EabiKind::Arg5,
@@ -162,6 +164,7 @@ impl ToTokens for PspStub {
                             #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32) -> u32;
 
                             #(#attrs)*
+                            #[link_name = #wrapper_name]
                             #vis #unsafety #sig
                         }
                     },
@@ -181,6 +184,7 @@ impl ToTokens for PspStub {
                             #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32;
 
                             #(#attrs)*
+                            #[link_name = #wrapper_name]
                             #vis #unsafety #sig
                         }
                     },
@@ -200,6 +204,7 @@ impl ToTokens for PspStub {
                             #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32;
 
                             #(#attrs)*
+                            #[link_name = #wrapper_name]
                             #vis #unsafety #sig
                         }
                     },
@@ -219,6 +224,7 @@ impl ToTokens for PspStub {
                             #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32;
 
                             #(#attrs)*
+                            #[link_name = #wrapper_name]
                             #vis #unsafety #sig
                         }
                     },
@@ -271,8 +277,8 @@ impl ToTokens for PspStub {
                         let asm_string = format!(
                             r#"
                             .section .text
-                            .global {0}
-                            {0}:
+                            .global __{0}_wrapper
+                            __{0}_wrapper:
                                 lw    $t0,16($sp)
                                 addiu $sp, $sp, -24
                                 sw    $ra,0($sp)
@@ -301,8 +307,8 @@ impl ToTokens for PspStub {
                         let asm_string = format!(
                             r#"
                             .section .text
-                            .global {0}
-                            {0}:
+                            .global __{0}_wrapper
+                            __{0}_wrapper:
                                 lw    $t0,16($sp)
                                 lw    $t1,20($sp)
                                 addiu $sp, $sp, -32
@@ -332,8 +338,8 @@ impl ToTokens for PspStub {
                         let asm_string = format!(
                             r#"
                             .section .text
-                            .global {0}
-                            {0}:
+                            .global __{0}_wrapper
+                            __{0}_wrapper:
                                 lw    $t0,16($sp)
                                 lw    $t1,20($sp)
                                 lw    $t2,24($sp)
@@ -364,8 +370,8 @@ impl ToTokens for PspStub {
                         let asm_string = format!(
                             r#"
                             .section .text
-                            .global {0}
-                            {0}:
+                            .global __{0}_wrapper
+                            __{0}_wrapper:
                                 lw    $t0,16($sp)
                                 lw    $t1,20($sp)
                                 lw    $t2,24($sp)
@@ -510,7 +516,7 @@ impl ToTokens for PspStub {
                     name: #resident_var.as_ptr().cast(),
                     version: (#major_version, #minor_version),
                     flags: #crate_path::sys::LibFlags::from_bits_retain(#flags),
-                    len: #crate_path::sys::library::STUB_LIBRARY_ENTRY_TABLE_OLD_LEN,
+                    len: #crate_path::sys::library::STUB_LIBRARY_ENTRY_TABLE_NEW_LEN,
                     var_stub_count: 0,
                     func_stub_count: #fn_stub_count,
                     nid_table: &#nid_start_var as *const () as *const _,
