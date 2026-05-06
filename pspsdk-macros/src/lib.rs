@@ -140,7 +140,7 @@ pub fn export(input: TokenStream) -> TokenStream {
             name: #nul_libname,
             version: (#major_ver, #minor_ver),
             flags: #flag,
-            len: 4,
+            len: ::pspsdk::sys::library::RESI_LIBRARY_ENTRY_TABLE_NEW_LEN,
             var_exp_count: #var_count,
             func_exp_count: #func_count,
             entry_table: #export_ident.as_ptr(),
