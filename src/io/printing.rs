@@ -25,10 +25,7 @@ const DISPLAY_WIDTH: usize = 480;
 
 static VRAM_BASE: AtomicPtr<u32> = AtomicPtr::new(core::ptr::null_mut());
 
-// TODO: Wrap this in some kind of a mutex.
-// static CHARS: Mutex<SyncUnsafeCell<CharBuffer>> =
-//     Mutex::new(SyncUnsafeCell::new(CharBuffer::new()));
-static CHARS: SyncUnsafeCell<CharBuffer> = SyncUnsafeCell::new(CharBuffer::new());
+static CHARS: Mutex<CharBuffer> = Mutex::new(CharBuffer::new());
 
 // TODO: Wait for better const generics.
 const ROWS: usize = MsxFont::ROWS;
@@ -150,11 +147,11 @@ impl fmt::Write for CharBuffer {
         for c in s.chars() {
             match c as u32 {
                 0..=255 => {
-                    let chars = unsafe { &mut *CHARS.get() };
+                    let mut chars = CHARS.lock();
                     chars.add(c as u8)
                 },
                 _ => {
-                    let chars = unsafe { &mut *CHARS.get() };
+                    let mut chars = CHARS.lock();
                     chars.add(0)
                 },
             }
@@ -244,8 +241,7 @@ fn update() {
         init();
         clear_screen(0);
 
-        // let mut chars = CHARS.lock();
-        let chars = &*CHARS.get();
+        let chars = CHARS.lock();
         for (i, line) in chars.lines().enumerate() {
             put_str::<MsxFont>(&line.chars[0..line.len], 0, i * MsxFont::CHAR_HEIGHT, 0xFFFF_FFFF)
         }
@@ -257,7 +253,7 @@ pub fn _dprint(arguments: core::fmt::Arguments<'_>) {
     use fmt::Write;
 
     {
-        let chars = unsafe { &mut *CHARS.get() };
+        let mut chars = CHARS.lock();
         let _ = write!(chars, "{}", arguments);
     }
 
