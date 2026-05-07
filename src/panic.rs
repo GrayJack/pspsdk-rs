@@ -19,7 +19,7 @@ use core::{
 #[cfg(not(feature = "std"))]
 use alloc::{boxed::Box, string::String};
 
-#[link(name = "unwind", kind = "static")]
+#[cfg_attr(panic = "unwind", link(name = "unwind", kind = "static"))]
 unsafe extern "C" {}
 
 #[cfg(not(feature = "std"))]
@@ -152,12 +152,14 @@ fn update_panic_count(amt: isize) -> usize {
 }
 
 #[allow(improper_ctypes)]
+#[cfg(panic = "unwind")]
 unsafe extern "C" {
     #[cfg_attr(not(bootstrap), rustc_std_internal_symbol)]
     fn __rust_panic_cleanup(payload: *mut u8) -> *mut (dyn Any + Send + 'static);
 }
 
 #[allow(improper_ctypes, unexpected_cfgs)]
+#[cfg(panic = "unwind")]
 unsafe extern "C-unwind" {
     #[cfg_attr(not(bootstrap), rustc_std_internal_symbol)]
     fn __rust_start_panic(payload: usize) -> u32;
@@ -194,7 +196,7 @@ pub use std::panic::catch_unwind;
 
 /// Invoke a closure, capturing the cause of an unwinding panic if one occurs.
 #[inline(never)]
-#[cfg(not(feature = "std"))]
+#[cfg(all(not(feature = "std"), panic = "unwind"))]
 pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>> {
     // This whole function is directly lifted out of rustc. See comments there
     // for an explanation of how this actually works.
