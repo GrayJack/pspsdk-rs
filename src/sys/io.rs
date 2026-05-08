@@ -6,7 +6,7 @@ use pspsdk_macros::psp_stub;
 use crate::sys::{
     thread::{CallbackId, EventFlagId, SemaId, ThreadId},
     time::DateTime,
-    SceError, SceResult, SceResultOk, SceSize, SceUid,
+    SceError, SceResult, SceResult64, SceResultOk, SceSize, SceUid,
 };
 
 /// File descriptor UID.
@@ -691,12 +691,11 @@ extern "C" {
     ///
     /// # Return Value
     ///
-    /// The position of the internal file offset on success, or one of the raw [`SceError`] constant
-    /// values on error.
+    /// Returns the position of the internal file offset on success, error value otherwise.
     #[eabi(i_ii_i_rii)]
     #[nid(0x27EB27B8)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoLseek(fd: FileId, offset: i64, whence: Whence) -> i64;
+    pub fn sceIoLseek(fd: FileId, offset: i64, whence: Whence) -> SceResult64<u64>;
 
     /// Repositions the file offset of the file descriptor asynchronously.
     ///
@@ -707,12 +706,11 @@ extern "C" {
     ///
     /// # Return Value
     ///
-    /// The position of the internal file offset on success, or one of the raw [`SceError`] constant
-    /// values on error.
+    /// Returns the position of the internal file offset on success, error value otherwise.
     #[eabi(i_ii_i_rii)]
     #[nid(0x71B19E77)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoLseekAsync(fd: FileId, offset: i64, whence: Whence) -> i64;
+    pub fn sceIoLseekAsync(fd: FileId, offset: i64, whence: Whence) -> SceResult64<u64>;
 
     /// Repositions the file offset of the file descriptor. (32-bit mode).
     ///
@@ -1298,11 +1296,10 @@ extern "C" {
     ///
     /// # Return Value
     ///
-    /// The position of the internal file offset on success, or one of the raw [`SceError`] constant
-    /// values on error.
+    /// Returns the position of the internal file offset on success, error value otherwise.
     #[eabi(i_ii_i_rii)]
     #[nid(0x27EB27B8)]
-    pub fn sceIoLseek(fd: FileId, offset: i64, whence: Whence) -> i64;
+    pub fn sceIoLseek(fd: FileId, offset: i64, whence: Whence) -> SceResult64<u64>;
 
     /// Repositions the file offset of the file descriptor asynchronously.
     ///
@@ -1313,11 +1310,10 @@ extern "C" {
     ///
     /// # Return Value
     ///
-    /// The position of the internal file offset on success, or one of the raw [`SceError`] constant
-    /// values on error.
+    /// Returns the position of the internal file offset on success, error value otherwise.
     #[eabi(i_ii_i_rii)]
     #[nid(0x71B19E77)]
-    pub fn sceIoLseekAsync(fd: FileId, offset: i64, whence: Whence) -> i64;
+    pub fn sceIoLseekAsync(fd: FileId, offset: i64, whence: Whence) -> SceResult64<u64>;
 
     /// Repositions the file offset of the file descriptor. (32-bit mode).
     ///

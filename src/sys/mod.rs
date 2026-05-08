@@ -101,7 +101,7 @@ impl core::fmt::Debug for SceUid {
 ///
 /// # Cloning behavior
 ///
-/// Cloning this type is cheat, the reason it is not [`Copy`] is to incentivize the handling of the
+/// Cloning this type is cheap, the reason it is not [`Copy`] is to incentivize the handling of the
 /// error values.
 #[repr(transparent)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -262,7 +262,180 @@ impl<T: SceResultOk> SceResult<T> {
     }
 }
 
-/// Trait of types that can be the ok result of [`SceResult`].
+/// A type that represents the return value of some PSP OS APIs.
+///
+/// If its value is in the range of [`SceError`] ( 0xFFFFFFFF_80000001..=0xFFFFFFFF_FFFFFFFF), then
+/// it is an error result, and a success value otherwise.
+///
+/// # Cloning behavior
+///
+/// Cloning this type is cheap, the reason it is not [`Copy`] is to incentivize the handling of the
+/// error values.
+#[repr(transparent)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[must_use = "this `SceResult` may be an error value, which should be handled"]
+pub struct SceResult64<T>(u64, PhantomData<T>);
+
+impl<T> SceResult64<T> {
+    /// Create a new SceResult.
+    pub const fn new(raw: u64) -> Self {
+        SceResult64(raw, PhantomData)
+    }
+
+    /// Returns `true` if the result is a Ok value.
+    #[inline]
+    pub const fn is_ok(&self) -> bool {
+        matches!(self.as_inner(), 0..=0xFFFFFFFF_7FFFFFFF)
+    }
+
+    /// Returns `true` if the result is a error value.
+    #[inline]
+    pub const fn is_err(&self) -> bool {
+        matches!(self.as_inner(), 0xFFFFFFFF_80000001..=0xFFFFFFFF_FFFFFFFF)
+    }
+
+    /// Get the internal value of the result.
+    #[inline]
+    pub(crate) const fn as_inner(&self) -> u64 {
+        self.0
+    }
+}
+
+impl<T: SceResultOk> SceResult64<T> {
+    /// Turn the SceResult64 into a [`Result`] type.
+    pub fn into_result(self) -> Result<T, SceError> {
+        match self.as_inner() {
+            0..=0xFFFFFFFF_7FFFFFFF => unsafe { T::handle_ok_value64(self.as_inner()) },
+            0xFFFFFFFF_80000001..=0xFFFFFFFF_FFFFFFFF => {
+                // Only lower bits
+                let err = (self.as_inner() & 0xFFFFFFFF_00000000) as u32;
+                Err(unsafe { SceError::from_raw_unchecked(err) })
+            },
+            0xFFFFFFFF_80000000 => Err(SceError::INVALID_VALUE),
+        }
+    }
+
+    /// Converts from `SceResult` to [`Option<T>`].
+    ///
+    /// Converts `self` into an [`Option<T>`], consuming `self`,
+    /// and discarding the error, if any.
+    pub fn ok(self) -> Option<T> {
+        self.into_result().ok()
+    }
+
+    /// Converts from `SceResult<T>` to [`Option<SceError>`].
+    ///
+    /// Converts `self` into an [`Option<SceError>`], consuming `self`,
+    /// and discarding the success value, if any.
+    pub fn err(self) -> Option<SceError> {
+        self.into_result().err()
+    }
+
+    // Maps a `SceResult<T>` to `Result<U, E>` by applying a function to a
+    /// contained [`Ok`] value, leaving an [`Err`] value untouched.
+    ///
+    /// This function can be used to compose the results of two functions.
+    pub fn map<U, F>(self, op: F) -> Result<U, SceError>
+    where
+        F: FnOnce(T) -> U,
+    {
+        self.into_result().map(op)
+    }
+
+    /// Returns the provided default (if `Err`), or
+    /// applies a function to the contained value (if `Ok`).
+    ///
+    /// Arguments passed to `map_or` are eagerly evaluated; if you are passing
+    /// the result of a function call, it is recommended to use [`map_or_else`],
+    /// which is lazily evaluated.
+    ///
+    /// [`map_or_else`]: SceResult::map_or_else
+    pub fn map_or<U, F>(self, default: U, f: F) -> U
+    where
+        F: FnOnce(T) -> U,
+    {
+        self.into_result().map_or(default, f)
+    }
+
+    /// Maps a `SceResult<T>` to `U` by applying fallback function `default` to
+    /// a contained `Err` value, or function `f` to a contained `Ok` value.
+    ///
+    /// This function can be used to unpack a successful result
+    /// while handling an error.
+    pub fn map_or_else<U, D, F>(self, default: D, f: F) -> U
+    where
+        D: FnOnce(SceError) -> U,
+        F: FnOnce(T) -> U,
+    {
+        self.into_result().map_or_else(default, f)
+    }
+
+    /// Maps a `SceResult<T>` to a `U` by applying function `f` to the contained
+    /// value if the result is `Ok`], otherwise if `Err`, returns the
+    /// [default value] for the type `U`.
+    ///
+    /// [default value]: Default::default
+    pub fn map_or_default<U, F>(self, f: F) -> U
+    where
+        F: FnOnce(T) -> U,
+        U: Default,
+    {
+        match self.into_result() {
+            Ok(t) => f(t),
+            Err(_) => U::default(),
+        }
+    }
+
+    /// Maps a `ScwResult<T>` to `Result<T, F>` by applying a function to a
+    /// contained `Err` value, leaving an `Ok` value untouched.
+    ///
+    /// This function can be used to pass through a successful result while handling
+    /// an error.
+    pub fn map_err<F, O>(self, op: O) -> Result<T, F>
+    where
+        O: FnOnce(SceError) -> F,
+    {
+        self.into_result().map_err(op)
+    }
+
+    /// Calls a function with a reference to the contained value if `Ok` value.
+    ///
+    /// Returns the original result.
+    pub fn inspect<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&T),
+    {
+        if self.is_ok() {
+            // SAFETY: We know it is a Ok value
+            let res = unsafe { T::handle_ok_value64(self.as_inner()) };
+            if let Ok(inner) = res {
+                f(&inner)
+            }
+        }
+
+        self
+    }
+
+    /// Calls a function with a reference to the contained value if `Err` value.
+    ///
+    /// Returns the original result.
+    pub fn inspect_err<F>(self, f: F) -> Self
+    where
+        F: FnOnce(SceError),
+    {
+        if self.is_err() {
+            // Only lower bits
+            let err = (self.as_inner() & 0xFFFFFFFF_00000000) as u32;
+            // SAFETY: we know it is an error
+            let err = unsafe { SceError::from_raw_unchecked(err) };
+            f(err)
+        }
+
+        self
+    }
+}
+
+/// Trait of types that can be the ok result of [`SceResult`] or [`SceResult64`].
 ///
 /// # Safety
 ///
@@ -281,6 +454,22 @@ pub unsafe trait SceResultOk: Sized + crate::private::Sealed {
     ///
     /// For callers outside of [`SceResult`], it must ensure to pass a valid `ok_value`.
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError>;
+
+    /// Turn the Ok value range (`(0,0xFFFFFFFF_7FFFFFFF]`) into a result
+    ///
+    /// The `ok_value` is always in the ok value range when used by [`SceResult64`].
+    ///
+    /// # Safety
+    /// [`SceResult64`] methods that use it will ensure to pass only the valid range and the
+    /// implementation is free to not check for values outside of that range.
+    ///
+    /// For callers outside of [`SceResult64`], it must ensure to pass a valid `ok_value`.
+    unsafe fn handle_ok_value64(ok_value: u64) -> Result<Self, SceError> {
+        match ok_value {
+            0..=0x7FFFFFFF => unsafe { Self::handle_ok_value(ok_value as u32) },
+            _ => Err(SceError::INVALID_VALUE),
+        }
+    }
 }
 
 macro_rules! __result_ok_int {
@@ -310,6 +499,31 @@ unsafe impl SceResultOk for u32 {
         Ok(ok_value)
     }
 }
+unsafe impl SceResultOk for i64 {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        Ok(ok_value as i64)
+    }
+
+    unsafe fn handle_ok_value64(ok_value: u64) -> Result<Self, SceError> {
+        match self.as_inner() {
+            0..=0xFFFFFFFF_7FFFFFFF => Ok(u64::cast_signed(ok_value)),
+            _ => Err(SceError::INVALID_VALUE),
+        }
+    }
+}
+unsafe impl SceResultOk for u64 {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        Ok(ok_value as u64)
+    }
+
+    unsafe fn handle_ok_value64(ok_value: u64) -> Result<Self, SceError> {
+        match self.as_inner() {
+            0..=0xFFFFFFFF_7FFFFFFF => Ok(ok_value),
+            _ => Err(SceError::INVALID_VALUE),
+        }
+    }
+}
+
 #[cfg(target_pointer_width = "32")]
 unsafe impl SceResultOk for isize {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
