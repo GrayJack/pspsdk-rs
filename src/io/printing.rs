@@ -1,5 +1,4 @@
 use core::{
-    cell::SyncUnsafeCell,
     fmt,
     sync::atomic::{AtomicPtr, Ordering},
 };
@@ -262,15 +261,8 @@ pub fn _dprint(arguments: core::fmt::Arguments<'_>) {
 
 #[doc(hidden)]
 pub fn _print(arguments: core::fmt::Arguments<'_>) {
-    use alloc::vec::Vec;
-    use io_core::io::Write;
-    let mut buffer = Vec::with_capacity(256);
+    use crate::io::{self, Write};
 
-    let _ = write!(buffer, "{arguments}");
-
-    let out = crate::sys::io::sceKernelStdout();
-    let _res = unsafe { crate::sys::io::sceIoWrite(out, buffer.as_ptr(), buffer.len()) };
-    if _res.is_err() {
-        panic!("Failed to print to stdout");
-    }
+    let mut out = io::stdout_raw();
+    let _ = write!(out, "{}", arguments);
 }

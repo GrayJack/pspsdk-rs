@@ -4,6 +4,9 @@ use alloc::string::{String, ToString};
 #[doc(hidden)]
 pub mod printing;
 
+mod stdio;
+pub use stdio::{stderr_raw, stdin_raw, stdout_raw, StderrRaw, StdinRaw, StdoutRaw};
+
 // Re-export io_core::io
 pub use io_core::io::*;
 use io_core::os::OsFunctions;

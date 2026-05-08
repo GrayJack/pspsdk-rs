@@ -505,7 +505,7 @@ unsafe impl SceResultOk for i64 {
     }
 
     unsafe fn handle_ok_value64(ok_value: u64) -> Result<Self, SceError> {
-        match self.as_inner() {
+        match ok_value {
             0..=0xFFFFFFFF_7FFFFFFF => Ok(u64::cast_signed(ok_value)),
             _ => Err(SceError::INVALID_VALUE),
         }
@@ -517,7 +517,7 @@ unsafe impl SceResultOk for u64 {
     }
 
     unsafe fn handle_ok_value64(ok_value: u64) -> Result<Self, SceError> {
-        match self.as_inner() {
+        match ok_value {
             0..=0xFFFFFFFF_7FFFFFFF => Ok(ok_value),
             _ => Err(SceError::INVALID_VALUE),
         }

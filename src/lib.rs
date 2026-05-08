@@ -13,8 +13,7 @@
     std_internals,
     core_intrinsics,
     lang_items,
-    negative_impls,
-    sync_unsafe_cell
+    negative_impls
 )]
 #![cfg_attr(feature = "non-stub-code", feature(panic_unwind))]
 #![cfg_attr(feature = "std", feature(psp_std))]
@@ -44,6 +43,9 @@ pub mod sync;
 #[cfg(feature = "non-stub-code")]
 pub mod io;
 
+#[cfg(feature = "non-stub-code")]
+pub mod os;
+
 #[doc(hidden)]
 pub mod eabi;
 
@@ -60,6 +62,8 @@ mod private {
     impl Sealed for i16 {}
     impl Sealed for u32 {}
     impl Sealed for i32 {}
+    impl Sealed for u64 {}
+    impl Sealed for i64 {}
     impl Sealed for usize {}
     impl Sealed for isize {}
     impl<T> Sealed for *const T {}
