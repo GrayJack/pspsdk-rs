@@ -7,13 +7,9 @@ use core::{
 };
 
 use crate::{
-    sync::{
-        nonpoison::{TryLockError, TryLockResult},
-        RawMutex,
-    },
+    sync::RawMutex,
     sys::{
         sync as sys,
-        sync::ReentrantMutex,
         thread::{sceKernelGetThreadId, ThreadId},
     },
 };

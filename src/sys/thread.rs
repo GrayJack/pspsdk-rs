@@ -1,4 +1,4 @@
-use core::{ffi::c_void, mem::MaybeUninit};
+use core::ffi::c_void;
 
 use bitflag_attr::bitflag;
 use pspsdk_macros::psp_stub;
