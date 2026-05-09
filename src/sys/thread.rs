@@ -329,8 +329,8 @@ pub enum MutexAttributes {
     WaitByFIFO = 0x000,
     /// Uses thread priority logic in the wait queue.
     WaitByPriority = 0x100,
-    /// Allows recursive locks on a mutex by the thread that acquired the it.
-    RecursiveLock = 0x200,
+    /// Allows reentrant locks on a mutex by the thread that acquired the ID.
+    ReentrantLock = 0x200,
 }
 
 /// The information of the current state of a mutex.
@@ -2021,8 +2021,8 @@ extern "C" {
     #[eabi(i5)]
     #[nid(0x19CFF145)]
     pub unsafe fn sceKernelCreateLwMutex(
-        work_area: &mut MaybeUninit<LwMutexWorkArea>, name: *const u8, attr: MutexAttributes,
-        init_count: i32, options: Option<&LwMutexOptions>,
+        work_area: *mut LwMutexWorkArea, name: *const u8, attr: MutexAttributes, init_count: i32,
+        options: Option<&LwMutexOptions>,
     ) -> SceResult<()>;
 
     /// Deletes a lightweight mutex.

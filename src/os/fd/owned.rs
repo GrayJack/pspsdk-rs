@@ -22,7 +22,7 @@ use crate::{
 /// descriptor, so it can be used in FFI in places where a file descriptor is
 /// passed as an argument, it is not captured or consumed.
 ///
-/// This type does not have a [`ToOwned`][crate::borrow::ToOwned]
+/// This type does not have a [`ToOwned`][alloc::borrow::ToOwned]
 /// implementation. Calling `.to_owned()` on a variable of this type will call
 /// it on `&BorrowedFd` and use `Clone::clone()` like `ToOwned` does for all
 /// types implementing `Clone`. The result will be descriptor borrowed under
@@ -223,7 +223,8 @@ impl FromRawFd for OwnedFd {
     ///
     /// # Panics
     ///
-    /// Panics if the raw file descriptor is not in the valid range (same as [`SceUid`] range).
+    /// Panics if the raw file descriptor is not in the valid range (same as
+    /// [`SceUid`](crate::sys::SceUid) range).
     #[inline]
     #[track_caller]
     unsafe fn from_raw_fd(fd: RawFd) -> Self {
