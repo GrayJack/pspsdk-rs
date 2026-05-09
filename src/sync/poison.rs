@@ -7,6 +7,9 @@ use core::{
 mod mutex;
 pub use mutex::{MappedMutexGuard, Mutex, MutexGuard};
 
+mod once;
+pub use once::Once;
+
 pub struct Flag {
     #[cfg(panic = "unwind")]
     failed: AtomicBool,

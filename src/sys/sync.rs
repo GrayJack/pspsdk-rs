@@ -1,11 +1,16 @@
 use core::{
-    mem,
+    cell::UnsafeCell,
+    mem::{self, MaybeUninit},
     sync::atomic::{AtomicU32, Ordering},
 };
 
+use alloc::boxed::Box;
+
 use crate::{
+    allocators::PartitionAlloc,
     sync::RawMutex,
     sys::{
+        mem::MemoryPartitionId,
         thread::{
             sceKernelCreateMutex, sceKernelDeleteMutex, sceKernelLockMutex, sceKernelTryLockMutex,
             sceKernelUnlockMutex, MutexAttributes, MutexId,
@@ -13,6 +18,10 @@ use crate::{
         SceError,
     },
 };
+
+
+mod once;
+pub use once::{Once, OnceState};
 
 const UNINIT: u32 = u32::MAX;
 const INITIALIZING: u32 = u32::MAX - 1;
