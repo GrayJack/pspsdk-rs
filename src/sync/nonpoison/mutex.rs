@@ -15,6 +15,11 @@ use crate::{
     sys::sync as sys,
 };
 
+type DefaultMutex = cfg_select! {
+    feature = "kernel" => sys::Mutex,
+    _ => sys::LwMutex,
+};
+
 /// A mutual exclusion primitive useful for protecting shared data
 ///
 /// This mutex will block threads waiting for the lock to become available. The
@@ -136,7 +141,7 @@ use crate::{
 ///
 /// assert_eq!(*res_mutex.lock(), 800);
 /// ```
-pub struct Mutex<T: ?Sized, M = sys::Mutex> {
+pub struct Mutex<T: ?Sized, M = DefaultMutex> {
     inner: M,
     data: UnsafeCell<T>,
 }
@@ -162,7 +167,7 @@ impl<T: ?Sized, M> core::panic::RefUnwindSafe for Mutex<T, M> {}
 /// [`try_lock`]: Mutex::try_lock
 #[must_use = "if unused the Mutex will immediately unlock"]
 #[clippy::has_significant_drop]
-pub struct MutexGuard<'a, T: ?Sized + 'a, M: RawMutex = sys::Mutex> {
+pub struct MutexGuard<'a, T: ?Sized + 'a, M: RawMutex = DefaultMutex> {
     lock: &'a Mutex<T, M>,
 }
 
@@ -189,7 +194,7 @@ unsafe impl<T: ?Sized + Sync, M: RawMutex> Sync for MutexGuard<'_, T, M> {}
 /// [`Condvar`]: crate::sync::nonpoison::Condvar
 #[must_use = "if unused the Mutex will immediately unlock"]
 #[clippy::has_significant_drop]
-pub struct MappedMutexGuard<'a, T: ?Sized + 'a, M: RawMutex = sys::Mutex> {
+pub struct MappedMutexGuard<'a, T: ?Sized + 'a, M: RawMutex = DefaultMutex> {
     // NB: we use a pointer instead of `&'a mut T` to avoid `noalias` violations, because a
     // `MappedMutexGuard` argument doesn't hold uniqueness for its whole scope, only until it
     // drops. `NonNull` is covariant over `T`, so we add a `PhantomData<&'a mut T>` field
@@ -215,7 +220,7 @@ impl<T> Mutex<T> {
     #[inline]
     pub const fn new(t: T) -> Mutex<T> {
         Mutex {
-            inner: sys::Mutex::new(),
+            inner: DefaultMutex::new(),
             data: UnsafeCell::new(t),
         }
     }

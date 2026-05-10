@@ -1,14 +1,22 @@
 use core::{
-    mem,
-    sync::atomic::{AtomicU32, Ordering},
+    mem, ptr,
+    sync::atomic::{AtomicPtr, AtomicU32, Ordering},
 };
 
+use alloc::boxed::Box;
+
 use crate::{
+    allocators::PartitionAlloc,
     sync::RawMutex,
     sys::{
+        mem::MemoryPartitionId,
         thread::{
-            sceKernelCreateMutex, sceKernelDeleteMutex, sceKernelLockMutex, sceKernelTryLockMutex,
-            sceKernelUnlockMutex, MutexAttributes, MutexId,
+            _sceKernelLockLwMutex, _sceKernelTryLockLwMutex, _sceKernelUnlockLwMutex,
+            sceKernelCreateLwMutex, sceKernelCreateMutex, sceKernelCreateSema,
+            sceKernelDeleteLwMutex, sceKernelDeleteMutex, sceKernelDeleteSema, sceKernelLockMutex,
+            sceKernelPollSema, sceKernelSignalSema, sceKernelTryLockMutex, sceKernelUnlockMutex,
+            sceKernelWaitSema, LwMutexWorkArea, MutexAttributes, MutexId, SemaId,
+            SemaphoreAttributes,
         },
         SceError,
     },
@@ -17,6 +25,14 @@ use crate::{
 const UNINIT: u32 = u32::MAX;
 const INITIALIZING: u32 = u32::MAX - 1;
 
+/// A raw mutex based on [`sys::thread`](crate::sys::thread) mutex API.
+///
+/// This is the more general mutex, handled by the kernel. It has a downside to be slower than
+/// [`LwMutex`].
+///
+/// Another niche downside of this type is that the required API was only introduced on PSP firmware
+/// version 2.70, so if the software was made to run on lower firmware can't use this kind of mutex.
+/// An alternative is to use [`SemaMutex`] (always available, i.e. since 1.00).
 pub struct Mutex {
     id: AtomicU32,
 }
@@ -31,7 +47,7 @@ impl Mutex {
 
     #[inline]
     pub fn try_lock(&self) -> bool {
-        let Ok(id) = self.get_id() else {
+        let Some(id) = self.get_id() else {
             return false;
         };
 
@@ -41,9 +57,7 @@ impl Mutex {
 
     #[inline]
     pub fn lock(&self) {
-        let id = self
-            .get_id()
-            .unwrap_or_else(|err| panic!("failed to init mutex: {:#X}", err.as_inner()));
+        let id = self.get_id().unwrap_or_else(|| panic!("failed to init mutex"));
 
         let res = sceKernelLockMutex(id, 1, None);
         if res.is_err() {
@@ -53,7 +67,7 @@ impl Mutex {
 
     #[inline]
     pub unsafe fn unlock(&self) {
-        let Ok(id) = self.get_id() else {
+        let Some(id) = self.get_id() else {
             return;
         };
 
@@ -63,8 +77,10 @@ impl Mutex {
 
 impl Mutex {
     #[inline(never)]
-    fn get_id(&self) -> Result<MutexId, SceError> {
-        loop {
+    fn get_id(&self) -> Option<MutexId> {
+        let mut i = 0;
+        while i < 0x10 {
+            i += 1;
             match self.id.load(Ordering::Acquire) {
                 UNINIT => {
                     if self
@@ -72,7 +88,10 @@ impl Mutex {
                         .compare_exchange(UNINIT, INITIALIZING, Ordering::AcqRel, Ordering::Acquire)
                         .is_ok()
                     {
-                        return self.create_id();
+                        match self.create_id() {
+                            Ok(id) => return Some(id),
+                            Err(_) => continue,
+                        }
                     }
                 },
                 INITIALIZING => {
@@ -80,10 +99,12 @@ impl Mutex {
                 },
                 raw_id => {
                     let id = unsafe { mem::transmute::<u32, MutexId>(raw_id) };
-                    return Ok(id);
+                    return Some(id);
                 },
             }
         }
+
+        None
     }
 
     /// Creates the mutex and store its UID.
@@ -140,6 +161,10 @@ impl RawMutex for Mutex {
     }
 }
 
+/// A raw reentrant mutex based on [`sys::thread`](crate::sys::thread) mutex API.
+///
+/// Implementation wise, it is the same as [`Mutex`], but enables the flag to be recursive/reentrant
+/// on creation/initialization.
 pub struct ReentrantMutex {
     id: AtomicU32,
 }
@@ -154,7 +179,7 @@ impl ReentrantMutex {
 
     #[inline]
     pub fn try_lock(&self) -> bool {
-        let Ok(id) = self.get_id() else {
+        let Some(id) = self.get_id() else {
             return false;
         };
 
@@ -164,9 +189,7 @@ impl ReentrantMutex {
 
     #[inline]
     pub fn lock(&self) {
-        let id = self
-            .get_id()
-            .unwrap_or_else(|err| panic!("failed to init mutex: {:#X}", err.as_inner()));
+        let id = self.get_id().unwrap_or_else(|| panic!("failed to init mutex"));
 
         let res = sceKernelLockMutex(id, 1, None);
         if res.is_err() {
@@ -176,7 +199,7 @@ impl ReentrantMutex {
 
     #[inline]
     pub unsafe fn unlock(&self) {
-        let Ok(id) = self.get_id() else {
+        let Some(id) = self.get_id() else {
             return;
         };
 
@@ -186,8 +209,10 @@ impl ReentrantMutex {
 
 impl ReentrantMutex {
     #[inline(never)]
-    fn get_id(&self) -> Result<MutexId, SceError> {
-        loop {
+    fn get_id(&self) -> Option<MutexId> {
+        let mut i = 0;
+        while i < 0x10 {
+            i += 1;
             match self.id.load(Ordering::Acquire) {
                 UNINIT => {
                     if self
@@ -195,7 +220,10 @@ impl ReentrantMutex {
                         .compare_exchange(UNINIT, INITIALIZING, Ordering::AcqRel, Ordering::Acquire)
                         .is_ok()
                     {
-                        return self.create_id();
+                        match self.create_id() {
+                            Ok(id) => return Some(id),
+                            Err(_) => continue,
+                        }
                     }
                 },
                 INITIALIZING => {
@@ -203,10 +231,12 @@ impl ReentrantMutex {
                 },
                 raw_id => {
                     let id = unsafe { mem::transmute::<u32, MutexId>(raw_id) };
-                    return Ok(id);
+                    return Some(id);
                 },
             }
         }
+
+        None
     }
 
     /// Creates the mutex and store its UID.
@@ -268,130 +298,275 @@ impl RawMutex for ReentrantMutex {
     }
 }
 
-// pub struct LwMutex {
-//     state: AtomicU32,
-//     work_area: UnsafeCell<MaybeUninit<Box<LwMutexWorkArea, PartitionAlloc>>>,
-// }
+/// A raw lightweight mutex based on [`sys::thread`](crate::sys::thread) lightweight mutex API.
+///
+/// This implementation has the advantage to be faster and more lightweight process-wise, but it has
+/// the downside of the entire mutex structure requiring to live in user RAM partition (this is
+/// automatically handled by this type), i.e. it uses slightly more user RAM space.
+///
+/// Another niche downside of this type is that the required API was only introduced on PSP firmware
+/// version 3.95, so if the software was made to run on lower firmware can't use this kind of mutex.
+/// An alternative is to use either [`Mutex`] (available on firmware `>= 2.70`) or [`SemaMutex`]
+/// (always available, i.e. since 1.00).
+pub struct LwMutex {
+    state: AtomicU32,
+    work_area: AtomicPtr<LwMutexWorkArea>,
+}
 
-// impl LwMutex {
-//     pub const fn new() -> Self {
-//         Self {
-//             state: AtomicU32::new(UNINIT),
-//             work_area: UnsafeCell::new(MaybeUninit::uninit()),
-//         }
-//     }
+impl LwMutex {
+    pub const fn new() -> Self {
+        Self {
+            state: AtomicU32::new(UNINIT),
+            work_area: AtomicPtr::new(ptr::null_mut()),
+        }
+    }
 
-//     pub fn lock(&self) {
-//         let work_area = self
-//             .get_work_area()
-//             .unwrap_or_else(|err| panic!("failed to init lwmutex: {:#X}", err.as_inner()));
+    pub fn lock(&self) {
+        let work_area = self.get_work_area().unwrap_or_else(|| panic!("failed to init lwmutex"));
 
-//         let res = _sceKernelLockLwMutex(work_area, 1, None);
-//         if res.is_err() {
-//             panic!("failed to lock lwmutex: {:#X}", res.as_inner());
-//         }
-//     }
+        let res = _sceKernelLockLwMutex(work_area, 1, None);
+        if res.is_err() {
+            panic!("failed to lock lwmutex: {:#X}", res.as_inner());
+        }
+    }
 
-//     pub fn try_lock(&self) -> bool {
-//         let Ok(work_area) = self.get_work_area() else {
-//             return false;
-//         };
+    pub fn try_lock(&self) -> bool {
+        let Some(work_area) = self.get_work_area() else {
+            return false;
+        };
 
-//         _sceKernelTryLockLwMutex(work_area, 1).into_result().is_ok()
-//     }
+        _sceKernelTryLockLwMutex(work_area, 1).into_result().is_ok()
+    }
 
-//     pub unsafe fn unlock(&self) {
-//         let Ok(work_area) = self.get_work_area() else {
-//             return;
-//         };
+    pub unsafe fn unlock(&self) {
+        let Some(work_area) = self.get_work_area() else {
+            return;
+        };
 
-//         let _ = _sceKernelUnlockLwMutex(work_area, 1);
-//     }
-// }
+        let _ = _sceKernelUnlockLwMutex(work_area, 1);
+    }
+}
 
-// impl LwMutex {
-//     fn get_work_area(&self) -> Result<&mut LwMutexWorkArea, SceError> {
-//         loop {
-//             match self.state.load(Ordering::Acquire) {
-//                 UNINIT => {
-//                     if self
-//                         .state
-//                         .compare_exchange(UNINIT, INITIALIZING, Ordering::AcqRel,
-// Ordering::Acquire)                         .is_ok()
-//                     {
-//                         return self.create_work_area();
-//                     }
-//                 },
-//                 INITIALIZING => core::hint::spin_loop(),
-//                 _ => {
-//                     let work_area = unsafe { &mut *(*self.work_area.get()).as_mut_ptr() };
-//                     return Ok(work_area);
-//                 },
-//             }
-//         }
-//     }
+impl LwMutex {
+    fn get_work_area(&self) -> Option<&mut LwMutexWorkArea> {
+        let mut i = 0;
+        while i < 0x10 {
+            i += 1;
+            match self.state.load(Ordering::Acquire) {
+                UNINIT => {
+                    if self
+                        .state
+                        .compare_exchange(UNINIT, INITIALIZING, Ordering::AcqRel, Ordering::Acquire)
+                        .is_ok()
+                    {
+                        match self.create_work_area() {
+                            Ok(wa) => return Some(wa),
+                            Err(_) => continue,
+                        }
+                    }
+                },
+                INITIALIZING => core::hint::spin_loop(),
+                _ => {
+                    let work_area = self.work_area.load(Ordering::Acquire);
+                    debug_assert!(!work_area.is_null());
+                    let work_area = unsafe { work_area.as_mut_unchecked() };
+                    return Some(work_area);
+                },
+            }
+        }
+        None
+    }
 
-//     #[cold]
-//     fn create_work_area(&self) -> Result<&mut LwMutexWorkArea, SceError> {
-//         let work_area = unsafe { self.work_area.get() };
-//         unsafe {
-//             (*work_area).write(Box::new_in(
-//                 LwMutexWorkArea::default_new(),
-//                 PartitionAlloc::new(MemoryPartitionId::MainUser),
-//             ))
-//         };
-//         let work_area = unsafe { work_area };
+    #[cold]
+    fn create_work_area(&self) -> Result<&mut LwMutexWorkArea, SceError> {
+        let work_area = Box::new_in(
+            LwMutexWorkArea::default_new(),
+            PartitionAlloc::new(MemoryPartitionId::MainUser),
+        );
 
-//         let created = unsafe {
-//             sceKernelCreateLwMutex(
-//                 work_area,
-//                 c"SDK_LW_MUTEX".as_ptr().cast(),
-//                 MutexAttributes::default(),
-//                 0,
-//                 None,
-//             )
-//         };
+        let (work_area, _) = Box::into_raw_with_allocator(work_area);
 
-//         match created.into_result() {
-//             Ok(()) => {
-//                 self.state.store(0, Ordering::Release);
-//                 Ok(unsafe { &mut *work_area.as_mut_ptr() })
-//             },
-//             Err(err) => {
-//                 self.state.store(UNINIT, Ordering::Release);
-//                 Err(err)
-//             },
-//         }
-//     }
-// }
+        self.work_area.store(work_area, Ordering::Release);
 
-// impl Drop for LwMutex {
-//     fn drop(&mut self) {
-//         let state = self.state.load(Ordering::Relaxed);
-//         if state != UNINIT && state != INITIALIZING {
-//             let work_area = unsafe { &mut *self.work_area.get() };
-//             let work_area = unsafe { &mut *work_area.as_mut_ptr() };
-//             let res = sceKernelDeleteLwMutex(work_area);
+        let created = unsafe {
+            sceKernelCreateLwMutex(
+                work_area,
+                c"SDK_LW_MUTEX".as_ptr().cast(),
+                MutexAttributes::default(),
+                0,
+                None,
+            )
+        };
 
-//             // Keep Drop non-panicking in release, but catch issues in debug.
-//             debug_assert!(res.is_ok(), "failed to delete mutex: {:#X}", res.as_inner());
-//         }
-//     }
-// }
+        match created.into_result() {
+            Ok(()) => {
+                self.state.store(0, Ordering::Release);
+                Ok(unsafe { &mut *work_area })
+            },
+            Err(err) => {
+                self.state.store(UNINIT, Ordering::Release);
+                // drop box
+                let _box = unsafe {
+                    Box::from_raw_in(work_area, PartitionAlloc::new(MemoryPartitionId::MainUser))
+                };
 
-// impl crate::private::Sealed for LwMutex {}
-// impl RawMutex for LwMutex {
-//     const NEW: Self = Self::new();
+                drop(_box);
+                self.work_area.store(ptr::null_mut(), Ordering::Release);
+                Err(err)
+            },
+        }
+    }
+}
 
-//     fn lock(&self) {
-//         self.lock();
-//     }
+impl Drop for LwMutex {
+    fn drop(&mut self) {
+        let state = self.state.load(Ordering::Relaxed);
+        let work_area = self.work_area.load(Ordering::Relaxed);
+        if state != UNINIT && state != INITIALIZING && !work_area.is_null() {
+            let mut work_area = unsafe {
+                Box::from_raw_in(work_area, PartitionAlloc::new(MemoryPartitionId::MainUser))
+            };
+            let res = sceKernelDeleteLwMutex(work_area.as_mut());
 
-//     fn try_lock(&self) -> bool {
-//         self.try_lock()
-//     }
+            // Keep Drop non-panicking in release, but catch issues in debug.
+            debug_assert!(res.is_ok(), "failed to delete mutex: {:#X}", res.as_inner());
+        }
+    }
+}
 
-//     unsafe fn unlock(&self) {
-//         unsafe { self.unlock() };
-//     }
-// }
+impl crate::private::Sealed for LwMutex {}
+impl RawMutex for LwMutex {
+    const NEW: Self = Self::new();
+
+    fn lock(&self) {
+        self.lock();
+    }
+
+    fn try_lock(&self) -> bool {
+        self.try_lock()
+    }
+
+    unsafe fn unlock(&self) {
+        unsafe { self.unlock() };
+    }
+}
+
+/// A raw mutex based on [`sys::thread`](crate::sys::thread) semaphore API.
+///
+/// This type exists because [`Mutex`] and [`LwMutex`] related System API are not available on all
+/// PSP firmware versions; this on the other hand, is available since the first PSP firmware
+/// version. Use this in the case you are constrained on the firmware version.
+pub struct SemaMutex {
+    sema: AtomicU32,
+}
+
+impl SemaMutex {
+    pub const fn new() -> Self {
+        Self {
+            sema: AtomicU32::new(UNINIT),
+        }
+    }
+
+    pub fn lock(&self) {
+        let id = self.get_id().unwrap_or_else(|| panic!("failed to init mutex"));
+
+        let res = unsafe { sceKernelWaitSema(id, 1, None) };
+        if res.is_err() {
+            panic!("failed to lock mutex: {:#X}", res.as_inner());
+        }
+    }
+
+    pub fn try_lock(&self) -> bool {
+        let Some(id) = self.get_id() else {
+            return false;
+        };
+
+        unsafe { sceKernelPollSema(id, 1) }.into_result().is_ok()
+    }
+
+    pub unsafe fn unlock(&self) {
+        let Some(id) = self.get_id() else {
+            return;
+        };
+
+        let _ = sceKernelSignalSema(id, 1);
+    }
+}
+
+impl SemaMutex {
+    fn get_id(&self) -> Option<SemaId> {
+        let mut i = 0;
+        while i < 0x10 {
+            i += 1;
+            match self.sema.load(Ordering::Acquire) {
+                UNINIT => {
+                    if self
+                        .sema
+                        .compare_exchange(UNINIT, INITIALIZING, Ordering::AcqRel, Ordering::Acquire)
+                        .is_ok()
+                    {
+                        match self.create_id() {
+                            Ok(id) => return Some(id),
+                            Err(_) => continue,
+                        }
+                    }
+                },
+                INITIALIZING => core::hint::spin_loop(),
+                raw => return Some(unsafe { SemaId::from_raw_unchecked(raw) }),
+            }
+        }
+        None
+    }
+
+    #[cold]
+    fn create_id(&self) -> Result<SemaId, SceError> {
+        let created = unsafe {
+            sceKernelCreateSema(
+                c"SDK_SEMA_MUTEX".as_ptr().cast(),
+                SemaphoreAttributes::default(),
+                1,
+                1,
+                None,
+            )
+        };
+
+        match created.into_result() {
+            Ok(id) => {
+                self.sema.store(id.as_inner(), Ordering::Release);
+                Ok(id)
+            },
+            Err(err) => {
+                self.sema.store(UNINIT, Ordering::Release);
+                Err(err)
+            },
+        }
+    }
+}
+
+impl Drop for SemaMutex {
+    fn drop(&mut self) {
+        let raw = self.sema.load(Ordering::Relaxed);
+        if raw != UNINIT && raw != INITIALIZING {
+            let id = unsafe { SemaId::from_raw_unchecked(raw) };
+            let res = sceKernelDeleteSema(id);
+            debug_assert!(res.is_ok(), "failed to delete semaphore mutex: {:#X}", res.as_inner());
+        }
+    }
+}
+
+impl Sealed for SemaMutex {}
+impl RawMutex for SemaMutex {
+    const NEW: Self = Self::new();
+
+    fn lock(&self) {
+        self.lock();
+    }
+
+    fn try_lock(&self) -> bool {
+        self.try_lock()
+    }
+
+    unsafe fn unlock(&self) {
+        unsafe { self.unlock() };
+    }
+}
