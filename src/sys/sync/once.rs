@@ -101,7 +101,7 @@ impl Once {
     #[cold]
     #[track_caller]
     pub fn wait(&self, ignore_poisoning: bool) {
-        let Ok(flag) = self.get_event_flag() else {
+        let Some(flag) = self.get_event_flag() else {
             return;
         };
         let wait_mask = EVENT_COMPLETE | EVENT_POISONED;
@@ -153,7 +153,7 @@ impl Once {
                         continue;
                     }
 
-                    let Ok(flag) = self.get_event_flag() else {
+                    let Some(flag) = self.get_event_flag() else {
                         continue;
                     };
                     let _ = sceKernelClearEventFlag(flag, EVENT_COMPLETE | EVENT_POISONED);
@@ -197,8 +197,10 @@ impl Once {
 
 
 impl Once {
-    fn get_event_flag(&self) -> Result<EventFlagId, SceError> {
-        loop {
+    fn get_event_flag(&self) -> Option<EventFlagId> {
+        let mut i = 0;
+        while i < 0x10 {
+            i += 1;
             match self.event_flag_id.load(Ordering::Acquire) {
                 UNINIT_FLAG => {
                     if self
@@ -211,13 +213,17 @@ impl Once {
                         )
                         .is_ok()
                     {
-                        return self.create_event_flag();
+                        match self.create_event_flag() {
+                            Ok(id) => return Some(id),
+                            Err(_) => continue,
+                        }
                     }
                 },
                 INITIALIZING_FLAG => core::hint::spin_loop(),
-                raw => return Ok(unsafe { EventFlagId::from_raw_unchecked(raw) }),
+                raw => return Some(unsafe { EventFlagId::from_raw_unchecked(raw) }),
             }
         }
+        None
     }
 
     #[cold]
@@ -244,7 +250,7 @@ impl Once {
     }
 
     fn signal_waiters(&self, new_state: u32) {
-        let Ok(flag) = self.get_event_flag() else {
+        let Some(flag) = self.get_event_flag() else {
             return;
         };
 

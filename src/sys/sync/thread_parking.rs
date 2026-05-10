@@ -86,6 +86,7 @@ impl Parker {
         let id = self.ev_flag.load(Ordering::Acquire);
         let mut i = 0;
         while i < 0x10 {
+            i += 1;
             match self.ev_flag.load(Ordering::Acquire) {
                 UNINIT => {
                     if self
@@ -102,7 +103,6 @@ impl Parker {
                 INITIALIZING => core::hint::spin_loop(),
                 raw => return Some(unsafe { EventFlagId::from_raw_unchecked(raw) }),
             }
-            i += 1;
         }
 
         None
@@ -125,7 +125,7 @@ impl Parker {
                 Ok(id)
             },
             Err(err) => {
-                self.ev_flag.store(UNINIT_FLAG, Ordering::Release);
+                self.ev_flag.store(UNINIT, Ordering::Release);
                 Err(err)
             },
         }
