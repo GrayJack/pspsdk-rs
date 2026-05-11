@@ -10,6 +10,9 @@ pub use mutex::{MappedMutexGuard, Mutex, MutexGuard};
 mod once;
 pub use once::Once;
 
+mod condvar;
+pub use condvar::Condvar;
+
 pub struct Flag {
     #[cfg(panic = "unwind")]
     failed: AtomicBool,

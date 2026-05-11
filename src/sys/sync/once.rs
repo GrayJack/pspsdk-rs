@@ -270,7 +270,10 @@ impl Drop for Once {
 
         if raw_id != UNINIT_FLAG && raw_id != INITIALIZING_FLAG {
             let id = unsafe { EventFlagId::from_raw_unchecked(raw_id) };
-            let _ = sceKernelDeleteEventFlag(id);
+            let res = sceKernelDeleteEventFlag(id);
+
+            // Keep Drop non-panicking in release, but catch issues in debug.
+            debug_assert!(res.is_ok(), "failed to delete once event flag: {:#X}", res.as_inner());
         }
     }
 }

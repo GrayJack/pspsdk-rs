@@ -9,6 +9,9 @@ pub use reentrant_lock::{ReentrantLock, ReentrantLockGuard};
 mod once;
 pub use once::Once;
 
+mod condvar;
+pub use condvar::Condvar;
+
 /// An enumeration of possible errors associated with a [`TryLockResult`] which
 /// can occur while trying to acquire a lock, from the [`try_lock`] method on a
 /// [`Mutex`] or the [`try_read`] and [`try_write`] methods on an [`RwLock`].
