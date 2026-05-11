@@ -1,3 +1,8 @@
+#[cfg(feature = "non-stub-code")]
+mod non_stub;
+#[cfg(feature = "non-stub-code")]
+pub(crate) use non_stub::{Instant, SystemTime, UNIX_EPOCH};
+
 /// The 64-bit system clock type.
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]

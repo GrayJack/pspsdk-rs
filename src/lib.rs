@@ -46,6 +46,9 @@ pub mod io;
 #[cfg(feature = "non-stub-code")]
 pub mod os;
 
+#[cfg(feature = "non-stub-code")]
+pub mod time;
+
 #[doc(hidden)]
 pub mod eabi;
 
