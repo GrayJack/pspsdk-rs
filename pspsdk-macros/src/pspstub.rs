@@ -63,28 +63,31 @@ impl ToTokens for PspStub {
             quote! {::pspsdk}
         };
 
-        let mod_name = Ident::new(&format!("__{}", lib_name.value()), tokens.span());
-        let resident_var = Ident::new(&format!("__{}_RESIDENT", lib_name.value()), tokens.span());
+        let mod_name = Ident::new(&format!("__{}", lib_name.value()), Span::mixed_site());
+        let resident_var =
+            Ident::new(&format!("__{}_RESIDENT", lib_name.value()), Span::mixed_site());
         let resident_section =
-            LitStr::new(&format!(".rodata.sceResident.{}", lib_name.value()), tokens.span());
+            LitStr::new(&format!(".rodata.sceResident.{}", lib_name.value()), Span::mixed_site());
 
-        let nid_start_var = Ident::new(&format!("__{}_NID_START", lib_name.value()), tokens.span());
+        let nid_start_var =
+            Ident::new(&format!("__{}_NID_START", lib_name.value()), Span::mixed_site());
         let nid_start_section =
-            LitStr::new(&format!(".rodata.sceNid.{}", lib_name.value()), tokens.span());
+            LitStr::new(&format!(".rodata.sceNid.{}", lib_name.value()), Span::mixed_site());
 
         let fn_stub_start_var =
-            Ident::new(&format!("__{}_FNSTUB_START", lib_name.value()), tokens.span());
+            Ident::new(&format!("__{}_FNSTUB_START", lib_name.value()), Span::mixed_site());
         let fn_stub_start_section =
-            LitStr::new(&format!(".sceStub.text.{}", lib_name.value()), tokens.span());
+            LitStr::new(&format!(".sceStub.text.{}", lib_name.value()), Span::mixed_site());
 
         let var_stub_start_var =
-            Ident::new(&format!("__{}_VARSTUB_START", lib_name.value()), tokens.span());
+            Ident::new(&format!("__{}_VARSTUB_START", lib_name.value()), Span::mixed_site());
         let var_stub_start_section =
-            LitStr::new(&format!(".rodata.sceVstub.{}", lib_name.value()), tokens.span());
+            LitStr::new(&format!(".rodata.sceVstub.{}", lib_name.value()), Span::mixed_site());
 
-        let stub_entry_var = Ident::new(&format!("__{}_STUB", lib_name.value()), tokens.span());
+        let stub_entry_var =
+            Ident::new(&format!("__{}_STUB", lib_name.value()), Span::mixed_site());
         let stub_entry_section =
-            LitStr::new(&format!(".lib.stub.entry.{}", lib_name.value()), tokens.span());
+            LitStr::new(&format!(".lib.stub.entry.{}", lib_name.value()), Span::mixed_site());
 
         let var_stub_count = items.iter().filter(|e| e.is_static()).count() as u8;
         let fn_stub_count = items.iter().filter(|e| e.is_func()).count() as u16;
@@ -114,19 +117,19 @@ impl ToTokens for PspStub {
 
                 let fn_nid_section = LitStr::new(
                     &format!(".rodata.sceNid.{}.{}", lib_name.value(), sig.ident),
-                    tokens.span(),
+                    Span::mixed_site(),
                 );
-                let fn_nid_var = Ident::new(&format!("__{}_NID", sig.ident), tokens.span());
+                let fn_nid_var = Ident::new(&format!("__{}_NID", sig.ident), Span::mixed_site());
                 let fn_stub_section = LitStr::new(
                     &format!(".sceStub.text.{}.{}", lib_name.value(), sig.ident),
-                    tokens.span(),
+                    Span::mixed_site(),
                 );
-                let fn_stub_var = Ident::new(&format!("__{}_stub", sig.ident), tokens.span());
+                let fn_stub_var = Ident::new(&format!("__{}_stub", sig.ident), Span::mixed_site());
 
                 let mut inner_sig = sig.clone();
                 inner_sig.ident = fn_stub_var.clone();
 
-                let fn_libname_link = LitStr::new(&fn_stub_var.to_string(), tokens.span());
+                let fn_libname_link = LitStr::new(&fn_stub_var.to_string(), Span::mixed_site());
 
                 let stub_vars = quote! {
                     #(#cfg_attrs)*
