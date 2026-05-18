@@ -554,7 +554,7 @@ impl Drop for SemaMutex {
     }
 }
 
-impl Sealed for SemaMutex {}
+impl crate::private::Sealed for SemaMutex {}
 impl RawMutex for SemaMutex {
     const NEW: Self = Self::new();
 

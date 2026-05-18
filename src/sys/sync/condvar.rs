@@ -20,13 +20,13 @@ const UNINIT: u32 = u32::MAX;
 const INITIALIZING: u32 = u32::MAX - 1;
 
 
-pub struct CondVar {
+pub struct Condvar {
     lock: SemaMutex,
     queue: AtomicU32,
     waiters: AtomicU32,
 }
 
-impl CondVar {
+impl Condvar {
     pub const fn new() -> Self {
         Self {
             lock: SemaMutex::new(),
@@ -69,7 +69,7 @@ impl CondVar {
                         remaining as i32
                     };
 
-                    let res = sceKernelSignalSema(id, to_signal);
+                    let res = sceKernelSignalSema(queue, to_signal);
                     debug_assert!(
                         res.is_ok(),
                         "failed to signal the queue semaphore: {:#X}",
@@ -147,7 +147,7 @@ impl CondVar {
     }
 }
 
-impl CondVar {
+impl Condvar {
     fn get_queue(&self) -> Option<SemaId> {
         let mut i = 0;
 
@@ -198,7 +198,7 @@ impl CondVar {
     }
 }
 
-impl Drop for CondVar {
+impl Drop for Condvar {
     fn drop(&mut self) {
         let raw = self.queue.load(Ordering::Relaxed);
         if raw != UNINIT && raw != INITIALIZING {
