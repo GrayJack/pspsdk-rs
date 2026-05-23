@@ -5,7 +5,10 @@ use alloc::string::{String, ToString};
 pub mod printing;
 
 mod stdio;
-pub use stdio::{stderr_raw, stdin_raw, stdout_raw, StderrRaw, StdinRaw, StdoutRaw};
+pub use stdio::{
+    stderr, stderr_raw, stdin, stdin_raw, stdout, stdout_raw, Stderr, StderrLock, StderrRaw, Stdin,
+    StdinLock, StdinRaw, Stdout, StdoutLock, StdoutRaw,
+};
 
 // Re-export io_core::io
 pub use io_core::io::*;

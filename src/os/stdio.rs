@@ -6,6 +6,8 @@ use crate::{
     sys::io::{sceKernelStderr, sceKernelStdin, sceKernelStdout},
 };
 
+pub const STDIN_BUF_SIZE: usize = 256;
+
 pub struct Stdin;
 pub struct Stdout;
 pub struct Stderr;
