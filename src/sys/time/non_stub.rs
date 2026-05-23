@@ -1,6 +1,9 @@
 use core::time::Duration;
 
-use crate::sys::thread::sceKernelGetSystemTimeWide;
+use crate::sys::{
+    thread::sceKernelGetSystemTimeWide,
+    time::{sceRtcGetCurrentTick, sceRtcGetTickResolution},
+};
 
 // PSP epoch is 0001-01-01 00:00:00 UTC.
 // Unix epoch is 1970-01-01 00:00:00 UTC.
@@ -19,7 +22,20 @@ impl SystemTime {
     pub const MIN: Self = Self(Duration::ZERO);
 
     pub fn now() -> Self {
-        todo!()
+        let mut tick = 0;
+        let res = sceRtcGetCurrentTick(&mut tick);
+        debug_assert!(res.is_ok(), "failed to get current tick: {:#X}", res.as_inner());
+        let resolution = sceRtcGetTickResolution() as u64;
+
+        if resolution > 0 {
+            let seconds = tick / resolution;
+            let remaining = tick % resolution;
+            let nanosecs = (remaining * 1_000_000_000) / resolution;
+            Self(Duration::new(seconds, nanosecs as u32))
+        } else {
+            // Assume microseconds resolution as fallback
+            Self(Duration::from_micros(tick))
+        }
     }
 
     pub fn sub_time(&self, other: &SystemTime) -> Result<Duration, Duration> {
