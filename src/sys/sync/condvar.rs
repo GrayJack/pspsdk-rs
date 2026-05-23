@@ -203,7 +203,7 @@ impl Drop for Condvar {
         let raw = self.queue.load(Ordering::Relaxed);
         if raw != UNINIT && raw != INITIALIZING {
             let id = unsafe { SemaId::from_raw_unchecked(raw) };
-            let res = unsafe { sceKernelDeleteSema(id) };
+            let res = sceKernelDeleteSema(id);
 
             // Keep Drop non-panicking in release, but catch issues in debug.
             debug_assert!(res.is_ok(), "failed to delete condvar semaphore: {:#X}", res.as_inner());

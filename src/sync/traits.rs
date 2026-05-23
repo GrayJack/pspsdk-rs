@@ -1,6 +1,9 @@
 //! Traits related to synchronization primitives
 
-use crate::private::Sealed;
+use crate::{
+    private::Sealed,
+    time::{Duration, Instant},
+};
 
 
 /// Define basic operations for a mutex.
@@ -33,6 +36,15 @@ pub trait RawMutex: Sealed {
         }
         !was_acquired
     }
+}
+
+/// Define timed operation on a mutex.
+pub trait RawMutexTimed: RawMutex {
+    /// Attempts to acquire this lock until a timeout is reached.
+    fn try_lock_for(&self, timeout: Duration) -> bool;
+
+    /// Attempts to acquire this lock until a timeout is reached.
+    fn try_lock_until(&self, timeout: Instant) -> bool;
 }
 
 /// Define basic operations for a ReadWrite Lock.

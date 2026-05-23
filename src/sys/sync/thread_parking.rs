@@ -83,7 +83,6 @@ impl Parker {
 
 impl Parker {
     fn get_id(&self) -> Option<EventFlagId> {
-        let id = self.ev_flag.load(Ordering::Acquire);
         let mut i = 0;
         while i < 0x10 {
             i += 1;

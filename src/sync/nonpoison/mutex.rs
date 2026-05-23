@@ -5,14 +5,16 @@ use core::{
     mem::{self, ManuallyDrop},
     ops::{Deref, DerefMut},
     ptr::NonNull,
+    time::Duration,
 };
 
 use crate::{
     sync::{
         nonpoison::{TryLockError, TryLockResult},
-        RawMutex,
+        RawMutex, RawMutexTimed,
     },
     sys::sync as sys,
+    time::Instant,
 };
 
 type DefaultMutex = cfg_select! {
@@ -460,6 +462,40 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
         F: FnOnce(&mut T) -> R,
     {
         f(&mut self.lock())
+    }
+}
+
+impl<T: ?Sized, M: RawMutexTimed> Mutex<T, M> {
+    /// Attempts to acquire this lock until a timeout is reached.
+    ///
+    /// If the lock could not be acquired before the timeout expired, then
+    /// `None` is returned. Otherwise, an RAII guard is returned. The lock will
+    /// be unlocked when the guard is dropped.
+    #[inline]
+    #[track_caller]
+    pub fn try_lock_for(&self, timeout: Duration) -> Option<MutexGuard<'_, T, M>> {
+        if self.inner.try_lock_for(timeout) {
+            // SAFETY: The lock is held, as required.
+            Some(unsafe { MutexGuard::new(self) })
+        } else {
+            None
+        }
+    }
+
+    /// Attempts to acquire this lock until a timeout is reached.
+    ///
+    /// If the lock could not be acquired before the timeout expired, then
+    /// `None` is returned. Otherwise, an RAII guard is returned. The lock will
+    /// be unlocked when the guard is dropped.
+    #[inline]
+    #[track_caller]
+    pub fn try_lock_until(&self, timeout: Instant) -> Option<MutexGuard<'_, T, M>> {
+        if self.inner.try_lock_until(timeout) {
+            // SAFETY: The lock is held, as required.
+            Some(unsafe { MutexGuard::new(self) })
+        } else {
+            None
+        }
     }
 }
 

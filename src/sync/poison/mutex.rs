@@ -5,14 +5,16 @@ use core::{
     mem::{self, ManuallyDrop},
     ops::{Deref, DerefMut},
     ptr::NonNull,
+    time::Duration,
 };
 
 use crate::{
     sync::{
         poison::{self, LockResult, TryLockError, TryLockResult},
-        RawMutex,
+        RawMutex, RawMutexTimed,
     },
     sys::sync as sys,
+    time::Instant,
 };
 
 use super::PoisonError;
@@ -299,9 +301,7 @@ impl<T, M: RawMutex> Mutex<T, M> {
     /// # Examples
     ///
     /// ```
-    /// #![feature(lock_value_accessors)]
-    ///
-    /// use std::sync::Mutex;
+    /// use pspsdk::sync::poison::Mutex;
     ///
     /// let mut mutex = Mutex::new(7);
     ///
@@ -327,9 +327,7 @@ impl<T, M: RawMutex> Mutex<T, M> {
     /// # Examples
     ///
     /// ```
-    /// #![feature(lock_value_accessors)]
-    ///
-    /// use std::sync::Mutex;
+    /// use pspsdk::sync::poison::Mutex;
     ///
     /// let mut mutex = Mutex::new(7);
     ///
@@ -364,9 +362,7 @@ impl<T, M: RawMutex> Mutex<T, M> {
     /// # Examples
     ///
     /// ```
-    /// #![feature(lock_value_accessors)]
-    ///
-    /// use std::sync::Mutex;
+    /// use pspsdk::sync::poison::Mutex;
     ///
     /// let mut mutex = Mutex::new(7);
     ///
@@ -415,6 +411,7 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
     /// .expect("thread::spawn failed");
     /// assert_eq!(*mutex.lock(), 10);
     /// ```
+    #[track_caller]
     pub fn lock(&self) -> MutexGuard<'_, T, M> {
         self.inner.lock();
         match unsafe { MutexGuard::new(self) } {
@@ -629,6 +626,7 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
     /// let mutex = Mutex::new(0);
     /// assert_eq!(mutex.into_inner(), 0);
     /// ```
+    #[track_caller]
     pub fn into_inner(self) -> T
     where
         T: Sized,
@@ -683,6 +681,7 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
     /// *mutex.get_mut() = 10;
     /// assert_eq!(*mutex.lock(), 10);
     /// ```
+    #[track_caller]
     pub fn get_mut(&mut self) -> &mut T {
         let data = self.data.get_mut();
         match poison::map_result(self.poison.borrow(), |()| data) {
@@ -758,6 +757,40 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
     /// or written through after the mutex is dropped.
     pub const fn data_ptr(&self) -> *mut T {
         self.data.get()
+    }
+}
+
+impl<T: ?Sized, M: RawMutexTimed> Mutex<T, M> {
+    /// Attempts to acquire this lock until a timeout is reached.
+    ///
+    /// If the lock could not be acquired before the timeout expired, then
+    /// `None` is returned. Otherwise, an RAII guard is returned. The lock will
+    /// be unlocked when the guard is dropped.
+    #[inline]
+    #[track_caller]
+    pub fn try_lock_for(&self, timeout: Duration) -> Option<MutexGuard<'_, T, M>> {
+        if self.inner.try_lock_for(timeout) {
+            // SAFETY: The lock is held, as required.
+            unsafe { MutexGuard::new(self).ok() }
+        } else {
+            None
+        }
+    }
+
+    /// Attempts to acquire this lock until a timeout is reached.
+    ///
+    /// If the lock could not be acquired before the timeout expired, then
+    /// `None` is returned. Otherwise, an RAII guard is returned. The lock will
+    /// be unlocked when the guard is dropped.
+    #[inline]
+    #[track_caller]
+    pub fn try_lock_until(&self, timeout: Instant) -> Option<MutexGuard<'_, T, M>> {
+        if self.inner.try_lock_until(timeout) {
+            // SAFETY: The lock is held, as required.
+            unsafe { MutexGuard::new(self).ok() }
+        } else {
+            None
+        }
     }
 }
 
