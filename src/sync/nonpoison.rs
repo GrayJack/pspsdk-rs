@@ -9,6 +9,9 @@ pub use reentrant_lock::{ReentrantLock, ReentrantLockGuard};
 mod once;
 pub use once::Once;
 
+mod once_lock;
+pub use once_lock::OnceLock;
+
 mod condvar;
 pub use condvar::Condvar;
 
