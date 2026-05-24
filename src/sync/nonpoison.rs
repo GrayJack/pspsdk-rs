@@ -6,6 +6,11 @@ pub use mutex::{MappedMutexGuard, Mutex, MutexGuard};
 mod reentrant_lock;
 pub use reentrant_lock::{ReentrantLock, ReentrantLockGuard};
 
+mod rwlock;
+pub use rwlock::{
+    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
+
 mod once;
 pub use once::Once;
 

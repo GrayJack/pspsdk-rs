@@ -7,6 +7,11 @@ use core::{
 mod mutex;
 pub use mutex::{MappedMutexGuard, Mutex, MutexGuard};
 
+mod rwlock;
+pub use rwlock::{
+    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
+
 mod once;
 pub use once::Once;
 
