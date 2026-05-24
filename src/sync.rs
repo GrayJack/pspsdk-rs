@@ -6,7 +6,7 @@ pub mod poison;
 
 mod traits;
 
-pub use traits::{RawMutex, RawMutexTimed, RawRwLock};
+pub use traits::{RawMutex, RawMutexTimed, RawRwLock, RawRwLockTimed};
 
 pub(crate) enum ExclusiveState {
     Incomplete,

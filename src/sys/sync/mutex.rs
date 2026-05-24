@@ -85,14 +85,6 @@ impl Mutex {
     }
 
     #[inline]
-    fn try_lock_until(&self, timeout: Instant) -> bool {
-        let now = Instant::now();
-        let duration = now.duration_since(timeout);
-
-        self.try_lock_for(duration)
-    }
-
-    #[inline]
     pub unsafe fn unlock(&self) {
         let Some(id) = self.get_id() else {
             return;
@@ -196,11 +188,6 @@ impl RawMutexTimed for Mutex {
     fn try_lock_for(&self, timeout: Duration) -> bool {
         self.try_lock_for(timeout)
     }
-
-    #[inline]
-    fn try_lock_until(&self, timeout: Instant) -> bool {
-        self.try_lock_until(timeout)
-    }
 }
 
 /// A raw reentrant mutex based on [`sys::thread`](crate::sys::thread) mutex API.
@@ -254,14 +241,6 @@ impl ReentrantMutex {
             Err(SceError::KERNEL_WAIT_TIMEOUT) => false,
             Err(_) => false,
         }
-    }
-
-    #[inline]
-    fn try_lock_until(&self, timeout: Instant) -> bool {
-        let now = Instant::now();
-        let duration = now.duration_since(timeout);
-
-        self.try_lock_for(duration)
     }
 
     #[inline]
@@ -373,11 +352,6 @@ impl RawMutexTimed for ReentrantMutex {
     fn try_lock_for(&self, timeout: Duration) -> bool {
         self.try_lock_for(timeout)
     }
-
-    #[inline]
-    fn try_lock_until(&self, timeout: Instant) -> bool {
-        self.try_lock_until(timeout)
-    }
 }
 
 /// A raw lightweight mutex based on [`sys::thread`](crate::sys::thread) lightweight mutex API.
@@ -437,14 +411,6 @@ impl LwMutex {
             Err(SceError::KERNEL_WAIT_TIMEOUT) => false,
             Err(_) => false,
         }
-    }
-
-    #[inline]
-    fn try_lock_until(&self, timeout: Instant) -> bool {
-        let now = Instant::now();
-        let duration = now.duration_since(timeout);
-
-        self.try_lock_for(duration)
     }
 
     #[inline]
@@ -569,11 +535,6 @@ impl RawMutexTimed for LwMutex {
     fn try_lock_for(&self, timeout: Duration) -> bool {
         self.try_lock_for(timeout)
     }
-
-    #[inline]
-    fn try_lock_until(&self, timeout: Instant) -> bool {
-        self.try_lock_until(timeout)
-    }
 }
 
 /// A raw mutex based on [`sys::thread`](crate::sys::thread) semaphore API.
@@ -626,14 +587,6 @@ impl SemaMutex {
             Err(SceError::KERNEL_WAIT_TIMEOUT) => false,
             Err(_) => false,
         }
-    }
-
-    #[inline]
-    fn try_lock_until(&self, timeout: Instant) -> bool {
-        let now = Instant::now();
-        let duration = now.duration_since(timeout);
-
-        self.try_lock_for(duration)
     }
 
     #[inline]
@@ -731,10 +684,5 @@ impl RawMutexTimed for SemaMutex {
     #[inline]
     fn try_lock_for(&self, timeout: Duration) -> bool {
         self.try_lock_for(timeout)
-    }
-
-    #[inline]
-    fn try_lock_until(&self, timeout: Instant) -> bool {
-        self.try_lock_until(timeout)
     }
 }

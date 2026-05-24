@@ -11,12 +11,19 @@ use core::{
 use crate::{
     sync::{
         poison::{self, LockResult, TryLockError, TryLockResult},
-        RawRwLock,
+        RawRwLock, RawRwLockTimed,
     },
     sys::sync as sys,
+    time::{Duration, Instant},
 };
 
 use super::PoisonError;
+
+type DefaultRwLock = cfg_select! {
+    feature = "kernel" => sys::RwLock,
+    _ => sys::LwRwLock,
+};
+
 
 /// A reader-writer lock
 ///
@@ -86,7 +93,7 @@ use super::PoisonError;
 /// ```
 ///
 /// [`Mutex`]: super::Mutex
-pub struct RwLock<T: ?Sized, Raw = sys::RwLock> {
+pub struct RwLock<T: ?Sized, Raw = DefaultRwLock> {
     inner: Raw,
     poison: poison::Flag,
     data: UnsafeCell<T>,
@@ -108,7 +115,7 @@ impl<T: ?Sized, Raw> core::panic::RefUnwindSafe for RwLock<T, Raw> {}
 /// [`try_read`]: RwLock::try_read
 #[must_use = "if unused the RwLock will immediately unlock"]
 #[clippy::has_significant_drop]
-pub struct RwLockReadGuard<'a, T: ?Sized + 'a, Raw: RawRwLock = sys::RwLock> {
+pub struct RwLockReadGuard<'a, T: ?Sized + 'a, Raw: RawRwLock = DefaultRwLock> {
     // NB: we use a pointer instead of `&'a T` to avoid `noalias` violations, because a
     // `RwLockReadGuard` argument doesn't hold immutability for its whole scope, only until it
     // drops. `NonNull` is also covariant over `T`, just like we would have with `&T`.
@@ -130,7 +137,7 @@ unsafe impl<T: ?Sized + Sync, L: RawRwLock> Sync for RwLockReadGuard<'_, T, L> {
 /// [`try_write`]: RwLock::try_write
 #[must_use = "if unused the RwLock will immediately unlock"]
 #[clippy::has_significant_drop]
-pub struct RwLockWriteGuard<'a, T: ?Sized + 'a, L: RawRwLock = sys::RwLock> {
+pub struct RwLockWriteGuard<'a, T: ?Sized + 'a, L: RawRwLock = DefaultRwLock> {
     lock: &'a RwLock<T, L>,
     poison: poison::Guard,
 }
@@ -150,7 +157,7 @@ unsafe impl<T: ?Sized + Sync, L: RawRwLock> Sync for RwLockWriteGuard<'_, T, L> 
 // #[must_not_suspend = "holding a MappedRwLockReadGuard across suspend points can cause deadlocks,
 // \                       delays, and cause Futures to not implement `Send`"]
 #[clippy::has_significant_drop]
-pub struct MappedRwLockReadGuard<'a, T: ?Sized + 'a, L: RawRwLock = sys::RwLock> {
+pub struct MappedRwLockReadGuard<'a, T: ?Sized + 'a, L: RawRwLock = DefaultRwLock> {
     // NB: we use a pointer instead of `&'a T` to avoid `noalias` violations, because a
     // `MappedRwLockReadGuard` argument doesn't hold immutability for its whole scope, only until
     // it drops. `NonNull` is also covariant over `T`, just like we would have with `&T`.
@@ -172,7 +179,7 @@ unsafe impl<T: ?Sized + Sync, L: RawRwLock> Sync for MappedRwLockReadGuard<'_, T
 /// [`try_map`]: RwLockWriteGuard::try_map
 #[must_use = "if unused the RwLock will immediately unlock"]
 #[clippy::has_significant_drop]
-pub struct MappedRwLockWriteGuard<'a, T: ?Sized + 'a, L: RawRwLock = sys::RwLock> {
+pub struct MappedRwLockWriteGuard<'a, T: ?Sized + 'a, L: RawRwLock = DefaultRwLock> {
     // NB: we use a pointer instead of `&'a mut T` to avoid `noalias` violations, because a
     // `MappedRwLockWriteGuard` argument doesn't hold uniqueness for its whole scope, only until it
     // drops. `NonNull` is covariant over `T`, so we add a `PhantomData<&'a mut T>` field
@@ -887,6 +894,76 @@ impl<T: ?Sized, L: RawRwLock> RwLock<T, L> {
     /// or written through after the mutex is dropped.
     pub const fn data_ptr(&self) -> *mut T {
         self.data.get()
+    }
+}
+
+impl<T: ?Sized, L: RawRwLockTimed> RwLock<T, L> {
+    /// Attempts to acquire this `RwLock` with shared read access until a timeout
+    /// is reached.
+    ///
+    /// If the access could not be granted before the timeout expires, then
+    /// `None` is returned. Otherwise, an RAII guard is returned which will
+    /// release the shared access when it is dropped.
+    #[inline]
+    #[track_caller]
+    pub fn try_read_for(&self, timeout: Duration) -> Option<RwLockReadGuard<'_, T, L>> {
+        if self.inner.try_lock_for(timeout) {
+            // SAFETY: The lock is held, as required.
+            unsafe { RwLockReadGuard::new(self).ok() }
+        } else {
+            None
+        }
+    }
+
+    /// Attempts to acquire this `RwLock` with shared read access until a timeout
+    /// is reached.
+    ///
+    /// If the access could not be granted before the timeout expires, then
+    /// `None` is returned. Otherwise, an RAII guard is returned which will
+    /// release the shared access when it is dropped.
+    #[inline]
+    #[track_caller]
+    pub fn try_read_until(&self, timeout: Instant) -> Option<RwLockReadGuard<'_, T, L>> {
+        if self.inner.try_lock_until(timeout) {
+            // SAFETY: The lock is held, as required.
+            unsafe { RwLockReadGuard::new(self).ok() }
+        } else {
+            None
+        }
+    }
+
+    /// Attempts to acquire this `RwLock` with exclusive write access until a
+    /// timeout is reached.
+    ///
+    /// If the access could not be granted before the timeout expires, then
+    /// `None` is returned. Otherwise, an RAII guard is returned which will
+    /// release the exclusive access when it is dropped.
+    #[inline]
+    #[track_caller]
+    pub fn try_write_for(&self, timeout: Duration) -> Option<RwLockWriteGuard<'_, T, L>> {
+        if self.inner.try_write_for(timeout) {
+            // SAFETY: The lock is held, as required.
+            unsafe { RwLockWriteGuard::new(self).ok() }
+        } else {
+            None
+        }
+    }
+
+    /// Attempts to acquire this `RwLock` with exclusive write access until a
+    /// timeout is reached.
+    ///
+    /// If the access could not be granted before the timeout expires, then
+    /// `None` is returned. Otherwise, an RAII guard is returned which will
+    /// release the exclusive access when it is dropped.
+    #[inline]
+    #[track_caller]
+    pub fn try_write_until(&self, timeout: Instant) -> Option<RwLockWriteGuard<'_, T, L>> {
+        if self.inner.try_write_until(timeout) {
+            // SAFETY: The lock is held, as required.
+            unsafe { RwLockWriteGuard::new(self).ok() }
+        } else {
+            None
+        }
     }
 }
 

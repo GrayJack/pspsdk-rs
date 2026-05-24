@@ -40,11 +40,22 @@ pub trait RawMutex: Sealed {
 
 /// Define timed operation on a mutex.
 pub trait RawMutexTimed: RawMutex {
-    /// Attempts to acquire this lock until a timeout is reached.
+    /// Attempts to acquire this lock for a `timeout` duration.
     fn try_lock_for(&self, timeout: Duration) -> bool;
 
     /// Attempts to acquire this lock until a timeout is reached.
-    fn try_lock_until(&self, timeout: Instant) -> bool;
+    #[inline]
+    fn try_lock_until(&self, timeout: Instant) -> bool {
+        let now = Instant::now();
+        let duration = timeout.duration_since(now);
+
+        // if zero, now is later than timeout, so we past the time to try
+        if duration.is_zero() {
+            false
+        } else {
+            self.try_lock_for(duration)
+        }
+    }
 }
 
 /// Define basic operations for a ReadWrite Lock.
@@ -66,4 +77,38 @@ pub trait RawRwLock: Sealed {
     unsafe fn write_unlock(&self);
 
     unsafe fn downgrade(&self);
+}
+
+pub trait RawRwLockTimed: RawRwLock {
+    /// Attempts to acquire a read lock for a `timeout` duration.
+    fn try_read_for(&self, timeout: Duration) -> bool;
+
+    /// Attempts to acquire a read lock until a timeout is reached.
+    fn try_read_until(&self, timeout: Instant) -> bool {
+        let now = Instant::now();
+        let duration = timeout.duration_since(now);
+
+        // if zero, now is later than timeout, so we past the time to try
+        if duration.is_zero() {
+            false
+        } else {
+            self.try_read_for(duration)
+        }
+    }
+
+    /// Attempts to acquire a write lock for a `timeout` duration.
+    fn try_write_for(&self, timeout: Duration) -> bool;
+
+    /// Attempts to acquire a write lock until a timeout is reached.
+    fn try_write_until(&self, timeout: Instant) -> bool {
+        let now = Instant::now();
+        let duration = timeout.duration_since(now);
+
+        // if zero, now is later than timeout, so we past the time to try
+        if duration.is_zero() {
+            false
+        } else {
+            self.try_write_for(duration)
+        }
+    }
 }

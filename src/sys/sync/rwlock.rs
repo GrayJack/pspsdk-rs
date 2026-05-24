@@ -1,7 +1,7 @@
-use core::cell::UnsafeCell;
+use core::{cell::UnsafeCell, time::Duration};
 
 use crate::{
-    sync::RawRwLock,
+    sync::{RawRwLock, RawRwLockTimed},
     sys::sync::{Condvar, LwMutex, Mutex, SemaMutex},
 };
 
@@ -74,11 +74,34 @@ impl RwLock {
     }
 
     #[inline]
+    fn try_read_for(&self, timeout: Duration) -> bool {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+
+        // prefer writers: if a writer is active or waiting, block readers
+        while state.writer_active || state.write_waiters != 0 {
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+
+            if !res {
+                unsafe { self.lock.unlock() };
+                return false;
+            }
+        }
+
+        state.readers += 1;
+        unsafe { self.lock.unlock() };
+        true
+    }
+
+    #[inline]
     fn write(&self) {
         self.lock.lock();
 
         // SAFETY: self.lock is locked
         let state = unsafe { self.state() };
+        state.write_waiters += 1;
 
         // Wait until no readers and no active writer
         while state.writer_active || state.readers != 0 {
@@ -106,6 +129,30 @@ impl RwLock {
 
         unsafe { self.lock.unlock() };
         ok
+    }
+
+    #[inline]
+    fn try_write_for(&self, timeout: Duration) -> bool {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+        state.write_waiters += 1;
+
+        while state.writer_active || state.readers != 0 {
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+
+            if !res {
+                unsafe { self.lock.unlock() };
+                return false;
+            }
+        }
+
+        state.write_waiters -= 1;
+        state.writer_active = true;
+
+        unsafe { self.lock.unlock() };
+        true
     }
 
     #[inline]
@@ -219,6 +266,18 @@ impl RawRwLock for RwLock {
     }
 }
 
+impl RawRwLockTimed for RwLock {
+    #[inline]
+    fn try_read_for(&self, timeout: Duration) -> bool {
+        self.try_read_for(timeout)
+    }
+
+    #[inline]
+    fn try_write_for(&self, timeout: Duration) -> bool {
+        self.try_write_for(timeout)
+    }
+}
+
 /// A raw lightweight rwlock with writer-preference based on [`sys::thread`](crate::sys::thread)
 /// lightweight mutex API.
 ///
@@ -285,11 +344,34 @@ impl LwRwLock {
     }
 
     #[inline]
+    fn try_read_for(&self, timeout: Duration) -> bool {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+
+        // prefer writers: if a writer is active or waiting, block readers
+        while state.writer_active || state.write_waiters != 0 {
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+
+            if !res {
+                unsafe { self.lock.unlock() };
+                return false;
+            }
+        }
+
+        state.readers += 1;
+        unsafe { self.lock.unlock() };
+        true
+    }
+
+    #[inline]
     fn write(&self) {
         self.lock.lock();
 
         // SAFETY: self.lock is locked
         let state = unsafe { self.state() };
+        state.write_waiters += 1;
 
         // Wait until no readers and no active writer
         while state.writer_active || state.readers != 0 {
@@ -317,6 +399,30 @@ impl LwRwLock {
 
         unsafe { self.lock.unlock() };
         ok
+    }
+
+    #[inline]
+    fn try_write_for(&self, timeout: Duration) -> bool {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+        state.write_waiters += 1;
+
+        while state.writer_active || state.readers != 0 {
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+
+            if !res {
+                unsafe { self.lock.unlock() };
+                return false;
+            }
+        }
+
+        state.write_waiters -= 1;
+        state.writer_active = true;
+
+        unsafe { self.lock.unlock() };
+        true
     }
 
     #[inline]
@@ -430,6 +536,18 @@ impl RawRwLock for LwRwLock {
     }
 }
 
+impl RawRwLockTimed for LwRwLock {
+    #[inline]
+    fn try_read_for(&self, timeout: Duration) -> bool {
+        self.try_read_for(timeout)
+    }
+
+    #[inline]
+    fn try_write_for(&self, timeout: Duration) -> bool {
+        self.try_write_for(timeout)
+    }
+}
+
 /// A raw rwlock with writer-preference based on [`sys::thread`](crate::sys::thread) semaphore API.
 ///
 /// This type exists because [`RwLock`] and [`LwRwLock`] related System API are not available on all
@@ -489,11 +607,34 @@ impl SemaRwLock {
     }
 
     #[inline]
+    fn try_read_for(&self, timeout: Duration) -> bool {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+
+        // prefer writers: if a writer is active or waiting, block readers
+        while state.writer_active || state.write_waiters != 0 {
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+
+            if !res {
+                unsafe { self.lock.unlock() };
+                return false;
+            }
+        }
+
+        state.readers += 1;
+        unsafe { self.lock.unlock() };
+        true
+    }
+
+    #[inline]
     fn write(&self) {
         self.lock.lock();
 
         // SAFETY: self.lock is locked
         let state = unsafe { self.state() };
+        state.write_waiters += 1;
 
         // Wait until no readers and no active writer
         while state.writer_active || state.readers != 0 {
@@ -521,6 +662,30 @@ impl SemaRwLock {
 
         unsafe { self.lock.unlock() };
         ok
+    }
+
+    #[inline]
+    fn try_write_for(&self, timeout: Duration) -> bool {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+        state.write_waiters += 1;
+
+        while state.writer_active || state.readers != 0 {
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+
+            if !res {
+                unsafe { self.lock.unlock() };
+                return false;
+            }
+        }
+
+        state.write_waiters -= 1;
+        state.writer_active = true;
+
+        unsafe { self.lock.unlock() };
+        true
     }
 
     #[inline]
@@ -631,5 +796,17 @@ impl RawRwLock for SemaRwLock {
     #[track_caller]
     unsafe fn downgrade(&self) {
         unsafe { self.downgrade() };
+    }
+}
+
+impl RawRwLockTimed for SemaRwLock {
+    #[inline]
+    fn try_read_for(&self, timeout: Duration) -> bool {
+        self.try_read_for(timeout)
+    }
+
+    #[inline]
+    fn try_write_for(&self, timeout: Duration) -> bool {
+        self.try_write_for(timeout)
     }
 }
