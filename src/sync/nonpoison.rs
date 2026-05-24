@@ -13,7 +13,7 @@ mod once_lock;
 pub use once_lock::OnceLock;
 
 mod condvar;
-pub use condvar::Condvar;
+pub use condvar::{Condvar, WaitTimeoutResult};
 
 /// An enumeration of possible errors associated with a [`TryLockResult`] which
 /// can occur while trying to acquire a lock, from the [`try_lock`] method on a

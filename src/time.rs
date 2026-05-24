@@ -100,31 +100,29 @@ pub use core::time::{Duration, TryFromFloatSecsError};
 /// let duration = Duration::new(max_seconds, 0);
 /// println!("{:?}", now + duration);
 /// ```
-///
-/// # Underlying System calls
-///
-/// The following system calls are [currently] being used by `now()` to find out
-/// the current time:
-///
-/// |  Platform |               System call                                            |
-/// |-----------|----------------------------------------------------------------------|
-/// | SGX       | [`insecure_time` usercall]. More information on [timekeeping in SGX] |
-/// | UNIX      | [clock_gettime (Monotonic Clock)]                                    |
-/// | Darwin    | [clock_gettime (Monotonic Clock)]                                    |
-/// | VXWorks   | [clock_gettime (Monotonic Clock)]                                    |
-/// | SOLID     | `get_tim`                                                            |
-/// | WASI      | [__wasi_clock_time_get (Monotonic Clock)]                            |
-/// | Windows   | [QueryPerformanceCounter]                                            |
-///
-/// [currently]: crate::platform::io#platform-specific-behavior
-/// [QueryPerformanceCounter]: https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancecounter
-/// [`insecure_time` usercall]: https://edp.fortanix.com/docs/api/fortanix_sgx_abi/struct.Usercalls.html#method.insecure_time
-/// [timekeeping in SGX]: https://edp.fortanix.com/docs/concepts/rust-std/#codestdtimecode
-/// [__wasi_clock_time_get (Monotonic Clock)]: https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/docs.md#clock_time_get
-/// [clock_gettime (Monotonic Clock)]: https://linux.die.net/man/3/clock_gettime
-///
-/// **Disclaimer:** These system calls might change over time.
-///
+// # Underlying System calls
+//
+// The following system calls are [currently] being used by `now()` to find out
+// the current time:
+//
+// |  Platform |               System call                                            |
+// |-----------|----------------------------------------------------------------------|
+// | SGX       | [`insecure_time` usercall]. More information on [timekeeping in SGX] |
+// | UNIX      | [clock_gettime (Monotonic Clock)]                                    |
+// | Darwin    | [clock_gettime (Monotonic Clock)]                                    |
+// | VXWorks   | [clock_gettime (Monotonic Clock)]                                    |
+// | SOLID     | `get_tim`                                                            |
+// | WASI      | [__wasi_clock_time_get (Monotonic Clock)]                            |
+// | Windows   | [QueryPerformanceCounter]                                            |
+//
+// [currently]: crate::platform::io#platform-specific-behavior
+// [QueryPerformanceCounter]: https://docs.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancecounter
+// [`insecure_time` usercall]: https://edp.fortanix.com/docs/api/fortanix_sgx_abi/struct.Usercalls.html#method.insecure_time
+// [timekeeping in SGX]: https://edp.fortanix.com/docs/concepts/rust-std/#codestdtimecode
+// [__wasi_clock_time_get (Monotonic Clock)]: https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/docs.md#clock_time_get
+// [clock_gettime (Monotonic Clock)]: https://linux.die.net/man/3/clock_gettime
+//
+// **Disclaimer:** These system calls might change over time.
 /// > Note: mathematical operations like [`add`] may panic if the underlying
 /// > structure cannot represent the new point in time.
 ///
@@ -206,36 +204,34 @@ pub struct Instant(time::Instant);
 ///     }
 /// }
 /// ```
-///
-/// # Platform-specific behavior
-///
-/// The precision of `SystemTime` can depend on the underlying OS-specific time format.
-/// For example, on Windows the time is represented in 100 nanosecond intervals whereas Linux
-/// can represent nanosecond intervals.
-///
-/// The following system calls are [currently] being used by `now()` to find out
-/// the current time:
-///
-/// |  Platform |               System call                                            |
-/// |-----------|----------------------------------------------------------------------|
-/// | SGX       | [`insecure_time` usercall]. More information on [timekeeping in SGX] |
-/// | UNIX      | [clock_gettime (Realtime Clock)]                                     |
-/// | Darwin    | [clock_gettime (Realtime Clock)]                                     |
-/// | VXWorks   | [clock_gettime (Realtime Clock)]                                     |
-/// | SOLID     | `SOLID_RTC_ReadTime`                                                 |
-/// | WASI      | [__wasi_clock_time_get (Realtime Clock)]                             |
-/// | Windows   | [GetSystemTimePreciseAsFileTime] / [GetSystemTimeAsFileTime]         |
-///
-/// [currently]: crate::platform::io#platform-specific-behavior
-/// [`insecure_time` usercall]: https://edp.fortanix.com/docs/api/fortanix_sgx_abi/struct.Usercalls.html#method.insecure_time
-/// [timekeeping in SGX]: https://edp.fortanix.com/docs/concepts/rust-std/#codestdtimecode
-/// [clock_gettime (Realtime Clock)]: https://linux.die.net/man/3/clock_gettime
-/// [__wasi_clock_time_get (Realtime Clock)]: https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/docs.md#clock_time_get
-/// [GetSystemTimePreciseAsFileTime]: https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimepreciseasfiletime
-/// [GetSystemTimeAsFileTime]: https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeasfiletime
-///
-/// **Disclaimer:** These system calls might change over time.
-///
+// # Platform-specific behavior
+//
+// The precision of `SystemTime` can depend on the underlying OS-specific time format.
+// For example, on Windows the time is represented in 100 nanosecond intervals whereas Linux
+// can represent nanosecond intervals.
+//
+// The following system calls are [currently] being used by `now()` to find out
+// the current time:
+//
+// |  Platform |               System call                                            |
+// |-----------|----------------------------------------------------------------------|
+// | SGX       | [`insecure_time` usercall]. More information on [timekeeping in SGX] |
+// | UNIX      | [clock_gettime (Realtime Clock)]                                     |
+// | Darwin    | [clock_gettime (Realtime Clock)]                                     |
+// | VXWorks   | [clock_gettime (Realtime Clock)]                                     |
+// | SOLID     | `SOLID_RTC_ReadTime`                                                 |
+// | WASI      | [__wasi_clock_time_get (Realtime Clock)]                             |
+// | Windows   | [GetSystemTimePreciseAsFileTime] / [GetSystemTimeAsFileTime]         |
+//
+// [currently]: crate::platform::io#platform-specific-behavior
+// [`insecure_time` usercall]: https://edp.fortanix.com/docs/api/fortanix_sgx_abi/struct.Usercalls.html#method.insecure_time
+// [timekeeping in SGX]: https://edp.fortanix.com/docs/concepts/rust-std/#codestdtimecode
+// [clock_gettime (Realtime Clock)]: https://linux.die.net/man/3/clock_gettime
+// [__wasi_clock_time_get (Realtime Clock)]: https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/docs.md#clock_time_get
+// [GetSystemTimePreciseAsFileTime]: https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimepreciseasfiletime
+// [GetSystemTimeAsFileTime]: https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeasfiletime
+//
+// **Disclaimer:** These system calls might change over time.
 /// > Note: mathematical operations like [`add`] may panic if the underlying
 /// > structure cannot represent the new point in time.
 ///

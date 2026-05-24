@@ -16,6 +16,9 @@ pub(crate) enum ExclusiveState {
 
 /// State yielded to [`Once::call_once_force()`]’s closure parameter. The state
 /// can be used to query the poison status of the [`Once`].
+///
+/// [`Once`]: crate::sync::nonpoison::Once
+/// [`Once::call_once_force()`]: crate::sync::nonpoison::Once::call_once_force
 pub struct OnceState {
     pub(crate) inner: crate::sys::sync::OnceState,
 }
@@ -29,7 +32,9 @@ impl OnceState {
     /// A poisoned [`Once`]:
     ///
     /// ```
-    /// use std::{sync::Once, thread};
+    /// use std::thread;
+    ///
+    /// use pspsdk::sync::poison::Once;
     ///
     /// static INIT: Once = Once::new();
     ///
@@ -47,19 +52,25 @@ impl OnceState {
     /// An unpoisoned [`Once`]:
     ///
     /// ```
-    /// use oxilibc::platform::sync::poison::Once;
+    /// use pspsdk::sync::poison::Once;
     ///
     /// static INIT: Once = Once::new();
     ///
     /// INIT.call_once_force(|state| {
     ///     assert!(!state.is_poisoned());
     /// });
+    /// ```
+    ///
+    /// [`Once`]: crate::sync::poison::Once
+    /// [`Once::call_once_force()`]: crate::sync::poison::Once::call_once_force
     #[inline]
     pub fn is_poisoned(&self) -> bool {
         self.inner.is_poisoned()
     }
 
     /// Poison the associated [`Once`] without explicitly panicking.
+    ///
+    /// [`Once`]: crate::sync::poison::once
     // NOTE: This is currently only exposed for `OnceLock`.
     #[inline]
     pub(crate) fn poison(&self) {

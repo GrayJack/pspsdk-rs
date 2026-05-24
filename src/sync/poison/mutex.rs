@@ -242,7 +242,7 @@ unsafe impl<T: ?Sized + Sync, M: RawMutex> Sync for MutexGuard<'_, T, M> {}
 ///
 /// [`map`]: MutexGuard::map
 /// [`try_map`]: MutexGuard::try_map
-/// [`Condvar`]: crate::platform::sync::poison::Condvar
+/// [`Condvar`]: crate::sync::poison::Condvar
 #[must_use = "if unused the Mutex will immediately unlock"]
 #[clippy::has_significant_drop]
 pub struct MappedMutexGuard<'a, T: ?Sized + 'a, M: RawMutex = DefaultMutex> {

@@ -11,7 +11,7 @@ mod once;
 pub use once::Once;
 
 mod condvar;
-pub use condvar::Condvar;
+pub use condvar::{Condvar, WaitTimeoutResult};
 
 pub struct Flag {
     #[cfg(panic = "unwind")]

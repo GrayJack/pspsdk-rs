@@ -24,7 +24,7 @@ use crate::{
 /// # Examples
 ///
 /// Allow recursively calling a function needing synchronization from within
-/// a callback (this is how [`StdoutLock`](crate::platform::io::StdoutLock) is currently
+/// a callback (this is how [`StdoutLock`](crate::io::StdoutLock) is currently
 /// implemented):
 ///
 /// ```
