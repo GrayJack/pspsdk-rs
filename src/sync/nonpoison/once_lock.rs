@@ -154,7 +154,7 @@ impl<T> OnceLock<T> {
     /// method never blocks.
     #[inline]
     pub fn get(&self) -> Option<&T> {
-        if self.is_initialized() {
+        if self.initialized() {
             // Safe b/c checked is_initialized
             Some(unsafe { self.get_unchecked() })
         } else {
@@ -167,7 +167,7 @@ impl<T> OnceLock<T> {
     /// Returns `None` if the cell is empty. This method never blocks.
     #[inline]
     pub fn get_mut(&mut self) -> Option<&mut T> {
-        if self.is_initialized() {
+        if self.initialized_mut() {
             // Safe b/c checked is_initialized and we have a unique access
             Some(unsafe { self.get_unchecked_mut() })
         } else {
@@ -387,7 +387,7 @@ impl<T> OnceLock<T> {
         }
         self.initialize(f)?;
 
-        debug_assert!(self.is_initialized());
+        debug_assert!(self.initialized());
 
         // SAFETY: The inner value has been initialized
         Ok(unsafe { self.get_unchecked() })
@@ -426,7 +426,7 @@ impl<T> OnceLock<T> {
         if self.get().is_none() {
             self.initialize(f)?;
         }
-        debug_assert!(self.is_initialized());
+        debug_assert!(self.initialized());
         // SAFETY: The inner value has been initialized
         Ok(unsafe { self.get_unchecked_mut() })
     }
@@ -472,20 +472,30 @@ impl<T> OnceLock<T> {
     /// ```
     #[inline]
     pub fn take(&mut self) -> Option<T> {
-        if self.is_initialized() {
+        if self.initialized_mut() {
             self.once = Once::new();
             // SAFETY: `self.value` is initialized and contains a valid `T`.
             // `self.once` is reset, so `is_initialized()` will be false again
             // which prevents the value from being read twice.
-            unsafe { Some((*self.value.get()).assume_init_read()) }
+            unsafe { Some(self.value.get_mut().assume_init_read()) }
         } else {
             None
         }
     }
 
     #[inline]
-    fn is_initialized(&self) -> bool {
+    fn initialized(&self) -> bool {
         self.once.is_completed()
+    }
+
+    #[inline]
+    fn initialized_mut(&mut self) -> bool {
+        // `state()` does not perform an atomic load, so prefer it over `is_complete()`.
+        let state = self.once.state();
+        match state {
+            OnceExclusiveState::Complete => true,
+            _ => false,
+        }
     }
 
     #[cold]
@@ -518,7 +528,7 @@ impl<T> OnceLock<T> {
     /// The value must be initialized
     #[inline]
     unsafe fn get_unchecked(&self) -> &T {
-        debug_assert!(self.is_initialized());
+        debug_assert!(self.initialized());
         unsafe { (*self.value.get()).assume_init_ref() }
     }
 
@@ -527,7 +537,7 @@ impl<T> OnceLock<T> {
     /// The value must be initialized
     #[inline]
     unsafe fn get_unchecked_mut(&mut self) -> &mut T {
-        debug_assert!(self.is_initialized());
+        debug_assert!(self.initialized_mut());
         unsafe { (*self.value.get()).assume_init_mut() }
     }
 }
@@ -644,11 +654,11 @@ impl<T> Drop for OnceLock<T> {
     #[inline]
     #[allow(clippy::needless_borrow)]
     fn drop(&mut self) {
-        if self.is_initialized() {
+        if self.initialized_mut() {
             // SAFETY: The cell is initialized and being dropped, so it can't
             // be accessed again. We also don't touch the `T` other than
             // dropping it, which validates our usage of #[may_dangle].
-            unsafe { (&mut *self.value.get()).assume_init_drop() };
+            unsafe { self.value.get_mut().assume_init_drop() };
         }
     }
 }
