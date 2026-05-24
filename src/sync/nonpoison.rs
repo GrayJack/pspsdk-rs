@@ -15,6 +15,9 @@ pub use once_lock::OnceLock;
 mod condvar;
 pub use condvar::{Condvar, WaitTimeoutResult};
 
+mod lazy_lock;
+pub use lazy_lock::LazyLock;
+
 /// An enumeration of possible errors associated with a [`TryLockResult`] which
 /// can occur while trying to acquire a lock, from the [`try_lock`] method on a
 /// [`Mutex`] or the [`try_read`] and [`try_write`] methods on an [`RwLock`].
