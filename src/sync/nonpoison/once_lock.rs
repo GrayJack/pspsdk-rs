@@ -7,7 +7,7 @@ use core::{
     panic::{RefUnwindSafe, UnwindSafe},
 };
 
-use crate::sync::nonpoison::Once;
+use crate::sync::{nonpoison::Once, ExclusiveState};
 
 /// A synchronization primitive which can nominally be written to only once.
 ///
@@ -493,7 +493,7 @@ impl<T> OnceLock<T> {
         // `state()` does not perform an atomic load, so prefer it over `is_complete()`.
         let state = self.once.state();
         match state {
-            OnceExclusiveState::Complete => true,
+            ExclusiveState::Complete => true,
             _ => false,
         }
     }

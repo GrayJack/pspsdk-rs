@@ -544,9 +544,9 @@ impl<T: ?Sized, L: RawRwLockTimed> RwLock<T, L> {
     #[inline]
     #[track_caller]
     pub fn try_read_for(&self, timeout: Duration) -> Option<RwLockReadGuard<'_, T, L>> {
-        if self.inner.try_lock_for(timeout) {
+        if self.inner.try_read_for(timeout) {
             // SAFETY: The lock is held, as required.
-            unsafe { RwLockReadGuard::new(self).ok() }
+            Some(unsafe { RwLockReadGuard::new(self) })
         } else {
             None
         }
@@ -561,9 +561,9 @@ impl<T: ?Sized, L: RawRwLockTimed> RwLock<T, L> {
     #[inline]
     #[track_caller]
     pub fn try_read_until(&self, timeout: Instant) -> Option<RwLockReadGuard<'_, T, L>> {
-        if self.inner.try_lock_until(timeout) {
+        if self.inner.try_read_until(timeout) {
             // SAFETY: The lock is held, as required.
-            unsafe { RwLockReadGuard::new(self).ok() }
+            Some(unsafe { RwLockReadGuard::new(self) })
         } else {
             None
         }
@@ -580,7 +580,7 @@ impl<T: ?Sized, L: RawRwLockTimed> RwLock<T, L> {
     pub fn try_write_for(&self, timeout: Duration) -> Option<RwLockWriteGuard<'_, T, L>> {
         if self.inner.try_write_for(timeout) {
             // SAFETY: The lock is held, as required.
-            unsafe { RwLockWriteGuard::new(self).ok() }
+            Some(unsafe { RwLockWriteGuard::new(self) })
         } else {
             None
         }
@@ -597,7 +597,7 @@ impl<T: ?Sized, L: RawRwLockTimed> RwLock<T, L> {
     pub fn try_write_until(&self, timeout: Instant) -> Option<RwLockWriteGuard<'_, T, L>> {
         if self.inner.try_write_until(timeout) {
             // SAFETY: The lock is held, as required.
-            unsafe { RwLockWriteGuard::new(self).ok() }
+            Some(unsafe { RwLockWriteGuard::new(self) })
         } else {
             None
         }

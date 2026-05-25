@@ -21,7 +21,6 @@ use crate::{
         },
         SceError,
     },
-    time::Instant,
 };
 
 const UNINIT: u32 = u32::MAX;
