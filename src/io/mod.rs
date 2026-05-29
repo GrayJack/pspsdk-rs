@@ -18,7 +18,7 @@ use crate::sys::SceError;
 
 impl From<SceError> for Error {
     fn from(value: SceError) -> Self {
-        Error::from_raw_os_error(value.as_inner() as i32)
+        Error::from_raw_os_error(value.to_inner() as i32)
     }
 }
 
@@ -137,7 +137,7 @@ pub(crate) fn decode_error_kind(error: i32) -> ErrorKind {
 }
 
 pub(crate) fn is_interrupted(error: i32) -> bool {
-    error as u32 == SceError::INTERRUPTED.as_inner()
+    error as u32 == SceError::INTERRUPTED.to_inner()
 }
 
 /// Expand for other error facilities

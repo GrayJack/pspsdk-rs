@@ -98,7 +98,7 @@ impl SceError {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -106,7 +106,7 @@ impl SceError {
 
     /// Get the facility of the error.
     pub const fn facility(self) -> ErrorFacility {
-        match (self.as_inner() >> 16) & 0xFF {
+        match (self.to_inner() >> 16) & 0xFF {
             0x000 => ErrorFacility::Null,
             0x001 => ErrorFacility::Errno,
             0x002 => ErrorFacility::Kernel,
@@ -618,7 +618,7 @@ impl core::fmt::Debug for SceError {
         let mut d = f.debug_struct("SceError");
 
         d.field("facility", &self.facility())
-            .field("code", &format_args!("{:#010X}", self.as_inner()));
+            .field("code", &format_args!("{:#010X}", self.to_inner()));
 
         let msg = self.error_msg();
 
@@ -635,7 +635,7 @@ impl core::fmt::Display for SceError {
         let err = self.error_msg();
 
         if err.is_empty() {
-            write!(f, "{} error: {:#010X}", self.facility(), self.as_inner())
+            write!(f, "{} error: {:#010X}", self.facility(), self.to_inner())
         } else {
             f.pad(err)
         }

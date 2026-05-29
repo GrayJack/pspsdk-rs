@@ -239,7 +239,7 @@ impl Once {
 
         match created.into_result() {
             Ok(id) => {
-                self.event_flag_id.store(id.as_inner(), Ordering::Release);
+                self.event_flag_id.store(id.to_inner(), Ordering::Release);
                 Ok(id)
             },
             Err(err) => {

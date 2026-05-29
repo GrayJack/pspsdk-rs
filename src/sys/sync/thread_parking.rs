@@ -23,7 +23,7 @@ pub struct Parker {
 
 impl Parker {
     pub fn new() -> Self {
-        let id = create_ev_flag().map(|ev| ev.as_inner()).unwrap_or(UNINIT);
+        let id = create_ev_flag().map(|ev| ev.to_inner()).unwrap_or(UNINIT);
         Self {
             ev_flag: AtomicU32::new(id),
         }
@@ -120,7 +120,7 @@ impl Parker {
 
         match created.into_result() {
             Ok(id) => {
-                self.ev_flag.store(id.as_inner(), Ordering::Release);
+                self.ev_flag.store(id.to_inner(), Ordering::Release);
                 Ok(id)
             },
             Err(err) => {

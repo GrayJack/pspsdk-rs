@@ -401,7 +401,7 @@ impl AtracId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }

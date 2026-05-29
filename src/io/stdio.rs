@@ -188,8 +188,8 @@ fn handle_ebadf<T>(r: io::Result<T>, default: impl FnOnce() -> io::Result<T>) ->
 
 pub fn is_ebadf(err: &io::Error) -> bool {
     let raw = err.raw_os_error();
-    raw == Some(SceError::BAD_FILE.as_inner() as i32)
-        || raw == Some(SceError::KERNEL_BADF.as_inner() as i32)
+    raw == Some(SceError::BAD_FILE.to_inner() as i32)
+        || raw == Some(SceError::KERNEL_BADF.to_inner() as i32)
 }
 
 /// A handle to the standard input stream of a process.

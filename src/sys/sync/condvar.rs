@@ -187,7 +187,7 @@ impl Condvar {
 
         match created.into_result() {
             Ok(id) => {
-                self.queue.store(id.as_inner(), Ordering::Release);
+                self.queue.store(id.to_inner(), Ordering::Release);
                 Ok(id)
             },
             Err(err) => {

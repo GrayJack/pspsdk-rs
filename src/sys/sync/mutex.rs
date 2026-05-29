@@ -134,7 +134,7 @@ impl Mutex {
 
         match created.into_result() {
             Ok(id) => {
-                self.id.store(id.as_inner(), Ordering::Release);
+                self.id.store(id.to_inner(), Ordering::Release);
                 Ok(id)
             },
             Err(err) => {
@@ -298,7 +298,7 @@ impl ReentrantMutex {
 
         match created.into_result() {
             Ok(id) => {
-                self.id.store(id.as_inner(), Ordering::Release);
+                self.id.store(id.to_inner(), Ordering::Release);
                 Ok(id)
             },
             Err(err) => {
@@ -637,7 +637,7 @@ impl SemaMutex {
 
         match created.into_result() {
             Ok(id) => {
-                self.sema.store(id.as_inner(), Ordering::Release);
+                self.sema.store(id.to_inner(), Ordering::Release);
                 Ok(id)
             },
             Err(err) => {

@@ -71,7 +71,7 @@ impl SceUid {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -90,7 +90,7 @@ impl Default for SceUid {
 
 impl core::fmt::Debug for SceUid {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        f.debug_tuple("SceUid").field(&self.as_inner()).finish()
+        f.debug_tuple("SceUid").field(&self.to_inner()).finish()
     }
 }
 
@@ -592,14 +592,14 @@ macro_rules! impl_ranged_ty {
         impl PartialEq for $t {
             #[inline]
             fn eq(&self, other: &Self) -> bool {
-                self.as_inner() == other.as_inner()
+                self.to_inner() == other.to_inner()
             }
         }
 
         impl Ord for $t {
             #[inline]
             fn cmp(&self, other: &Self) -> ::core::cmp::Ordering {
-                Ord::cmp(&self.as_inner(), &other.as_inner())
+                Ord::cmp(&self.to_inner(), &other.to_inner())
             }
         }
 
@@ -613,7 +613,7 @@ macro_rules! impl_ranged_ty {
         impl ::core::hash::Hash for $t {
             // Required method
             fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
-                ::core::hash::Hash::hash(&self.as_inner(), state);
+                ::core::hash::Hash::hash(&self.to_inner(), state);
             }
         }
     };

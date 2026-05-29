@@ -5592,7 +5592,7 @@ impl ThreadId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -5603,7 +5603,7 @@ impl crate::private::Sealed for ThreadId {}
 unsafe impl SceResultOk for ThreadId {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         unsafe {
-            SceUid::handle_ok_value(ok_value).map(|id| Self::from_raw_unchecked(id.as_inner()))
+            SceUid::handle_ok_value(ok_value).map(|id| Self::from_raw_unchecked(id.to_inner()))
         }
     }
 }
@@ -5633,7 +5633,7 @@ impl SemaId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -5672,7 +5672,7 @@ impl EventFlagId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -5711,7 +5711,7 @@ impl CallbackId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -5757,7 +5757,7 @@ impl MutexId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -5914,7 +5914,7 @@ impl LwMutexId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -5983,7 +5983,7 @@ impl MsgBoxId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -6035,7 +6035,7 @@ impl MsgPipeId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -6096,7 +6096,7 @@ impl VplId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -6143,7 +6143,7 @@ impl FplId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -6191,7 +6191,7 @@ impl TlsPoolId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -6253,7 +6253,7 @@ impl AlarmId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -6303,7 +6303,7 @@ impl VirtualTimerId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
@@ -6464,7 +6464,7 @@ impl KtlsId {
     }
 
     #[inline]
-    pub const fn as_inner(self) -> u32 {
+    pub const fn to_inner(self) -> u32 {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }

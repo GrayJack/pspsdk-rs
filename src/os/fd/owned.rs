@@ -167,21 +167,21 @@ impl OwnedFd {
 impl AsRawFd for BorrowedFd<'_> {
     #[inline]
     fn as_raw_fd(&self) -> RawFd {
-        self.fd.as_inner()
+        self.fd.to_inner()
     }
 }
 
 impl AsRawFd for OwnedFd {
     #[inline]
     fn as_raw_fd(&self) -> RawFd {
-        self.fd.as_inner()
+        self.fd.to_inner()
     }
 }
 
 impl IntoRawFd for OwnedFd {
     #[inline]
     fn into_raw_fd(self) -> RawFd {
-        ManuallyDrop::new(self).fd.as_inner()
+        ManuallyDrop::new(self).fd.to_inner()
     }
 }
 

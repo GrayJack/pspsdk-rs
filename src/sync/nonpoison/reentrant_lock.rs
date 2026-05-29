@@ -191,7 +191,7 @@ impl<T: ?Sized, M: RawMutex> ReentrantLock<T, M> {
     /// assert_eq!(lock.lock().get(), 10);
     /// ```
     pub fn lock(&self) -> ReentrantLockGuard<'_, T, M> {
-        let this_thread = current_thread_id().as_inner() as usize;
+        let this_thread = current_thread_id().to_inner() as usize;
         // SAFETY: We only touch lock_count when we own the lock.
         unsafe {
             if self.owner.load(Relaxed) == this_thread {
@@ -243,7 +243,7 @@ impl<T: ?Sized, M: RawMutex> ReentrantLock<T, M> {
     ///
     /// This function does not block.
     pub(crate) fn try_lock(&self) -> Option<ReentrantLockGuard<'_, T, M>> {
-        let this_thread = current_thread_id().as_inner() as usize;
+        let this_thread = current_thread_id().to_inner() as usize;
         // SAFETY: We only touch lock_count when we own the lock.
         unsafe {
             if self.owner.load(Relaxed) == this_thread {
