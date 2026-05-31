@@ -202,7 +202,7 @@ impl<T> RwLock<T> {
     #[inline]
     pub const fn new(t: T) -> RwLock<T> {
         RwLock {
-            inner: sys::RwLock::new(),
+            inner: DefaultRwLock::new(),
             data: UnsafeCell::new(t),
         }
     }

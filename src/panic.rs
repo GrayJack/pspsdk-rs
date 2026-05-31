@@ -191,7 +191,7 @@ extern "C" fn __rust_drop_panic() -> ! {
     print_and_die("Rust panics must be rethrown".into());
 }
 
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", not(target_os = "psp")))]
 pub use std::panic::catch_unwind;
 
 /// Invoke a closure, capturing the cause of an unwinding panic if one occurs.
@@ -214,7 +214,7 @@ pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>>
     let data_ptr = &mut data as *mut _ as *mut u8;
 
     return unsafe {
-        if core::intrinsics::catch_unwind(do_call::<F, R>, data_ptr, do_catch::<F, R>) == 0 {
+        if !core::intrinsics::catch_unwind(do_call::<F, R>, data_ptr, do_catch::<F, R>) {
             Ok(ManuallyDrop::into_inner(data.r))
         } else {
             Err(ManuallyDrop::into_inner(data.p))
