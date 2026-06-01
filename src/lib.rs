@@ -55,6 +55,9 @@ pub mod eabi;
 mod macros;
 
 mod private {
+    #[cfg(feature = "non-stub-code")]
+    use crate::sys::SceSize;
+
     pub trait Sealed {}
 
     impl Sealed for () {}
@@ -73,6 +76,128 @@ mod private {
     impl<T> Sealed for *mut T {}
     impl<T> Sealed for &T {}
     impl<T> Sealed for &mut T {}
+
+    // Libc functions that we need for user-space without using CFW's `SysclibForUser`
+
+    #[unsafe(no_mangle)]
+    #[cfg(feature = "non-stub-code")]
+    unsafe extern "C" fn memset(ptr: *mut u8, value: u32, num: SceSize) -> *mut u8 {
+        unsafe {
+            cfg_select! {
+                feature = "kernel" => crate::sys::libc::memset(ptr, value as i32, num),
+                all(not(feature = "kernel"), feature = "cfw-api") => crate::sys::libc::memset(ptr, value as i32, num) ,
+                _ => {
+                    let mut i = 0;
+
+                    while i < num {
+                        *((ptr as SceSize + i) as *mut u8) = value as u8;
+                        i += 1;
+                    }
+
+                    ptr
+                }
+            }
+        }
+    }
+
+    #[unsafe(no_mangle)]
+    #[cfg(feature = "non-stub-code")]
+    unsafe extern "C" fn memcpy(dst: *mut u8, src: *const u8, num: SceSize) -> *mut u8 {
+        unsafe {
+            cfg_select! {
+                feature = "kernel" => crate::sys::libc::memcpy(dst, src, num),
+                all(not(feature = "kernel"), feature = "cfw-api") => crate::sys::libc::memcpy(dst, src, num),
+                _ => {
+                    let mut i = 0;
+
+                    while i < num {
+                        *((dst as SceSize + i) as *mut u8) = *((src as SceSize + i) as *mut u8);
+                        i += 1;
+                    }
+
+                    dst
+                }
+            }
+        }
+    }
+
+    #[unsafe(no_mangle)]
+    #[cfg(feature = "non-stub-code")]
+    unsafe extern "C" fn memcmp(ptr1: *mut u8, ptr2: *mut u8, num: SceSize) -> i32 {
+        unsafe {
+            cfg_select! {
+                feature = "kernel" => crate::sys::libc::memcmp(ptr1, ptr2, num),
+                all(not(feature = "kernel"), feature = "cfw-api") => crate::sys::libc::memcmp(ptr1, ptr2, num),
+                _ => {
+                    let mut i = 0;
+
+                    while i < num {
+                        let val1 = *((ptr1 as SceSize + i) as *mut u8);
+                        let val2 = *((ptr2 as SceSize + i) as *mut u8);
+                        let diff = val1 as i32 - val2 as i32;
+
+                        if diff != 0 {
+                            return diff;
+                        }
+
+                        i += 1;
+                    }
+
+                    0
+                }
+            }
+        }
+    }
+
+    #[unsafe(no_mangle)]
+    #[cfg(feature = "non-stub-code")]
+    unsafe extern "C" fn memmove(dst: *mut u8, src: *mut u8, num: SceSize) -> *mut u8 {
+        unsafe {
+            cfg_select! {
+                feature = "kernel" => crate::sys::libc::memmove(dst, src, num),
+                all(not(feature = "kernel"), feature = "cfw-api") => crate::sys::libc::memmove(dst, src, num),
+                _ => {
+                    if dst < src {
+                        let mut i = 0;
+
+                        while i < num {
+                            *((dst as SceSize + i) as *mut u8) = *((src as SceSize + i) as *mut u8);
+                            i += 1;
+                        }
+                    } else {
+                        let mut i = num - 1;
+
+                        while i > 0 {
+                            *((dst as SceSize + i) as *mut u8) = *((src as SceSize + i) as *mut u8);
+                            i -= 1;
+                        }
+                    }
+
+                    dst
+                }
+            }
+        }
+    }
+
+    #[unsafe(no_mangle)]
+    #[cfg(feature = "non-stub-code")]
+    unsafe extern "C" fn strlen(s: *mut u8) -> SceSize {
+        unsafe {
+            cfg_select! {
+                feature = "kernel" => crate::sys::libc::strlen(s),
+                all(not(feature = "kernel"), feature = "cfw-api") => crate::sys::libc::strlen(s),
+                _ => {
+                    let mut len = 0;
+
+                    while *s.wrapping_add(len) != 0 {
+                        len += 1;
+                    }
+
+                    len as SceSize
+                }
+            }
+        }
+    }
 }
 
 /// Sets the PSP OS functions for the [`io`] module when `non-stub-code` is enabled.
