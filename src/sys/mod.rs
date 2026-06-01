@@ -14,6 +14,7 @@ pub mod atrac;
 pub mod audio;
 pub mod ctrl;
 pub mod display;
+pub mod dma;
 pub mod ge;
 pub mod hprm;
 pub mod io;
