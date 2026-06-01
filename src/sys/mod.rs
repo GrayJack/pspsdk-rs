@@ -12,6 +12,7 @@ pub use error::{ErrorFacility, SceError};
 
 pub mod atrac;
 pub mod audio;
+pub mod ctrl;
 pub mod display;
 pub mod ge;
 pub mod hprm;

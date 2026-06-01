@@ -76,6 +76,7 @@ impl From<Error> for SceError {
 }
 
 #[rustfmt::skip]
+#[allow(clippy::redundant_field_names)]
 pub(crate) const PSP_OS_FUNCS: &OsFunctions = &OsFunctions {
     error_string: error_string,
     error_str: error_str,

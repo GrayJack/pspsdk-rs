@@ -16,13 +16,13 @@
     negative_impls
 )]
 #![cfg_attr(feature = "non-stub-code", feature(panic_unwind))]
-#![cfg_attr(feature = "std", feature(psp_std))]
+// #![cfg_attr(feature = "std", feature(psp_std))]
 
 #[cfg(feature = "non-stub-code")]
 extern crate alloc;
 #[cfg(feature = "non-stub-code")]
 extern crate panic_unwind;
-#[cfg(all(feature = "std", feature = "non-stub-code"))]
+#[cfg(all(feature = "std", feature = "non-stub-code", not(target_os = "psp")))]
 extern crate std;
 
 // Re-export proc-macros
