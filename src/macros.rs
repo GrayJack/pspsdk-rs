@@ -101,12 +101,21 @@ macro_rules! _start {
 #[macro_export]
 macro_rules! module_info {
     ($name:expr, $version_major:expr, $version_minor:expr) => {
+        $crate::module_info!(
+            $name,
+            $version_major,
+            $version_minor,
+            $crate::sys::library::ModuleAttributes::base_default()
+        );
+    };
+
+    ($name:expr, $version_major:expr, $version_minor:expr, $attr:expr) => {
         #[used]
         #[unsafe(no_mangle)]
         #[unsafe(link_section = ".rodata.sceModuleInfo")]
         static module_info: $crate::Align16<$crate::sys::library::ModuleInfo> =
             $crate::Align16($crate::sys::library::ModuleInfo {
-                attributes: $crate::sys::library::ModuleAttributes::from_bits_retain(0),
+                attributes: $attr,
                 version: ($version_major, $version_minor),
                 name: $crate::sys::library::ModuleInfo::name_from_str($name),
                 terminal_char: b'\0',

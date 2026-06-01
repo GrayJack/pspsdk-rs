@@ -270,3 +270,15 @@ impl ResidentLibraryEntryItem {
         Self { var }
     }
 }
+
+impl ModuleAttributes {
+    #[inline]
+    #[doc(hidden)]
+    pub const fn base_default() -> Self {
+        if cfg!(feature = "kernel") {
+            Self::Kernel
+        } else {
+            Self::User
+        }
+    }
+}
