@@ -48,7 +48,10 @@ impl RwLock {
         let state = unsafe { self.state() };
 
         // prefer writers: if a writer is active or waiting, block readers
-        while state.writer_active || state.write_waiters != 0 {
+        loop {
+            if !state.writer_active && state.write_waiters == 0 {
+                break;
+            }
             unsafe { self.cond.wait(&self.lock) };
         }
 
@@ -81,9 +84,12 @@ impl RwLock {
         let state = unsafe { self.state() };
 
         // prefer writers: if a writer is active or waiting, block readers
-        while state.writer_active || state.write_waiters != 0 {
-            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+        loop {
+            if !state.writer_active && state.write_waiters == 0 {
+                break;
+            }
 
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
             if !res {
                 unsafe { self.lock.unlock() };
                 return false;
@@ -104,7 +110,11 @@ impl RwLock {
         state.write_waiters += 1;
 
         // Wait until no readers and no active writer
-        while state.writer_active || state.readers != 0 {
+        loop {
+            if !state.writer_active && state.readers == 0 {
+                break;
+            }
+
             unsafe { self.cond.wait(&self.lock) };
         }
 
@@ -139,9 +149,12 @@ impl RwLock {
         let state = unsafe { self.state() };
         state.write_waiters += 1;
 
-        while state.writer_active || state.readers != 0 {
-            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+        loop {
+            if !state.writer_active && state.readers == 0 {
+                break;
+            }
 
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
             if !res {
                 unsafe { self.lock.unlock() };
                 return false;
@@ -318,7 +331,10 @@ impl LwRwLock {
         let state = unsafe { self.state() };
 
         // prefer writers: if a writer is active or waiting, block readers
-        while state.writer_active || state.write_waiters != 0 {
+        loop {
+            if !state.writer_active && state.write_waiters == 0 {
+                break;
+            }
             unsafe { self.cond.wait(&self.lock) };
         }
 
@@ -351,9 +367,12 @@ impl LwRwLock {
         let state = unsafe { self.state() };
 
         // prefer writers: if a writer is active or waiting, block readers
-        while state.writer_active || state.write_waiters != 0 {
-            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+        loop {
+            if !state.writer_active && state.write_waiters == 0 {
+                break;
+            }
 
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
             if !res {
                 unsafe { self.lock.unlock() };
                 return false;
@@ -374,7 +393,11 @@ impl LwRwLock {
         state.write_waiters += 1;
 
         // Wait until no readers and no active writer
-        while state.writer_active || state.readers != 0 {
+        loop {
+            if !state.writer_active && state.readers == 0 {
+                break;
+            }
+
             unsafe { self.cond.wait(&self.lock) };
         }
 
@@ -409,9 +432,12 @@ impl LwRwLock {
         let state = unsafe { self.state() };
         state.write_waiters += 1;
 
-        while state.writer_active || state.readers != 0 {
-            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+        loop {
+            if !state.writer_active && state.readers == 0 {
+                break;
+            }
 
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
             if !res {
                 unsafe { self.lock.unlock() };
                 return false;
@@ -581,7 +607,10 @@ impl SemaRwLock {
         let state = unsafe { self.state() };
 
         // prefer writers: if a writer is active or waiting, block readers
-        while state.writer_active || state.write_waiters != 0 {
+        loop {
+            if !state.writer_active && state.write_waiters == 0 {
+                break;
+            }
             unsafe { self.cond.wait(&self.lock) };
         }
 
@@ -614,9 +643,12 @@ impl SemaRwLock {
         let state = unsafe { self.state() };
 
         // prefer writers: if a writer is active or waiting, block readers
-        while state.writer_active || state.write_waiters != 0 {
-            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+        loop {
+            if !state.writer_active && state.write_waiters == 0 {
+                break;
+            }
 
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
             if !res {
                 unsafe { self.lock.unlock() };
                 return false;
@@ -637,7 +669,11 @@ impl SemaRwLock {
         state.write_waiters += 1;
 
         // Wait until no readers and no active writer
-        while state.writer_active || state.readers != 0 {
+        loop {
+            if !state.writer_active && state.readers == 0 {
+                break;
+            }
+
             unsafe { self.cond.wait(&self.lock) };
         }
 
@@ -672,9 +708,12 @@ impl SemaRwLock {
         let state = unsafe { self.state() };
         state.write_waiters += 1;
 
-        while state.writer_active || state.readers != 0 {
-            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+        loop {
+            if !state.writer_active && state.readers == 0 {
+                break;
+            }
 
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
             if !res {
                 unsafe { self.lock.unlock() };
                 return false;

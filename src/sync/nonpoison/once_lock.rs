@@ -492,10 +492,7 @@ impl<T> OnceLock<T> {
     fn initialized_mut(&mut self) -> bool {
         // `state()` does not perform an atomic load, so prefer it over `is_complete()`.
         let state = self.once.state();
-        match state {
-            ExclusiveState::Complete => true,
-            _ => false,
-        }
+        matches!(state, ExclusiveState::Complete)
     }
 
     #[cold]

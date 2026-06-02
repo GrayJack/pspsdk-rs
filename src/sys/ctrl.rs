@@ -1616,8 +1616,8 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware 5.70.
     #[nid(if cfg!(feature = "psp_660") { 0xDB76878D }
-        else if cfg!(feature = "psp_630") { 0xA759DB6A }
-        else if cfg!(feature = "psp_600") { 0xD8329216 }
+        else if cfg!(feature = "psp_630") { 0x094EF1BB }
+        else if cfg!(feature = "psp_600") { 0xA759DB6A }
         else { 0xD8329216 }
     )]
     pub fn sceCtrlSetAnalogEmulation(
@@ -1716,7 +1716,7 @@ impl IdleCancelThreshold {
     /// Creates a new idle cancel threshold if it is one of the valid values.
     pub const fn new(raw: i32) -> Result<Self, SceError> {
         match raw {
-            -1 | 0..=128 => Ok(unsafe { Self::new_unchecked(raw) }),
+            -1..=128 => Ok(unsafe { Self::new_unchecked(raw) }),
             _ => Err(SceError::INVALID_VALUE),
         }
     }

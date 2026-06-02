@@ -88,7 +88,7 @@ impl FileDesc {
     }
 }
 
-impl<'a> io::Read for &'a FileDesc {
+impl io::Read for &FileDesc {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         (**self).read(buf)
@@ -100,7 +100,7 @@ impl<'a> io::Read for &'a FileDesc {
     }
 }
 
-impl<'a> io::Write for &'a FileDesc {
+impl io::Write for &FileDesc {
     #[inline]
     fn write(&mut self, data: &[u8]) -> io::Result<usize> {
         (**self).write(data)
@@ -117,13 +117,13 @@ impl<'a> io::Write for &'a FileDesc {
     }
 }
 
-impl<'a> fmt::Write for &'a FileDesc {
+impl fmt::Write for &FileDesc {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.write_all(s.as_bytes()).map_err(|_| fmt::Error)
     }
 }
 
-impl<'a> io::Seek for &'a FileDesc {
+impl io::Seek for &FileDesc {
     #[inline]
     fn seek(&mut self, pos: io::SeekFrom) -> io::Result<u64> {
         (**self).seek(pos)

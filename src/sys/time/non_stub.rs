@@ -21,6 +21,7 @@ impl SystemTime {
     pub const MAX: Self = Self(Duration::MAX);
     pub const MIN: Self = Self(Duration::ZERO);
 
+    #[allow(clippy::manual_checked_ops)]
     pub fn now() -> Self {
         let mut tick = 0;
         let res = sceRtcGetCurrentTick(&mut tick);

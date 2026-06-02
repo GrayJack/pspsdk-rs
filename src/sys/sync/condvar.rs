@@ -58,26 +58,26 @@ impl Condvar {
         self.lock.lock();
         let waiters = self.waiters.swap(0, Ordering::Relaxed);
 
-        if waiters > 0 {
-            if let Some(queue) = self.get_queue() {
-                let mut remaining = waiters;
+        if waiters > 0
+            && let Some(queue) = self.get_queue()
+        {
+            let mut remaining = waiters;
 
-                while remaining != 0 {
-                    let to_signal = if remaining > i32::MAX as u32 {
-                        i32::MAX
-                    } else {
-                        remaining as i32
-                    };
+            while remaining != 0 {
+                let to_signal = if remaining > i32::MAX as u32 {
+                    i32::MAX
+                } else {
+                    remaining as i32
+                };
 
-                    let res = sceKernelSignalSema(queue, to_signal);
-                    debug_assert!(
-                        res.is_ok(),
-                        "failed to signal the queue semaphore: {:#X}",
-                        res.as_inner()
-                    );
+                let res = sceKernelSignalSema(queue, to_signal);
+                debug_assert!(
+                    res.is_ok(),
+                    "failed to signal the queue semaphore: {:#X}",
+                    res.as_inner()
+                );
 
-                    remaining = remaining.saturating_sub(to_signal as u32);
-                }
+                remaining = remaining.saturating_sub(to_signal as u32);
             }
         }
 

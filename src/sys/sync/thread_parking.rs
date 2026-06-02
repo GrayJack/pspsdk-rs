@@ -56,10 +56,7 @@ impl Parker {
 
         let micros = dur.as_micros();
         let mut out_bits = 0;
-        let mut timeout = match u32::try_from(micros) {
-            Ok(t) => t,
-            Err(_) => u32::MAX,
-        };
+        let mut timeout = u32::try_from(micros).unwrap_or(u32::MAX);
         let timeout2 = Some(&mut timeout);
         let _res = sceKernelWaitEventFlag(
             id,

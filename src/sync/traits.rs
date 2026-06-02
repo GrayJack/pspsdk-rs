@@ -24,7 +24,18 @@ pub trait RawMutex: Sealed {
     /// and `false` otherwise.
     fn try_lock(&self) -> bool;
 
-    /// Unlocks this mutex
+    /// Unlocks this mutex.
+    ///
+    /// # Safety
+    ///
+    /// This method may only be called if the mutex is held in the current context, i.e. it must
+    /// be paired with a successful call to [`lock`], [`try_lock`], [`try_lock_for`] or
+    /// [`try_lock_until`].
+    ///
+    /// [`lock`]: RawMutex::lock
+    /// [`try_lock`]: RawMutex::try_lock
+    /// [`try_lock_for`]: RawMutexTimed::try_lock_for
+    /// [`try_lock_until`]: RawMutexTimed::try_lock_until
     unsafe fn unlock(&self);
 
     fn is_locked(&self) -> bool {
