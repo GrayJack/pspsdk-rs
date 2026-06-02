@@ -77,7 +77,7 @@ mod private {
     impl<T> Sealed for &T {}
     impl<T> Sealed for &mut T {}
 
-    // Libc functions that we need for user-space without using CFW's `SysclibForUser`
+    // Libc functions that we need for rust linker
 
     #[unsafe(no_mangle)]
     #[cfg(feature = "non-stub-code")]
