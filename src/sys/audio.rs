@@ -100,21 +100,21 @@ pub const fn audio_sample_align(sample_count: i32) -> i32 {
 }
 
 impl AudioChannelId {
-    /// Channel 0
+    /// Channel 0.
     pub const CHANNEL_0: AudioChannelId = unsafe { Self::from_raw_unchecked(0) };
-    /// Channel 1
+    /// Channel 1.
     pub const CHANNEL_1: AudioChannelId = unsafe { Self::from_raw_unchecked(1) };
-    /// Channel 2
+    /// Channel 2.
     pub const CHANNEL_2: AudioChannelId = unsafe { Self::from_raw_unchecked(2) };
-    /// Channel 3
+    /// Channel 3.
     pub const CHANNEL_3: AudioChannelId = unsafe { Self::from_raw_unchecked(3) };
-    /// Channel 4
+    /// Channel 4.
     pub const CHANNEL_4: AudioChannelId = unsafe { Self::from_raw_unchecked(4) };
-    /// Channel 5
+    /// Channel 5.
     pub const CHANNEL_5: AudioChannelId = unsafe { Self::from_raw_unchecked(5) };
-    /// Channel 6
+    /// Channel 6.
     pub const CHANNEL_6: AudioChannelId = unsafe { Self::from_raw_unchecked(6) };
-    /// Channel 7
+    /// Channel 7.
     pub const CHANNEL_7: AudioChannelId = unsafe { Self::from_raw_unchecked(7) };
     /// Channel value to request a the next channel on functions like [`sceAudioChReserve`].
     pub const NEXT: AudioChannelId = unsafe { Self::from_raw_unchecked(0xFFFFFFFF) };

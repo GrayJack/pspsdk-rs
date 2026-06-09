@@ -6,10 +6,12 @@ use pspsdk_macros::psp_stub;
 
 use crate::sys::{SceError, SceResult, SceResultOk, SceUid};
 
+/// The callback slot for headphone remote module.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct HprmCallbackSlot(u32);
 
+/// Possible keys on headphone remote.
 #[bitflag(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[doc(alias("SceHprmKeys", "PspHprmKeys"))]
@@ -239,9 +241,11 @@ extern "C" {
     /// Unregisters Hprm callback function.
     ///
     /// # Parameters
+    ///
     /// - `slot`: The slot to unregister the callback function.
     ///
     /// # Return Value
+    ///
     /// `Ok` value on success, error value otherwise.
     #[nid(if cfg!(feature = "psp_660") { 0xEB0CFCCC } else { 0x444ED0B7 })]
     pub fn sceHprmUnregitserCallback(slot: HprmCallbackSlot) -> SceResult<()>;
@@ -251,18 +255,18 @@ extern "C" {
 impl HprmCallbackSlot {
     /// Callback slot to register the callback on available slot and receive the slot value back on
     /// [`sceHprmRegisterCallback`].
-    pub const AVAILABLE: HprmCallbackSlot = unsafe { Self::from_raw_unchecked(0xFFFFFFFF) };
+    pub const AVAILABLE: Self = unsafe { Self::new_unchecked(0xFFFFFFFF) };
     /// Callback slot zero that also can be returned if passed [`HprmCallbackSlot::AVAILABLE`] to
     /// [`sceHprmRegisterCallback`] as success value.
-    pub const ZERO: HprmCallbackSlot = unsafe { Self::from_raw_unchecked(0) };
+    pub const ZERO: Self = unsafe { Self::new_unchecked(0) };
 
     /// Create a new channel number from a raw value.
     ///
     /// This functions checks for the value of `raw` to be a in the range of possible `SceChannel`
     /// values used by the PSP OS, returning an [`None`] otherwise.
-    pub const fn from_raw(raw: u32) -> Option<Self> {
+    pub const fn new(raw: u32) -> Option<Self> {
         match raw {
-            0u32..0x20 => Some(unsafe { Self::from_raw_unchecked(raw) }),
+            0u32..0x20 => Some(unsafe { Self::new_unchecked(raw) }),
             0xFFFFFFFF => Some(Self::AVAILABLE),
             _ => None,
         }
@@ -275,7 +279,7 @@ impl HprmCallbackSlot {
     /// Immediate language UB if `val` is not within the valid range for this
     /// type, as it violates the validity invariant.
     #[inline]
-    pub const unsafe fn from_raw_unchecked(raw: u32) -> Self {
+    pub const unsafe fn new_unchecked(raw: u32) -> Self {
         Self(raw)
     }
 
@@ -292,7 +296,7 @@ unsafe impl SceResultOk for HprmCallbackSlot {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         // On result Channel is never 0xFFFFFFFF
         match ok_value {
-            0..0x20 => Ok(unsafe { Self::from_raw_unchecked(ok_value) }),
+            0..0x20 => Ok(unsafe { Self::new_unchecked(ok_value) }),
             _ => Err(SceError::INVALID_VALUE),
         }
     }

@@ -857,7 +857,7 @@ pub enum CallbackTermState {
 /// The termination state of the callback on success, error value otherwise.
 #[doc(alias = "SceKernelCallbackFunction")]
 pub type CallbackFunction =
-    unsafe extern "C" fn(count: u32, arg: i32, common: *mut c_void) -> CallbackTermState;
+    unsafe extern "C" fn(count: u32, arg: u32, common: *mut c_void) -> CallbackTermState;
 
 /// The information of the current state of a callback.
 #[repr(C)]
