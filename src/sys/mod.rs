@@ -24,6 +24,7 @@ pub mod loadexec;
 pub mod mem;
 pub mod openpsid;
 pub mod power;
+pub mod suspend;
 pub mod thread;
 pub mod time;
 
