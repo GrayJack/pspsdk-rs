@@ -133,6 +133,7 @@ impl ToTokens for PspStub {
 
                 let stub_vars = quote! {
                     #(#cfg_attrs)*
+                    #[allow(clippy::if_same_then_else)]
                     #[unsafe(link_section = #fn_nid_section)]
                     static #fn_nid_var: u32 = #nid;
 

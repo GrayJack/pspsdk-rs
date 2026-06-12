@@ -266,7 +266,7 @@ pub fn enable_home_button() {
     unsafe {
         unsafe extern "C" fn exit_thread(_args: usize, _argp: *mut c_void) -> SceResult<u32> {
             unsafe extern "C" fn exit_callback(
-                _arg1: u32, _arg2: i32, _arg: *mut c_void,
+                _arg1: u32, _arg2: u32, _arg: *mut c_void,
             ) -> CallbackTermState {
                 let _res = sys::loadexec::sceKernelExitGame();
                 CallbackTermState::NormalTermination
