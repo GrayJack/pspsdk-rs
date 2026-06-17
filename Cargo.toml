@@ -20,6 +20,10 @@ default = ["non-stub-code"]
 kernel = []
 # Enable CFW modules.
 cfw-api = []
+# Optimize for space instead of speed the basic C-functions required by the
+# linker when such functions doesn't have a stub alternative. (memset, memcpy,
+# memmove, strlen).
+opt-size-c = []
 
 # Build with std support
 std = []
