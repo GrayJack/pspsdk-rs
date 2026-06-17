@@ -5,6 +5,8 @@ use crate::sys::{thread::CallbackId, SceError, SceResult, SceResultOk, SceSize};
 
 /// Bitflags that are passed to the `arg` parameter of [`CallbackFunction`]
 /// when registered with [`scePowerRegisterCallback`].
+///
+/// [`CallbackFunction`]: crate::sys::thread::CallbackFunction
 #[bitflag(u32)]
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -508,7 +510,7 @@ extern "C" {
     ///
     /// # Precautions
     ///
-    /// The power lock should always be unlocked ([`sceKernelPowerUnlock`]) after processing
+    /// The power lock should always be unlocked ([`scePowerUnlock`]) after processing
     /// whatever important thing you needed, because it blocks power off even with physical buttons.
     ///
     /// This functions is not marked `unsafe`, because it is not memory unsafe operation.
@@ -528,7 +530,7 @@ extern "C" {
     ///
     /// # Precautions
     ///
-    /// Calling this function without calling [`sceKernelPowerLock`] can mess up cases of power lock
+    /// Calling this function without calling [`scePowerLock`] can mess up cases of power lock
     /// nesting.
     ///
     /// This functions is not marked `unsafe`, because it is not memory unsafe operation.
@@ -555,7 +557,7 @@ extern "C" {
     ///
     /// The volatile memory is used by the PSP system for the utility library and to save eDRAM
     /// during suspend/resume time and those will be blocked while this memory is being used by your
-    /// software. For that reason, it is best to unlock (with [`sceKernelVolatileMemUnlock`]) as
+    /// software. For that reason, it is best to unlock (with [`scePowerVolatileMemUnlock`]) as
     /// soon as you done with using that piece of memory.
     ///
     /// If you need to use this memory for long periods and want to maintain such functionalities
@@ -592,14 +594,14 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     ///
-    /// Specifically [`SceError::CANNOT_LOCK_VMEM`] when volatile memory is in use by other
+    /// Specifically [`SceError::POWER_CANNOT_LOCK_VMEM`] when volatile memory is in use by other
     /// processes.
     ///
     /// # Precautions
     ///
     /// The volatile memory is used by the PSP system for the utility library and to save eDRAM
     /// during suspend/resume time and those will be blocked while this memory is being used by your
-    /// software. For that reason, it is best to unlock (with [`sceKernelVolatileMemUnlock`]) as
+    /// software. For that reason, it is best to unlock (with [`scePowerVolatileMemUnlock`]) as
     /// soon as you done with using that piece of memory.
     ///
     /// If you need to use this memory for long periods and want to maintain such functionalities
@@ -615,7 +617,7 @@ extern "C" {
     /// [create]: crate::sys::thread::sceKernelCreateCallback
     /// [register]: crate::sys::power::scePowerRegisterCallback
     /// [`CallbackFunction`]: crate::sys::thread::CallbackFunction
-    /// [`SceError::CANNOT_LOCK_VMEM`]: crate::sys::SceError::CANNOT_LOCK_VMEM
+    /// [`SceError::POWER_CANNOT_LOCK_VMEM`]: crate::sys::SceError::POWER_CANNOT_LOCK_VMEM
     #[nid(0xFA97A599)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn scePowerVolatileMemTryLock(
@@ -639,7 +641,7 @@ extern "C" {
     /// # Precautions
     ///
     /// This function should not be called without having a previous successful call to either
-    /// [`sceKernelVolatileMemLock`] or [`sceKernelVolatileMemTryLock`].
+    /// [`scePowerVolatileMemLock`] or [`scePowerVolatileMemTryLock`].
     ///
     /// # Firmware Version
     ///
@@ -1470,7 +1472,7 @@ extern "C" {
     ///
     /// # Precautions
     ///
-    /// The power lock should always be unlocked ([`sceKernelPowerUnlock`]) after processing
+    /// The power lock should always be unlocked ([`scePowerUnlock`]) after processing
     /// whatever important thing you needed, because it blocks power off even with physical buttons.
     ///
     /// This functions is not marked `unsafe`, because it is not memory unsafe operation.
@@ -1499,7 +1501,7 @@ extern "C" {
     ///
     /// # Precautions
     ///
-    /// Calling this function without calling [`sceKernelPowerLock`] can mess up cases of power lock
+    /// Calling this function without calling [`scePowerLock`] can mess up cases of power lock
     /// nesting.
     ///
     /// This functions is not marked `unsafe`, because it is not memory unsafe operation.
@@ -1535,7 +1537,7 @@ extern "C" {
     ///
     /// The volatile memory is used by the PSP system for the utility library and to save eDRAM
     /// during suspend/resume time and those will be blocked while this memory is being used by your
-    /// software. For that reason, it is best to unlock (with [`sceKernelVolatileMemUnlock`]) as
+    /// software. For that reason, it is best to unlock (with [`scePowerVolatileMemUnlock`]) as
     /// soon as you done with using that piece of memory.
     ///
     /// If you need to use this memory for long periods and want to maintain such functionalities
@@ -1581,14 +1583,14 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     ///
-    /// Specifically [`SceError::CANNOT_LOCK_VMEM`] when volatile memory is in use by other
+    /// Specifically [`SceError::POWER_CANNOT_LOCK_VMEM`] when volatile memory is in use by other
     /// processes.
     ///
     /// # Precautions
     ///
     /// The volatile memory is used by the PSP system for the utility library and to save eDRAM
     /// during suspend/resume time and those will be blocked while this memory is being used by your
-    /// software. For that reason, it is best to unlock (with [`sceKernelVolatileMemUnlock`]) as
+    /// software. For that reason, it is best to unlock (with [`scePowerVolatileMemUnlock`]) as
     /// soon as you done with using that piece of memory.
     ///
     /// If you need to use this memory for long periods and want to maintain such functionalities
@@ -1604,7 +1606,7 @@ extern "C" {
     /// [create]: crate::sys::thread::sceKernelCreateCallback
     /// [register]: crate::sys::power::scePowerRegisterCallback
     /// [`CallbackFunction`]: crate::sys::thread::CallbackFunction
-    /// [`SceError::CANNOT_LOCK_VMEM`]: crate::sys::SceError::CANNOT_LOCK_VMEM
+    /// [`SceError::POWER_CANNOT_LOCK_VMEM`]: crate::sys::SceError::POWER_CANNOT_LOCK_VMEM
     #[nid(if cfg!(feature = "psp_660") { 0xA882AEB7 }
         else if cfg!(feature = "psp_630") { 0x37DB9C37 }
         else if cfg!(feature = "psp_600") { 0x74035D33 }
@@ -1637,7 +1639,7 @@ extern "C" {
     /// # Precautions
     ///
     /// This function should not be called without having a previous successful call to either
-    /// [`sceKernelVolatileMemLock`] or [`sceKernelVolatileMemTryLock`].
+    /// [`scePowerVolatileMemLock`] or [`scePowerVolatileMemTryLock`].
     ///
     /// # Firmware Version
     ///

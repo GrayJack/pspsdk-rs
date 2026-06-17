@@ -84,6 +84,9 @@ extern "C" {
     /// [create]: crate::sys::thread::sceKernelCreateCallback
     /// [register]: crate::sys::power::scePowerRegisterCallback
     /// [`CallbackFunction`]: crate::sys::thread::CallbackFunction
+    /// [`PowerCallbackArg::Standby`]: crate::sys::power::PowerCallbackArg::Standby
+    /// [`PowerCallbackArg::Suspending`]: crate::sys::power::PowerCallbackArg::Suspending
+    /// [`PowerCallbackArg::ResumeComplete`]: crate::sys::power::PowerCallbackArg::ResumeComplete
     #[nid(0x3E0271D3)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn sceKernelVolatileMemLock(
@@ -105,7 +108,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     ///
-    /// Specifically [`SceError::CANNOT_LOCK_VMEM`] when volatile memory is in use by other
+    /// Specifically [`SceError::POWER_CANNOT_LOCK_VMEM`] when volatile memory is in use by other
     /// processes.
     ///
     /// # Precautions
@@ -128,7 +131,10 @@ extern "C" {
     /// [create]: crate::sys::thread::sceKernelCreateCallback
     /// [register]: crate::sys::power::scePowerRegisterCallback
     /// [`CallbackFunction`]: crate::sys::thread::CallbackFunction
-    /// [`SceError::CANNOT_LOCK_VMEM`]: crate::sys::SceError::CANNOT_LOCK_VMEM
+    /// [`SceError::POWER_CANNOT_LOCK_VMEM`]: crate::sys::SceError::POWER_CANNOT_LOCK_VMEM
+    /// [`PowerCallbackArg::Standby`]: crate::sys::power::PowerCallbackArg::Standby
+    /// [`PowerCallbackArg::Suspending`]: crate::sys::power::PowerCallbackArg::Suspending
+    /// [`PowerCallbackArg::ResumeComplete`]: crate::sys::power::PowerCallbackArg::ResumeComplete
     #[nid(0xA14F40B2)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn sceKernelVolatileMemTryLock(
@@ -254,6 +260,9 @@ extern "C" {
     /// [create]: crate::sys::thread::sceKernelCreateCallback
     /// [register]: crate::sys::power::scePowerRegisterCallback
     /// [`CallbackFunction`]: crate::sys::thread::CallbackFunction
+    /// [`PowerCallbackArg::Standby`]: crate::sys::power::PowerCallbackArg::Standby
+    /// [`PowerCallbackArg::Suspending`]: crate::sys::power::PowerCallbackArg::Suspending
+    /// [`PowerCallbackArg::ResumeComplete`]: crate::sys::power::PowerCallbackArg::ResumeComplete
     #[nid(0x3E0271D3)]
     pub unsafe fn sceKernelVolatileMemLock(
         unk: u32, ptr: *mut *mut u8, size: &mut SceSize,
@@ -274,7 +283,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     ///
-    /// Specifically [`SceError::CANNOT_LOCK_VMEM`] when volatile memory is in use by other
+    /// Specifically [`SceError::POWER_CANNOT_LOCK_VMEM`] when volatile memory is in use by other
     /// processes.
     ///
     /// # Precautions
@@ -297,7 +306,10 @@ extern "C" {
     /// [create]: crate::sys::thread::sceKernelCreateCallback
     /// [register]: crate::sys::power::scePowerRegisterCallback
     /// [`CallbackFunction`]: crate::sys::thread::CallbackFunction
-    /// [`SceError::CANNOT_LOCK_VMEM`]: crate::sys::SceError::CANNOT_LOCK_VMEM
+    /// [`SceError::POWER_CANNOT_LOCK_VMEM`]: crate::sys::SceError::POWER_CANNOT_LOCK_VMEM
+    /// [`PowerCallbackArg::Standby`]: crate::sys::power::PowerCallbackArg::Standby
+    /// [`PowerCallbackArg::Suspending`]: crate::sys::power::PowerCallbackArg::Suspending
+    /// [`PowerCallbackArg::ResumeComplete`]: crate::sys::power::PowerCallbackArg::ResumeComplete
     #[nid(0xA14F40B2)]
     pub unsafe fn sceKernelVolatileMemTryLock(
         unk: u32, ptr: *mut *mut u8, size: &mut SceSize,
