@@ -8,6 +8,11 @@ use crate::sys::{
     SceSize, SceUid,
 };
 
+pub use crate::sys::usersystemlib::{
+    sceKernelGetTlsAddr, sceKernelLockLwMutex, sceKernelLockLwMutexCB, sceKernelReferLwMutexStatus,
+    sceKernelTryLockLwMutex, sceKernelUnlockLwMutex,
+};
+
 /// The thread UID, created with [`sceKernelCreateThread`].
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -92,7 +97,7 @@ pub enum ThreadWaitKind {
     DeleteCallback = 0x0B,
     Mutex = 0x0C,
     LightweightMutex = 0x0D,
-    TLSPL = 0x0E,
+    TLSPool = 0x0E,
 
     SleepCallback = 0x101,
     DelayCallback = 0x102,
@@ -2131,7 +2136,7 @@ extern "C" {
     /// # Parameters
     ///
     /// - `id`: The lightweight mutex UID.
-    /// - `info` **[[InOut parameter]]**: A reference to [`MutexInfo`] to receive the semaphore
+    /// - `info` **[[InOut parameter]]**: A reference to [`LwMutexInfo`] to receive the semaphore
     ///   information.
     ///
     /// # Return Value
@@ -2783,21 +2788,26 @@ extern "C" {
     #[nid(0x32BF938E)]
     pub fn sceKernelDeleteTlspl(id: TlsPoolId) -> SceResult<()>;
 
-    /// Gets the address of a user TLS memory pool.
+    /// Allocates the TLS memory pool.
     ///
     /// # Parameters
     ///
     /// - `id`: The user TLS memory pool UID.
+    /// - `tls_addr` **[[Out parameter]]**: A pointer to the pointer to receive the TLS head
+    ///   address.
+    /// - `unk`: Unknown. Pass 0.
     ///
     /// # Return Value
     ///
-    /// Returns a pointer to the user TLS memory pool on success, null value on error.
+    /// `Ok` value on success, error value otherwise.
     ///
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 5.70.
-    #[nid(0xFA835CDE)]
-    pub fn sceKernelGetTlsAddr(id: TlsPoolId) -> *mut c_void;
+    #[nid(0x65F54FFB)]
+    pub unsafe fn _sceKernelAllocateTlspl(
+        id: TlsPoolId, tls_addr: *mut *mut c_void, unk: u32,
+    ) -> SceResult<()>;
 
     /// Gets the current state of a user TLS memory pool.
     ///
@@ -4343,7 +4353,7 @@ extern "C" {
     /// # Parameters
     ///
     /// - `id`: The lightweight mutex UID.
-    /// - `info` **[[InOut parameter]]**: A reference to [`MutexInfo`] to receive the semaphore
+    /// - `info` **[[InOut parameter]]**: A reference to [`LwMutexInfo`] to receive the semaphore
     ///   information.
     ///
     /// # Return Value
