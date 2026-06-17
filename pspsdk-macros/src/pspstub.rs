@@ -119,12 +119,18 @@ impl ToTokens for PspStub {
                     &format!(".rodata.sceNid.{}.{}", lib_name.value(), sig.ident),
                     Span::mixed_site(),
                 );
-                let fn_nid_var = Ident::new(&format!("__{}_NID", sig.ident), Span::mixed_site());
+                let fn_nid_var = Ident::new(
+                    &format!("__{}_{}_NID", lib_name.value(), sig.ident),
+                    Span::mixed_site(),
+                );
                 let fn_stub_section = LitStr::new(
                     &format!(".sceStub.text.{}.{}", lib_name.value(), sig.ident),
                     Span::mixed_site(),
                 );
-                let fn_stub_var = Ident::new(&format!("__{}_stub", sig.ident), Span::mixed_site());
+                let fn_stub_var = Ident::new(
+                    &format!("__{}_{}_stub", lib_name.value(), sig.ident),
+                    Span::mixed_site(),
+                );
 
                 let mut inner_sig = sig.clone();
                 inner_sig.ident = fn_stub_var.clone();
