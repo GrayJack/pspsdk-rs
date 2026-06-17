@@ -27,6 +27,7 @@ pub mod power;
 pub mod suspend;
 pub mod thread;
 pub mod time;
+pub mod usersystemlib;
 
 #[cfg(feature = "non-stub-code")]
 pub mod sync;
