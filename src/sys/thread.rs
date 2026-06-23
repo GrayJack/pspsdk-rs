@@ -61,16 +61,23 @@ pub enum ThreadAttributes {
     NeverUseFPU = 0x00002000,
 }
 
-/// The possible states that a PSP thread can be.
+/// The possible states/status that a PSP thread can be.
 #[bitflag(u32)]
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[doc(alias("PspThreadStatus"))]
 pub enum ThreadState {
+    #[doc(alias("PSP_THREAD_RUNNING"))]
     Run   = 0x01,
+    #[doc(alias("PSP_THREAD_READY"))]
     Ready = 0x02,
+    #[doc(alias("PSP_THREAD_WAITING"))]
     Wait  = 0x04,
+    #[doc(alias("PSP_THREAD_SUSPEND"))]
     Suspend = 0x08,
+    #[doc(alias("PSP_THREAD_STOPPED"))]
     Dormant = 0x10,
+    #[doc(alias("PSP_THREAD_KILLED"))]
     Dead  = 0x20,
 
     WaitSuspend = Wait | Suspend,
@@ -136,7 +143,7 @@ pub struct ThreadInfo {
     /// The thread attributes.
     pub attr: ThreadAttributes,
     /// The thread current status.
-    pub status: u32,
+    pub status: ThreadState,
     /// The thread entry function.
     pub entry: Option<ThreadEntryFn>,
     /// The thread stack pointer.
