@@ -67,19 +67,28 @@ pub enum ThreadAttributes {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[doc(alias("PspThreadStatus"))]
 pub enum ThreadState {
+    /// The thread is in running state.
     #[doc(alias("PSP_THREAD_RUNNING"))]
     Run   = 0x01,
+    /// The thread is ready to execute.
     #[doc(alias("PSP_THREAD_READY"))]
     Ready = 0x02,
+    /// The thread is waiting to resume.
     #[doc(alias("PSP_THREAD_WAITING"))]
     Wait  = 0x04,
+    /// The thread is suspended.
     #[doc(alias("PSP_THREAD_SUSPEND"))]
     Suspend = 0x08,
+    /// The thread is dormant.
     #[doc(alias("PSP_THREAD_STOPPED"))]
     Dormant = 0x10,
+    /// The thread is dead.
+    ///
+    /// Killed by the thread manager. Stack overflow often causes this state.
     #[doc(alias("PSP_THREAD_KILLED"))]
     Dead  = 0x20,
 
+    /// The thread is in both wait and suspend states.
     WaitSuspend = Wait | Suspend,
 }
 
