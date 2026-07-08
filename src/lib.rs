@@ -124,7 +124,7 @@ mod private {
                 feature = "kernel" => crate::sys::libc::memcmp(ptr1.cast(), ptr2.cast(), num),
                 all(not(feature = "kernel"), feature = "cfw-api") => crate::sys::libc::memcmp(ptr1.cast(), ptr2.cast(), num),
                 _ => {
-                    string_impl::compare_bytes(ptr1, ptr2, num)
+                    string_impl::compare_bytes(ptr1.cast(), ptr2.cast(), num)
                 }
             }
         }
