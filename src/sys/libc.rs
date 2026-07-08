@@ -43,7 +43,7 @@ extern "C" {
     pub unsafe fn memchr(src: *const u8, byte: i32, len: SceSize) -> *mut u8;
 
     #[nid(0x81D0D1F7)]
-    pub unsafe fn memcmp(src: *mut u8, other: *mut u8, len: SceSize) -> i32;
+    pub unsafe fn memcmp(src: *const u8, other: *const u8, len: SceSize) -> i32;
 
     #[nid(0xAB7592FF)]
     pub unsafe fn memcpy(dest: *mut u8, src: *const u8, len: SceSize) -> *mut u8;

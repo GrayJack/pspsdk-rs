@@ -58,6 +58,9 @@ mod private {
     #[cfg(feature = "non-stub-code")]
     mod string_impl;
     #[cfg(feature = "non-stub-code")]
+    use core::ffi::{c_char, c_void};
+
+    #[cfg(feature = "non-stub-code")]
     use crate::sys::SceSize;
 
     pub trait Sealed {}
@@ -83,14 +86,14 @@ mod private {
 
     #[unsafe(no_mangle)]
     #[cfg(feature = "non-stub-code")]
-    unsafe extern "C" fn memset(src: *mut u8, value: u8, num: SceSize) -> *mut u8 {
+    unsafe extern "C" fn memset(src: *mut c_void, value: i32, num: SceSize) -> *mut c_void {
         unsafe {
             cfg_select! {
-                feature = "kernel" => crate::sys::libc::memset(src, value as i32, num),
-                not(feature = "kernel") => crate::sys::usersystemlib::sceKernelMemset(src, value as i32, num),
+                feature = "kernel" => crate::sys::libc::memset(src.cast(), value, num).cast(),
+                not(feature = "kernel") => crate::sys::usersystemlib::sceKernelMemset(src.cast(), value, num).cast(),
                 // all(not(feature = "kernel"), feature = "cfw-api") => crate::sys::libc::memset(src, value as i32, num) ,
                 _ => {
-                    string_impl::set_bytes(src, value, num);
+                    string_impl::set_bytes(src.cast(), value as i32, num);
                     src
                 }
             }
@@ -99,11 +102,11 @@ mod private {
 
     #[unsafe(no_mangle)]
     #[cfg(feature = "non-stub-code")]
-    unsafe extern "C" fn memcpy(dst: *mut u8, src: *const u8, num: SceSize) -> *mut u8 {
+    unsafe extern "C" fn memcpy(dst: *mut c_void, src: *const c_void, num: SceSize) -> *mut c_void {
         unsafe {
             cfg_select! {
-                feature = "kernel" => crate::sys::libc::memcpy(dst, src, num),
-                not(feature = "kernel") => crate::sys::usersystemlib::sceKernelMemcpy(dst, src, num),
+                feature = "kernel" => crate::sys::libc::memcpy(dst.cast(), src.cast(), num).cast(),
+                not(feature = "kernel") => crate::sys::usersystemlib::sceKernelMemcpy(dst.cast(), src.cast(), num).cast(),
                 // all(not(feature = "kernel"), feature = "cfw-api") => crate::sys::libc::memcpy(dst, src, num),
                 _ => {
                     string_impl::copy_forward(dst, src, num);
@@ -115,11 +118,11 @@ mod private {
 
     #[unsafe(no_mangle)]
     #[cfg(feature = "non-stub-code")]
-    unsafe extern "C" fn memcmp(ptr1: *mut u8, ptr2: *mut u8, num: SceSize) -> i32 {
+    unsafe extern "C" fn memcmp(ptr1: *const c_void, ptr2: *const c_void, num: SceSize) -> i32 {
         unsafe {
             cfg_select! {
-                feature = "kernel" => crate::sys::libc::memcmp(ptr1, ptr2, num),
-                all(not(feature = "kernel"), feature = "cfw-api") => crate::sys::libc::memcmp(ptr1, ptr2, num),
+                feature = "kernel" => crate::sys::libc::memcmp(ptr1.cast(), ptr2.cast(), num),
+                all(not(feature = "kernel"), feature = "cfw-api") => crate::sys::libc::memcmp(ptr1.cast(), ptr2.cast(), num),
                 _ => {
                     string_impl::compare_bytes(ptr1, ptr2, num)
                 }
@@ -129,10 +132,12 @@ mod private {
 
     #[unsafe(no_mangle)]
     #[cfg(feature = "non-stub-code")]
-    unsafe extern "C" fn memmove(dst: *mut u8, src: *mut u8, num: SceSize) -> *mut u8 {
+    unsafe extern "C" fn memmove(
+        dst: *mut c_void, src: *const c_void, num: SceSize,
+    ) -> *mut c_void {
         unsafe {
             cfg_select! {
-                feature = "kernel" => crate::sys::libc::memmove(dst, src, num),
+                feature = "kernel" => crate::sys::libc::memmove(dst.cast(), src.cast(), num).cast(),
                 all(not(feature = "kernel"), feature = "cfw-api") => crate::sys::libc::memmove(dst, src, num),
                 _ => {
                     use string_impl::PointersOverlap;
@@ -155,10 +160,10 @@ mod private {
 
     #[unsafe(no_mangle)]
     #[cfg(feature = "non-stub-code")]
-    unsafe extern "C" fn strlen(s: *const u8) -> SceSize {
+    unsafe extern "C" fn strlen(s: *const c_char) -> SceSize {
         unsafe {
             cfg_select! {
-                feature = "kernel" => crate::sys::libc::strlen(s),
+                feature = "kernel" => crate::sys::libc::strlen(s.cast()),
                 all(not(feature = "kernel"), feature = "cfw-api") => crate::sys::libc::strlen(s),
                 _ => {
                     string_impl::c_string_length(s.cast())

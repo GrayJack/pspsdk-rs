@@ -271,6 +271,7 @@ impl Once {
     /// be running, so the state must be either "incomplete", "poisoned" or
     /// "complete".
     #[inline]
+    #[allow(unused)]
     pub(crate) fn state(&mut self) -> ExclusiveState {
         self.inner.state()
     }
@@ -281,6 +282,7 @@ impl Once {
     /// be running, so the state must be either "incomplete", "poisoned" or
     /// "complete".
     #[inline]
+    #[allow(unused)]
     pub(crate) fn set_state(&mut self, new_state: ExclusiveState) {
         self.inner.set_state(new_state);
     }
