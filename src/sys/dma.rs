@@ -7,7 +7,7 @@ use pspsdk_macros::psp_stub;
 use crate::sys::{SceResult, SceSize};
 
 
-#[psp_stub(libname = "sceDmac", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "sceDmac", flags = 0x4001, version = (0x00, 0x11), use_crate)]
 extern "C" {
     /// Perform a DMA memory copy (blocking).
     ///

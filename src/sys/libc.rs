@@ -22,7 +22,7 @@ use crate::sys::{SceIsize, SceSize};
 // - (look_ctype_table, 0x32C767F2)
 // - (prnt, 0x87C78FB6)
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "SysclibForKernel", flags = 0x0001, version = (0x00, 0x11), use_crate)]
+#[psp_stub(libname = "SysclibForKernel", flags = 0x0001, version = (0x00, 0x00), use_crate)]
 extern "C" {
     #[nid(0x7F8A6F23)]
     pub unsafe fn bcmp(source: *const u8, other: *const u8, len: SceSize) -> i32;
