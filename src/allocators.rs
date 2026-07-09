@@ -52,6 +52,11 @@ unsafe impl GlobalAlloc for SystemAlloc {
         match res.into_result() {
             Ok(id) => {
                 let mut ptr: *mut u8 = sceKernelGetBlockHeadAddr(id).cast();
+
+                if ptr.is_null() {
+                    return ptr;
+                }
+
                 unsafe {
                     *ptr.cast() = id;
 
@@ -104,6 +109,11 @@ unsafe impl Allocator for SystemAlloc {
                 match res.into_result() {
                     Ok(id) => {
                         let mut ptr: *mut u8 = sceKernelGetBlockHeadAddr(id).cast();
+
+                        if ptr.is_null() {
+                            return Err(AllocError);
+                        }
+
                         unsafe {
                             *ptr.cast() = id;
 
@@ -156,6 +166,11 @@ unsafe impl GlobalAlloc for PartitionAlloc {
         match res.into_result() {
             Ok(id) => {
                 let mut ptr: *mut u8 = sceKernelGetBlockHeadAddr(id).cast();
+
+                if ptr.is_null() {
+                    return ptr;
+                }
+
                 unsafe {
                     *ptr.cast() = id;
 
@@ -208,6 +223,11 @@ unsafe impl Allocator for PartitionAlloc {
                 match res.into_result() {
                     Ok(id) => {
                         let mut ptr: *mut u8 = sceKernelGetBlockHeadAddr(id).cast();
+
+                        if ptr.is_null() {
+                            return Err(AllocError);
+                        }
+
                         unsafe {
                             *ptr.cast() = id;
 
