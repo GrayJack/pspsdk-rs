@@ -160,9 +160,9 @@ impl ToTokens for PspStub {
                         ..
                     }) => {
                         quote! {
-                            #(#cfg_attrs)*
-                            #[doc(hidden)]
-                            #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32) -> u32
+                            // #(#cfg_attrs)*
+                            // #[doc(hidden)]
+                            // #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32) -> u32
                         }
                     },
                     Some(EabiAttr {
@@ -170,9 +170,9 @@ impl ToTokens for PspStub {
                         ..
                     }) => {
                         quote! {
-                            #(#cfg_attrs)*
-                            #[doc(hidden)]
-                            #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
+                            // #(#cfg_attrs)*
+                            // #[doc(hidden)]
+                            // #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
                         }
                     },
                     Some(EabiAttr {
@@ -180,9 +180,9 @@ impl ToTokens for PspStub {
                         ..
                     }) => {
                         quote! {
-                            #(#cfg_attrs)*
-                            #[doc(hidden)]
-                            #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
+                            // #(#cfg_attrs)*
+                            // #[doc(hidden)]
+                            // #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
                         }
                     },
                     Some(EabiAttr {
@@ -196,9 +196,9 @@ impl ToTokens for PspStub {
                         //     quote! {safe}
                         // };
                         quote! {
-                            #(#cfg_attrs)*
-                            #[doc(hidden)]
-                            #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
+                            // #(#cfg_attrs)*
+                            // #[doc(hidden)]
+                            // #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
                         }
                     },
                     Some(EabiAttr {
@@ -207,7 +207,7 @@ impl ToTokens for PspStub {
                     }) => quote! {
                         #(#cfg_attrs)*
                         #[doc(hidden)]
-                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u64, _: u32) -> u32
+                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u64, _: u32) -> u32;
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::I_II_I_RII,
@@ -215,7 +215,7 @@ impl ToTokens for PspStub {
                     }) => quote! {
                         #(#cfg_attrs)*
                         #[doc(hidden)]
-                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u64, _: u32) -> u64
+                        #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u64, _: u32) -> u64;
                     },
                     None => {
                         let unsafety = if unsafety.is_some() {
@@ -227,7 +227,7 @@ impl ToTokens for PspStub {
                         quote! {
                             #(#attrs)*
                             #[link_name = #fn_libname_link]
-                            #vis #unsafety #sig
+                            #vis #unsafety #sig ;
                         }
                     },
                 };
@@ -592,7 +592,7 @@ impl ToTokens for PspStub {
             #[cfg(any(target_os = "psp", doc))]
             #[allow(non_snake_case)]
             unsafe extern "C" {
-                #(#fn_stub_extern_items;)*
+                #(#fn_stub_extern_items)*
             }
 
             #(#fn_eabi_defs)*
