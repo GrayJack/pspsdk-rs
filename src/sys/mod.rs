@@ -623,3 +623,137 @@ macro_rules! impl_ranged_ty {
         }
     };
 }
+
+/// Sets the processor K1 register to a known value.
+///
+/// This function is for use in kernel mode syscall exports. The kernel sets the `k1` register to
+/// indicate what mode called the function, i.e. whether it was directly called, was called via a
+/// syscall from a kernel thread or called via a syscall from a user thread. By setting `k1` to `0`
+/// before doing anything in your code you can make the other functions think you are calling from a
+/// kernel thread and therefore disable numerous protections. But it's usage must be careful, as the
+/// some system API also checks for `k1` not being from the kernel to work properly.
+///
+/// # Safety
+///
+/// Touching a privileged CPU register is unsafe and changing K1 value can cause issues on system
+/// state.
+#[cfg(all(target_os = "psp", feature = "kernel", feature = "non-stub-code"))]
+#[unsafe(naked)]
+pub unsafe extern "C" fn set_k1(k1: u32) -> u32 {
+    core::arch::naked_asm!(
+        ".set noreorder",
+        ".set noat",
+        "move $v0, $k1",
+        "jr	 $ra",
+        "move $k1, $a0"
+    )
+}
+
+/// Gets the current value of the processor K1 register.
+#[cfg(all(target_os = "psp", feature = "kernel", feature = "non-stub-code"))]
+#[unsafe(naked)]
+pub extern "C" fn get_k1() -> u32 {
+    core::arch::naked_asm!(".set noreorder", ".set noat", "jr $ra", "move $v0, $k1")
+}
+
+/// Disables the CPU FPU exceptions.
+#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
+#[unsafe(naked)]
+pub extern "C" fn disable_fpu_exceptions() {
+    core::arch::naked_asm!(
+        ".set noreorder",
+        ".set noat",
+        "cfc1 $2, $31",
+        "lui $8, 0x80",
+        "and $8, $2, $8",
+        "ctc1 $8, $31",
+        "jr $31",
+        "nop",
+    );
+}
+
+/// Disables interrupts, returning the previous state of the interrupt enable bit.
+///
+/// # Safety
+///
+/// Disabling interrupts for too long otherwise the watchdog will get you.
+#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
+#[unsafe(naked)]
+pub unsafe extern "C" fn suspend_interrupts() -> u32 {
+    core::arch::naked_asm!(
+        ".set noreorder",
+        ".set noat",
+        ".word 0x70020024", // mfic $v0, $0
+        ".word 0x70000026", // mtic $0, $0
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "jr $31",
+        "nop"
+    )
+}
+
+
+/// Enables interrupts to the `state` value.
+///
+/// # Safety
+///
+/// The `state` must be a value returned by [`disable_interrupts`].
+#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
+#[unsafe(naked)]
+pub unsafe extern "C" fn resume_interrupts(state: u32) {
+    core::arch::naked_asm!(
+        ".set noreorder",
+        ".set noat",
+        ".word 0x70040026", // mtic $a0, $0
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "jr $31",
+        "nop",
+    )
+}
+
+/// Intrinsic to hint a spin-loop to the mips processor
+///
+/// Rust hint on mips is a no-op, doing nothing and making the loop hot.
+#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
+pub fn spin_loop() {
+    let _ = thread::sceKernelDelayThread(1000);
+}

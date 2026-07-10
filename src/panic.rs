@@ -24,7 +24,7 @@ unsafe extern "C" {}
 
 #[cfg(not(feature = "std"))]
 fn print_and_die(s: String) -> ! {
-    crate::dprintln!("{}", s);
+    crate::println!("{}", s);
 
     unsafe {
         let _res = sys::thread::sceKernelExitDeleteThread(1);
@@ -37,7 +37,7 @@ fn print_and_die(s: String) -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     loop {
-        core::hint::spin_loop();
+        crate::sys::spin_loop();
     }
 }
 
@@ -275,7 +275,7 @@ mod libunwind_shims {
     #[allow(deprecated)]
     unsafe extern "C" fn abort() {
         loop {
-            core::hint::spin_loop();
+            crate::sys::spin_loop();
         }
     }
 

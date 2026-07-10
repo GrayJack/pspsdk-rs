@@ -108,12 +108,14 @@ impl Mutex {
                     {
                         match self.create_id() {
                             Ok(id) => return Some(id),
-                            Err(_) => continue,
+                            Err(_err) => {
+                                continue;
+                            },
                         }
                     }
                 },
                 INITIALIZING => {
-                    core::hint::spin_loop();
+                    crate::sys::spin_loop();
                 },
                 raw_id => {
                     let id = unsafe { mem::transmute::<u32, MutexId>(raw_id) };
@@ -272,7 +274,7 @@ impl ReentrantMutex {
                     }
                 },
                 INITIALIZING => {
-                    core::hint::spin_loop();
+                    crate::sys::spin_loop();
                 },
                 raw_id => {
                     let id = unsafe { mem::transmute::<u32, MutexId>(raw_id) };

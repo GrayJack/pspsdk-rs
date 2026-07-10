@@ -263,6 +263,6 @@ pub fn _dprint(arguments: core::fmt::Arguments<'_>) {
 pub fn _print(arguments: core::fmt::Arguments<'_>) {
     use crate::io::{self, Write};
 
-    let mut out = io::stdout();
+    let mut out = io::stdout_raw();
     let _ = write!(out, "{}", arguments);
 }
