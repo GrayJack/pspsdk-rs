@@ -17,13 +17,22 @@ pspsdk-macros = { path = "pspsdk-macros", features = [] }
 [features]
 default = ["non-stub-code"]
 # Enable kernel modules.
-kernel = []
+kernel = ["use-stub-c"]
 # Enable CFW modules.
 cfw-api = []
 # Optimize for space instead of speed the basic C-functions required by the
 # linker when such functions doesn't have a stub alternative. (memset, memcpy,
 # memmove, strlen).
 opt-size-c = []
+# Use available stubs in the basic C-functions required by the linker when
+# available (memset, memcpy, memmove, strlen).
+#
+# This is the default for kernel modules as the kernel libc will always be
+# available. It is recommended to enable this feature when:
+# - Creating EBOOT.PBP
+# - Plugins and EBOOT.PBP using `cfw-api` enabled.
+# - When enabling PAF functions (TODO)
+use-stub-c = []
 
 # Build with std support
 std = []
