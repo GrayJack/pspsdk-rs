@@ -28,7 +28,10 @@ extern crate std;
 // Re-export proc-macros
 pub use pspsdk_macros::{export, exports, psp_stub};
 
-use crate::sys::{thread::CallbackTermState, SceResult};
+use crate::{
+    sync::nonpoison::Once,
+    sys::{thread::CallbackTermState, SceResult},
+};
 
 pub mod sys;
 
@@ -287,4 +290,17 @@ pub fn enable_home_button() {
 
         let _res = sys::thread::sceKernelStartThread(id, 0, ptr::null_mut());
     }
+}
+
+/// Cleanup procedure to be run after `main`
+///
+/// If you are a plugin, remember to do this manually
+pub fn cleanup() {
+    static CLEANUP: Once = Once::new();
+    CLEANUP.call_once(|| unsafe {
+        // Flush stdout and disable buffering.
+        crate::io::cleanup();
+        // SAFETY: Only called once during runtime cleanup.
+        sys::cleanup();
+    });
 }

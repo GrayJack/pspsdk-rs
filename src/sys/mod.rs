@@ -637,7 +637,7 @@ macro_rules! impl_ranged_ty {
 ///
 /// Touching a privileged CPU register is unsafe and changing K1 value can cause issues on system
 /// state.
-#[cfg(all(target_os = "psp", feature = "kernel", feature = "non-stub-code"))]
+#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
 #[unsafe(naked)]
 pub unsafe extern "C" fn set_k1(k1: u32) -> u32 {
     core::arch::naked_asm!(
@@ -650,7 +650,7 @@ pub unsafe extern "C" fn set_k1(k1: u32) -> u32 {
 }
 
 /// Gets the current value of the processor K1 register.
-#[cfg(all(target_os = "psp", feature = "kernel", feature = "non-stub-code"))]
+#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
 #[unsafe(naked)]
 pub extern "C" fn get_k1() -> u32 {
     core::arch::naked_asm!(".set noreorder", ".set noat", "jr $ra", "move $v0, $k1")

@@ -6,6 +6,7 @@ use core::{
 use crate::{
     sync::RawMutex,
     sys::{
+        is_interrupt_enabled,
         sync::SemaMutex,
         thread::{
             sceKernelCreateSema, sceKernelDeleteSema, sceKernelSignalSema, sceKernelWaitSema,
@@ -113,36 +114,40 @@ impl Condvar {
             },
         };
 
-        let mut timeout = timeout.map(|d| d.as_micros().min(u128::from(u32::MAX)) as u32);
-        let res = sceKernelWaitSema(queue, 1, timeout.as_mut());
+        if is_interrupt_enabled() {
+            let mut timeout = timeout.map(|d| d.as_micros().min(u128::from(u32::MAX)) as u32);
+            let res = sceKernelWaitSema(queue, 1, timeout.as_mut());
 
-        match res.into_result() {
-            Ok(()) => {
-                // Woken by notifier. Notifier already decremented waiter count.
-                mutex.lock();
-                true
-            },
-            Err(err) => {
-                match err {
-                    SceError::KERNEL_WAIT_TIMEOUT => {
-                        // Decrement waiter count under gate to avoid races
-                        self.lock.lock();
-                        self.waiters.fetch_sub(1, Ordering::Relaxed);
-                        unsafe { self.lock.unlock() };
+            match res.into_result() {
+                Ok(()) => {
+                    // Woken by notifier. Notifier already decremented waiter count.
+                    mutex.lock();
+                    true
+                },
+                Err(err) => {
+                    match err {
+                        SceError::KERNEL_WAIT_TIMEOUT => {
+                            // Decrement waiter count under gate to avoid races
+                            self.lock.lock();
+                            self.waiters.fetch_sub(1, Ordering::Relaxed);
+                            unsafe { self.lock.unlock() };
 
-                        mutex.lock();
-                        false
-                    },
-                    _ => {
-                        // Best-effort recovery: decrement waiter and reacquire mutex
-                        self.lock.lock();
-                        self.waiters.fetch_sub(1, Ordering::Relaxed);
-                        unsafe { self.lock.unlock() };
-                        mutex.lock();
-                        true
-                    },
-                }
-            },
+                            mutex.lock();
+                            false
+                        },
+                        _ => {
+                            // Best-effort recovery: decrement waiter and reacquire mutex
+                            self.lock.lock();
+                            self.waiters.fetch_sub(1, Ordering::Relaxed);
+                            unsafe { self.lock.unlock() };
+                            mutex.lock();
+                            true
+                        },
+                    }
+                },
+            }
+        } else {
+            false
         }
     }
 }

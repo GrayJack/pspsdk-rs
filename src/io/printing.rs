@@ -10,6 +10,7 @@ use crate::{
             sceDisplaySetFrameBuf, sceDisplaySetMode, DisplayMode, DisplayUpdateSync, PixelFormat,
         },
         ge::sceGeEdramGetAddr,
+        sync::SpinMutex,
     },
 };
 
@@ -24,7 +25,7 @@ const DISPLAY_WIDTH: usize = 480;
 
 static VRAM_BASE: AtomicPtr<u32> = AtomicPtr::new(core::ptr::null_mut());
 
-static CHARS: Mutex<CharBuffer> = Mutex::new(CharBuffer::new());
+static CHARS: Mutex<CharBuffer, SpinMutex> = Mutex::new_with(CharBuffer::new(), SpinMutex::new());
 
 // TODO: Wait for better const generics.
 const ROWS: usize = MsxFont::ROWS;
@@ -145,14 +146,8 @@ impl fmt::Write for CharBuffer {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for c in s.chars() {
             match c as u32 {
-                0..=255 => {
-                    let mut chars = CHARS.lock();
-                    chars.add(c as u8)
-                },
-                _ => {
-                    let mut chars = CHARS.lock();
-                    chars.add(0)
-                },
+                0..=255 => self.add(c as u8),
+                _ => self.add(0),
             }
         }
 
@@ -247,13 +242,22 @@ fn update() {
     }
 }
 
+
+fn print_to<T: crate::io::Write>(args: fmt::Arguments<'_>, global_s: fn() -> T, label: &str) {
+    if let Err(e) = global_s().write_fmt(args) {
+        panic!("failed printing to {label}: {e}");
+    }
+}
+
 #[doc(hidden)]
 pub fn _dprint(arguments: core::fmt::Arguments<'_>) {
     use fmt::Write;
 
     {
         let mut chars = CHARS.lock();
-        let _ = write!(chars, "{}", arguments);
+        if let Err(e) = chars.write_fmt(arguments) {
+            panic!("failed printing to debug screen: {e}");
+        }
     }
 
     update();
@@ -261,8 +265,14 @@ pub fn _dprint(arguments: core::fmt::Arguments<'_>) {
 
 #[doc(hidden)]
 pub fn _print(arguments: core::fmt::Arguments<'_>) {
-    use crate::io::{self, Write};
+    use crate::io;
 
-    let mut out = io::stdout_raw();
-    let _ = write!(out, "{}", arguments);
+    print_to(arguments, io::stdout_raw, "stdout")
+}
+
+#[doc(hidden)]
+pub fn _eprint(arguments: core::fmt::Arguments<'_>) {
+    use crate::io;
+
+    print_to(arguments, io::stderr_raw, "stderr")
 }

@@ -6,6 +6,7 @@ use core::{
 use crate::{
     sync::{self as public, ExclusiveState},
     sys::{
+        is_interrupt_enabled,
         thread::{
             sceKernelClearEventFlag, sceKernelCreateEventFlag, sceKernelDeleteEventFlag,
             sceKernelSetEventFlag, sceKernelWaitEventFlag, EventFlagAttributes, EventFlagId,
@@ -115,13 +116,17 @@ impl Once {
                 },
                 POISONED => return,
                 _ => {
-                    let _ = sceKernelWaitEventFlag(
-                        flag,
-                        wait_mask,
-                        EventFlagWaitKinds::Or,
-                        &mut matched_bits,
-                        None,
-                    );
+                    if is_interrupt_enabled() {
+                        let _ = sceKernelWaitEventFlag(
+                            flag,
+                            wait_mask,
+                            EventFlagWaitKinds::Or,
+                            &mut matched_bits,
+                            None,
+                        );
+                    } else {
+                        crate::sys::spin_loop();
+                    }
                 },
             }
         }
@@ -178,17 +183,21 @@ impl Once {
                     let flag = self
                         .get_event_flag()
                         .expect("event flag should be initialized at this point");
-                    let mut matched_bits = 0;
 
-                    let _ = sceKernelWaitEventFlag(
-                        flag,
-                        EVENT_COMPLETE | EVENT_POISONED,
-                        EventFlagWaitKinds::Or,
-                        &mut matched_bits,
-                        None,
-                    );
+                    if is_interrupt_enabled() {
+                        let mut matched_bits = 0;
+                        let _ = sceKernelWaitEventFlag(
+                            flag,
+                            EVENT_COMPLETE | EVENT_POISONED,
+                            EventFlagWaitKinds::Or,
+                            &mut matched_bits,
+                            None,
+                        );
 
-                    current_state = self.state.load(Ordering::Acquire);
+                        current_state = self.state.load(Ordering::Acquire);
+                    } else {
+                        crate::sys::spin_loop();
+                    }
                 },
             }
         }

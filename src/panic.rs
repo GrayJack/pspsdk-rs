@@ -27,7 +27,9 @@ fn print_and_die(s: String) -> ! {
     crate::println!("{}", s);
 
     unsafe {
-        let _res = sys::thread::sceKernelExitDeleteThread(1);
+        if sys::is_interrupt_enabled() {
+            let _res = sys::thread::sceKernelExitDeleteThread(1);
+        }
         core::intrinsics::unreachable()
     }
 }
@@ -123,6 +125,7 @@ fn rust_panic_with_hook(payload: &mut dyn panic::PanicPayload) -> ! {
 
     payload.get(); // populate the payload's string
                    // dprintln!("{}", payload);
+    crate::println!("{payload}");
 
     if panics > 1 {
         // If a thread panics while it's already unwinding then we

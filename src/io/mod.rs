@@ -6,8 +6,8 @@ pub mod printing;
 
 mod stdio;
 pub use stdio::{
-    stderr, stderr_raw, stdin, stdin_raw, stdout, stdout_raw, Stderr, StderrLock, StderrRaw, Stdin,
-    StdinLock, StdinRaw, Stdout, StdoutLock, StdoutRaw,
+    cleanup, stderr, stderr_raw, stdin, stdin_raw, stdout, stdout_raw, Stderr, StderrLock,
+    StderrRaw, Stdin, StdinLock, StdinRaw, Stdout, StdoutLock, StdoutRaw,
 };
 
 // Re-export io_core::io

@@ -10,7 +10,10 @@ pub use owned::{AsFd, BorrowedFd, OwnedFd};
 
 use crate::{
     io,
-    sys::io::{sceIoLseek, sceIoRead, sceIoWrite, Whence},
+    sys::{
+        self,
+        io::{sceIoLseek, sceIoRead, sceIoWrite, Whence},
+    },
 };
 
 /// A high-level abstraction on PSP file descriptor to create a `File` abstraction
@@ -20,32 +23,48 @@ pub(crate) struct FileDesc(OwnedFd);
 impl FileDesc {
     #[inline]
     pub fn read(&self, buf: &mut [u8]) -> io::Result<usize> {
-        let res = unsafe { sceIoRead(self.0.as_file_id(), buf.as_mut_ptr().cast(), buf.len()) };
-        res.into_result().map_err(Into::into)
+        if sys::is_interrupt_enabled() {
+            let res = unsafe { sceIoRead(self.0.as_file_id(), buf.as_mut_ptr().cast(), buf.len()) };
+            res.into_result().map_err(Into::into)
+        } else {
+            Err(io::Error::from(sys::SceError::IO))
+        }
     }
 
     #[inline]
     pub fn read_buf(&self, mut cursor: io::BorrowedCursor<'_>) -> io::Result<()> {
-        let res = unsafe {
-            sceIoRead(self.0.as_file_id(), cursor.as_mut().as_mut_ptr().cast(), cursor.capacity())
-        };
+        if sys::is_interrupt_enabled() {
+            let res = unsafe {
+                sceIoRead(
+                    self.0.as_file_id(),
+                    cursor.as_mut().as_mut_ptr().cast(),
+                    cursor.capacity(),
+                )
+            };
 
-        let ret = res.into_result().map_err(Into::<io::Error>::into)?;
+            let ret = res.into_result().map_err(Into::<io::Error>::into)?;
 
-        // SAFETY: `ret` bytes were written to the initialized portion of the buffer
-        unsafe {
-            cursor.advance(ret);
+            // SAFETY: `ret` bytes were written to the initialized portion of the buffer
+            unsafe {
+                cursor.advance(ret);
+            }
+
+            Ok(())
+        } else {
+            Err(io::Error::from(sys::SceError::IO))
         }
-
-        Ok(())
     }
 
     #[inline]
     pub fn write(&self, buf: &[u8]) -> io::Result<usize> {
-        unsafe {
-            sceIoWrite(self.0.as_file_id(), buf.as_ptr().cast(), buf.len())
-                .into_result()
-                .map_err(Into::into)
+        if sys::is_interrupt_enabled() {
+            unsafe {
+                sceIoWrite(self.0.as_file_id(), buf.as_ptr().cast(), buf.len())
+                    .into_result()
+                    .map_err(Into::into)
+            }
+        } else {
+            Err(io::Error::from(sys::SceError::IO))
         }
     }
 
@@ -69,16 +88,20 @@ impl FileDesc {
 
     #[inline]
     pub fn seek(&self, pos: io::SeekFrom) -> io::Result<u64> {
-        let (whence, pos) = match pos {
-            // Casting to `i64` is fine, too large values will end up as
-            // negative which will cause an error in `lseek`.
-            io::SeekFrom::Start(off) => (Whence::Start, off as i64),
-            io::SeekFrom::End(off) => (Whence::End, off),
-            io::SeekFrom::Current(off) => (Whence::Current, off),
-        };
-        sceIoLseek(self.0.as_file_id(), pos, whence)
-            .into_result()
-            .map_err(Into::into)
+        if sys::is_interrupt_enabled() {
+            let (whence, pos) = match pos {
+                // Casting to `i64` is fine, too large values will end up as
+                // negative which will cause an error in `lseek`.
+                io::SeekFrom::Start(off) => (Whence::Start, off as i64),
+                io::SeekFrom::End(off) => (Whence::End, off),
+                io::SeekFrom::Current(off) => (Whence::Current, off),
+            };
+            sceIoLseek(self.0.as_file_id(), pos, whence)
+                .into_result()
+                .map_err(Into::into)
+        } else {
+            Err(io::Error::from(sys::SceError::IO))
+        }
     }
 
     #[inline]

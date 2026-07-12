@@ -814,9 +814,11 @@ where
 
 impl<T: ?Sized + fmt::Debug, M: RawMutex> fmt::Debug for Mutex<T, M> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        crate::println!("GOT HERE 1");
         let mut d = f.debug_struct("Mutex");
         match self.try_lock() {
             Ok(guard) => {
+                crate::println!("GOT HERE 2");
                 d.field("data", &&*guard);
             },
             Err(TryLockError::Poisoned(err)) => {

@@ -3,7 +3,10 @@ use core::mem::ManuallyDrop;
 use crate::{
     io,
     os::fd::{FileDesc, FromRawFd},
-    sys::io::{sceKernelStderr, sceKernelStdin, sceKernelStdout},
+    sys::{
+        self,
+        io::{sceKernelStderr, sceKernelStdin, sceKernelStdout},
+    },
 };
 
 pub const STDIN_BUF_SIZE: usize = 256;
@@ -20,12 +23,22 @@ impl Stdin {
 
 impl io::Read for Stdin {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        unsafe { ManuallyDrop::new(FileDesc::from_raw_fd(sceKernelStdin().to_inner())).read(buf) }
+        if sys::is_interrupt_enabled() {
+            unsafe {
+                ManuallyDrop::new(FileDesc::from_raw_fd(sceKernelStdin().to_inner())).read(buf)
+            }
+        } else {
+            Err(io::Error::from(sys::SceError::IO))
+        }
     }
 
     fn read_buf(&mut self, buf: io::BorrowedCursor<'_>) -> io::Result<()> {
-        unsafe {
-            ManuallyDrop::new(FileDesc::from_raw_fd(sceKernelStdin().to_inner())).read_buf(buf)
+        if sys::is_interrupt_enabled() {
+            unsafe {
+                ManuallyDrop::new(FileDesc::from_raw_fd(sceKernelStdin().to_inner())).read_buf(buf)
+            }
+        } else {
+            Err(io::Error::from(sys::SceError::IO))
         }
     }
 }
@@ -38,7 +51,13 @@ impl Stdout {
 
 impl io::Write for Stdout {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        unsafe { ManuallyDrop::new(FileDesc::from_raw_fd(sceKernelStdout().to_inner())).write(buf) }
+        if sys::is_interrupt_enabled() {
+            unsafe {
+                ManuallyDrop::new(FileDesc::from_raw_fd(sceKernelStdout().to_inner())).write(buf)
+            }
+        } else {
+            Err(io::Error::from(sys::SceError::IO))
+        }
     }
 
     #[inline]
@@ -55,7 +74,13 @@ impl Stderr {
 
 impl io::Write for Stderr {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        unsafe { ManuallyDrop::new(FileDesc::from_raw_fd(sceKernelStderr().to_inner())).write(buf) }
+        if sys::is_interrupt_enabled() {
+            unsafe {
+                ManuallyDrop::new(FileDesc::from_raw_fd(sceKernelStderr().to_inner())).write(buf)
+            }
+        } else {
+            Err(io::Error::from(sys::SceError::IO))
+        }
     }
 
     #[inline]

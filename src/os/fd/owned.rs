@@ -9,6 +9,7 @@ use crate::{
         fd::{AsRawFd, FromRawFd, IntoRawFd, RawFd},
         AsInner, FromInner, IntoInner,
     },
+    sys,
     sys::io::{sceIoClose, sceIoLseek, sceIoRead, sceIoWrite, FileId, Whence},
 };
 
@@ -87,31 +88,44 @@ impl BorrowedFd<'_> {
 impl BorrowedFd<'_> {
     #[inline]
     pub fn read(&self, buf: &mut [u8]) -> io::Result<usize> {
-        let res = unsafe { sceIoRead(self.fd, buf.as_mut_ptr().cast(), buf.len()) };
-        res.into_result().map_err(Into::into)
+        if sys::is_interrupt_enabled() {
+            let res = unsafe { sceIoRead(self.fd, buf.as_mut_ptr().cast(), buf.len()) };
+            res.into_result().map_err(Into::into)
+        } else {
+            Err(io::Error::from(sys::SceError::IO))
+        }
     }
 
     #[inline]
     pub fn read_buf(&self, mut cursor: io::BorrowedCursor<'_>) -> io::Result<()> {
-        let res =
-            unsafe { sceIoRead(self.fd, cursor.as_mut().as_mut_ptr().cast(), cursor.capacity()) };
+        if sys::is_interrupt_enabled() {
+            let res = unsafe {
+                sceIoRead(self.fd, cursor.as_mut().as_mut_ptr().cast(), cursor.capacity())
+            };
 
-        let ret = res.into_result().map_err(Into::<io::Error>::into)?;
+            let ret = res.into_result().map_err(Into::<io::Error>::into)?;
 
-        // SAFETY: `ret` bytes were written to the initialized portion of the buffer
-        unsafe {
-            cursor.advance(ret);
+            // SAFETY: `ret` bytes were written to the initialized portion of the buffer
+            unsafe {
+                cursor.advance(ret);
+            }
+
+            Ok(())
+        } else {
+            Err(io::Error::from(sys::SceError::IO))
         }
-
-        Ok(())
     }
 
     #[inline]
     pub fn write(&self, buf: &[u8]) -> io::Result<usize> {
-        unsafe {
-            sceIoWrite(self.fd, buf.as_ptr().cast(), buf.len())
-                .into_result()
-                .map_err(Into::into)
+        if sys::is_interrupt_enabled() {
+            unsafe {
+                sceIoWrite(self.fd, buf.as_ptr().cast(), buf.len())
+                    .into_result()
+                    .map_err(Into::into)
+            }
+        } else {
+            Err(io::Error::from(sys::SceError::IO))
         }
     }
 
@@ -135,14 +149,18 @@ impl BorrowedFd<'_> {
 
     #[inline]
     pub fn seek(&self, pos: io::SeekFrom) -> io::Result<u64> {
-        let (whence, pos) = match pos {
-            // Casting to `i64` is fine, too large values will end up as
-            // negative which will cause an error in `lseek`.
-            io::SeekFrom::Start(off) => (Whence::Start, off as i64),
-            io::SeekFrom::End(off) => (Whence::End, off),
-            io::SeekFrom::Current(off) => (Whence::Current, off),
-        };
-        sceIoLseek(self.fd, pos, whence).into_result().map_err(From::from)
+        if sys::is_interrupt_enabled() {
+            let (whence, pos) = match pos {
+                // Casting to `i64` is fine, too large values will end up as
+                // negative which will cause an error in `lseek`.
+                io::SeekFrom::Start(off) => (Whence::Start, off as i64),
+                io::SeekFrom::End(off) => (Whence::End, off),
+                io::SeekFrom::Current(off) => (Whence::Current, off),
+            };
+            sceIoLseek(self.fd, pos, whence).into_result().map_err(From::from)
+        } else {
+            Err(io::Error::from(sys::SceError::IO))
+        }
     }
 
     #[inline]
@@ -238,17 +256,19 @@ impl Drop for OwnedFd {
     #[inline]
     fn drop(&mut self) {
         unsafe {
-            let mut res = sceIoClose(self.fd);
+            if sys::is_interrupt_enabled() {
+                let mut res = sceIoClose(self.fd);
 
-            if res.is_ok() {
-                return;
-            }
+                if res.is_ok() {
+                    return;
+                }
 
-            // Retry a few times if unable to close
-            let mut atempts = 0;
-            while atempts < 0x10 && res.is_err() {
-                res = sceIoClose(self.fd);
-                atempts += 1;
+                // Retry a few times if unable to close
+                let mut atempts = 0;
+                while atempts < 0x10 && res.is_err() {
+                    res = sceIoClose(self.fd);
+                    atempts += 1;
+                }
             }
         }
     }

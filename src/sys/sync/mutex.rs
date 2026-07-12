@@ -1,6 +1,6 @@
 use core::{
     mem, ptr,
-    sync::atomic::{AtomicPtr, AtomicU32, Ordering},
+    sync::atomic::{AtomicBool, AtomicPtr, AtomicU32, Ordering},
     time::Duration,
 };
 
@@ -10,6 +10,7 @@ use crate::{
     allocators::PartitionAlloc,
     sync::{RawMutex, RawMutexTimed},
     sys::{
+        is_interrupt_enabled,
         mem::MemoryPartitionId,
         thread::{
             _sceKernelLockLwMutex, _sceKernelTryLockLwMutex, _sceKernelUnlockLwMutex,
@@ -61,9 +62,12 @@ impl Mutex {
     pub fn lock(&self) {
         let id = self.get_id().unwrap_or_else(|| panic!("failed to init mutex"));
 
-        let res = sceKernelLockMutex(id, 1, None);
-        if res.is_err() {
-            panic!("failed to lock mutex: {:#X}", res.as_inner());
+        if is_interrupt_enabled() {
+            let res = sceKernelLockMutex(id, 1, None);
+
+            if res.is_err() {
+                panic!("failed to lock mutex: {:#X}", res.as_inner());
+            }
         }
     }
 
@@ -72,14 +76,19 @@ impl Mutex {
         let Some(id) = self.get_id() else {
             return false;
         };
-        let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-        let res = sceKernelLockMutex(id, 1, Some(&mut timeout));
+        if is_interrupt_enabled() {
+            let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-        match res.into_result() {
-            Ok(_) => true,
-            Err(SceError::KERNEL_WAIT_TIMEOUT) => false,
-            Err(_) => false,
+            let res = sceKernelLockMutex(id, 1, Some(&mut timeout));
+
+            match res.into_result() {
+                Ok(_) => true,
+                Err(SceError::KERNEL_WAIT_TIMEOUT) => false,
+                Err(_) => false,
+            }
+        } else {
+            false
         }
     }
 
@@ -222,9 +231,11 @@ impl ReentrantMutex {
     pub fn lock(&self) {
         let id = self.get_id().unwrap_or_else(|| panic!("failed to init mutex"));
 
-        let res = sceKernelLockMutex(id, 1, None);
-        if res.is_err() {
-            panic!("failed to lock mutex: {:#X}", res.as_inner());
+        if is_interrupt_enabled() {
+            let res = sceKernelLockMutex(id, 1, None);
+            if res.is_err() {
+                panic!("failed to lock mutex: {:#X}", res.as_inner());
+            }
         }
     }
 
@@ -233,14 +244,18 @@ impl ReentrantMutex {
         let Some(id) = self.get_id() else {
             return false;
         };
-        let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-        let res = sceKernelLockMutex(id, 1, Some(&mut timeout));
+        if is_interrupt_enabled() {
+            let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-        match res.into_result() {
-            Ok(_) => true,
-            Err(SceError::KERNEL_WAIT_TIMEOUT) => false,
-            Err(_) => false,
+            let res = sceKernelLockMutex(id, 1, Some(&mut timeout));
+            match res.into_result() {
+                Ok(_) => true,
+                Err(SceError::KERNEL_WAIT_TIMEOUT) => false,
+                Err(_) => false,
+            }
+        } else {
+            false
         }
     }
 
@@ -383,9 +398,11 @@ impl LwMutex {
     pub fn lock(&self) {
         let work_area = self.get_work_area().unwrap_or_else(|| panic!("failed to init lwmutex"));
 
-        let res = _sceKernelLockLwMutex(work_area, 1, None);
-        if res.is_err() {
-            panic!("failed to lock lwmutex: {:#X}", res.as_inner());
+        if is_interrupt_enabled() {
+            let res = _sceKernelLockLwMutex(work_area, 1, None);
+            if res.is_err() {
+                panic!("failed to lock lwmutex: {:#X}", res.as_inner());
+            }
         }
     }
 
@@ -403,14 +420,19 @@ impl LwMutex {
         let Some(work_area) = self.get_work_area() else {
             return false;
         };
-        let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-        let res = _sceKernelLockLwMutex(work_area, 1, Some(&mut timeout));
+        if is_interrupt_enabled() {
+            let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-        match res.into_result() {
-            Ok(_) => true,
-            Err(SceError::KERNEL_WAIT_TIMEOUT) => false,
-            Err(_) => false,
+            let res = _sceKernelLockLwMutex(work_area, 1, Some(&mut timeout));
+
+            match res.into_result() {
+                Ok(_) => true,
+                Err(SceError::KERNEL_WAIT_TIMEOUT) => false,
+                Err(_) => false,
+            }
+        } else {
+            false
         }
     }
 
@@ -559,9 +581,11 @@ impl SemaMutex {
     pub fn lock(&self) {
         let id = self.get_id().unwrap_or_else(|| panic!("failed to init mutex"));
 
-        let res = sceKernelWaitSema(id, 1, None);
-        if res.is_err() {
-            panic!("failed to lock mutex: {:#X}", res.as_inner());
+        if is_interrupt_enabled() {
+            let res = sceKernelWaitSema(id, 1, None);
+            if res.is_err() {
+                panic!("failed to lock mutex: {:#X}", res.as_inner());
+            }
         }
     }
 
@@ -579,14 +603,19 @@ impl SemaMutex {
         let Some(id) = self.get_id() else {
             return false;
         };
-        let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-        let res = sceKernelWaitSema(id, 1, Some(&mut timeout));
+        if is_interrupt_enabled() {
+            let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-        match res.into_result() {
-            Ok(_) => true,
-            Err(SceError::KERNEL_WAIT_TIMEOUT) => false,
-            Err(_) => false,
+            let res = sceKernelWaitSema(id, 1, Some(&mut timeout));
+
+            match res.into_result() {
+                Ok(_) => true,
+                Err(SceError::KERNEL_WAIT_TIMEOUT) => false,
+                Err(_) => false,
+            }
+        } else {
+            false
         }
     }
 
@@ -685,5 +714,61 @@ impl RawMutexTimed for SemaMutex {
     #[inline]
     fn try_lock_for(&self, timeout: Duration) -> bool {
         self.try_lock_for(timeout)
+    }
+}
+
+pub struct SpinMutex {
+    locked: AtomicBool,
+}
+
+impl SpinMutex {
+    pub const fn new() -> Self {
+        Self {
+            locked: AtomicBool::new(false),
+        }
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn lock(&self) {
+        while self
+            .locked
+            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+            .is_err()
+        {
+            crate::sys::spin_loop();
+        }
+    }
+
+    #[inline]
+    pub fn try_lock(&self) -> bool {
+        self.locked
+            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+            .is_ok()
+    }
+
+    #[inline]
+    pub unsafe fn unlock(&self) {
+        self.locked.store(false, Ordering::Release);
+    }
+}
+
+impl crate::private::Sealed for SpinMutex {}
+impl RawMutex for SpinMutex {
+    const NEW: Self = Self::new();
+
+    #[inline]
+    fn lock(&self) {
+        self.lock();
+    }
+
+    #[inline]
+    fn try_lock(&self) -> bool {
+        self.try_lock()
+    }
+
+    #[inline]
+    unsafe fn unlock(&self) {
+        unsafe { self.unlock() };
     }
 }

@@ -4,7 +4,7 @@ mod once;
 pub use once::{Once, OnceState};
 
 mod mutex;
-pub use mutex::{LwMutex, Mutex, ReentrantMutex, SemaMutex};
+pub use mutex::{LwMutex, Mutex, ReentrantMutex, SemaMutex, SpinMutex};
 
 mod rwlock;
 pub use rwlock::{LwRwLock, RwLock, SemaRwLock};
