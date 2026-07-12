@@ -750,10 +750,62 @@ pub unsafe extern "C" fn resume_interrupts(state: u32) {
     )
 }
 
+/// Disables interrupts, returning the previous state of the interrupt enable bit.
+///
+/// # Safety
+///
+/// Disabling interrupts for too long otherwise the watchdog will get you.
+#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
+#[unsafe(naked)]
+pub extern "C" fn get_current_interrupt_status() -> u32 {
+    core::arch::naked_asm!(
+        ".set noreorder",
+        ".set noat",
+        ".word 0x70020024", // mfic %0, $0
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "nop",
+        "jr $31",
+        "nop"
+    )
+}
+
+#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
+pub fn is_interrupt_enabled() -> bool {
+    get_current_interrupt_status() != 0
+}
+
 /// Intrinsic to hint a spin-loop to the mips processor
 ///
 /// Rust hint on mips is a no-op, doing nothing and making the loop hot.
 #[cfg(all(target_os = "psp", feature = "non-stub-code"))]
 pub fn spin_loop() {
-    let _ = thread::sceKernelDelayThread(1000);
+    if is_interrupt_enabled() {
+        let _ = thread::sceKernelDelayThread(1000);
+    } else {
+        core::hint::spin_loop();
+    }
 }
+
+// SAFETY: must be called only once during runtime cleanup.
+// NOTE: this is not guaranteed to run, for example when the program aborts.
+#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
+pub(crate) unsafe fn cleanup() {}
