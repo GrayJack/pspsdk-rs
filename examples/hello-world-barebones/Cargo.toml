@@ -5,6 +5,10 @@ edition = "2024"
 
 [profile.release]
 opt-level = "z"
+strip = true
+lto = "thin"
+codegen-units = 1
+# panic = "abort"
 
 [dependencies]
 pspsdk = { path = "../../" }
