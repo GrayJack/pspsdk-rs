@@ -51,12 +51,13 @@ impl Stdout {
 
 impl io::Write for Stdout {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        if sys::is_interrupt_enabled() {
-            unsafe {
-                ManuallyDrop::new(FileDesc::from_raw_fd(sceKernelStdout().to_inner())).write(buf)
-            }
+        let res = unsafe {
+            ManuallyDrop::new(FileDesc::from_raw_fd(sceKernelStdout().to_inner())).write(buf)
+        };
+        if let Ok(0) = res {
+            Ok(buf.len())
         } else {
-            Err(io::Error::from(sys::SceError::IO))
+            res
         }
     }
 
@@ -75,8 +76,13 @@ impl Stderr {
 impl io::Write for Stderr {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         if sys::is_interrupt_enabled() {
-            unsafe {
+            let res = unsafe {
                 ManuallyDrop::new(FileDesc::from_raw_fd(sceKernelStderr().to_inner())).write(buf)
+            };
+            if let Ok(0) = res {
+                Ok(buf.len())
+            } else {
+                res
             }
         } else {
             Err(io::Error::from(sys::SceError::IO))

@@ -267,12 +267,12 @@ pub fn _dprint(arguments: core::fmt::Arguments<'_>) {
 pub fn _print(arguments: core::fmt::Arguments<'_>) {
     use crate::io;
 
-    print_to(arguments, io::stdout_raw, "stdout")
+    print_to(arguments, io::stdout, "stdout")
 }
 
 #[doc(hidden)]
 pub fn _eprint(arguments: core::fmt::Arguments<'_>) {
     use crate::io;
 
-    print_to(arguments, io::stderr_raw, "stderr")
+    print_to(arguments, io::stderr, "stderr")
 }

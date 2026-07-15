@@ -532,13 +532,15 @@ unsafe impl SceResultOk for u64 {
 #[cfg(target_pointer_width = "32")]
 unsafe impl SceResultOk for isize {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
-        isize::try_from(ok_value).map_err(|_| SceError::INVALID_VALUE)
+        debug_assert!(ok_value <= 0x7FFFFFFF);
+        Ok(ok_value as isize)
     }
 }
 #[cfg(target_pointer_width = "32")]
 unsafe impl SceResultOk for usize {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
-        usize::try_from(ok_value).map_err(|_| SceError::INVALID_VALUE)
+        debug_assert!(ok_value <= 0x7FFFFFFF);
+        Ok(ok_value as usize)
     }
 }
 unsafe impl SceResultOk for () {
