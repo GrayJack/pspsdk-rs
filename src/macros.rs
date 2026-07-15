@@ -487,14 +487,17 @@ macro_rules! module {
             $crate::module_info!($name, $version_major, $version_minor);
 
             #[unsafe(no_mangle)]
-            extern "C" fn module_start(argc_bytes: usize, argv: *mut ::core::ffi::c_void) -> isize {
+            extern "C" fn module_start(
+                argc_bytes: usize, argp: *const ::core::ffi::c_void,
+            ) -> isize {
                 extern "C" fn main_thread(
-                    argc: usize, argv: *mut ::core::ffi::c_void,
+                    argc: usize, argv: *const ::core::ffi::c_void,
                 ) -> $crate::sys::SceResult<u32> {
                     $crate::_start!(super::psp_main, argc, argv)
                 }
 
                 $crate::set_psp_os_functions();
+                let (argc, argv) = unsafe { $crate::process_argc_argv(argc_bytes, argp) };
                 unsafe {
                     let Ok(id) = $crate::sys::thread::sceKernelCreateThread(
                         c"main_thread".as_ptr().cast(),
@@ -511,7 +514,12 @@ macro_rules! module {
                         return -1;
                     };
 
-                    let _res = $crate::sys::thread::sceKernelStartThread(id, argc_bytes, argv);
+                    let Ok(()) =
+                        $crate::sys::thread::sceKernelStartThread(id, argc, argv.as_ptr().cast())
+                            .into_result()
+                    else {
+                        return -1;
+                    };
                 }
 
                 0

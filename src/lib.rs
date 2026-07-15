@@ -172,7 +172,7 @@ mod private {
 
     #[unsafe(no_mangle)]
     #[cfg(feature = "non-stub-code")]
-    unsafe extern "C" fn strlen(s: *const c_char) -> SceSize {
+    pub(crate) unsafe extern "C" fn strlen(s: *const c_char) -> SceSize {
         unsafe {
             cfg_select! {
                 feature = "kernel" => crate::sys::libc::strlen(s.cast()),
@@ -189,7 +189,7 @@ mod private {
 ///
 /// When `non-stub-code` is set, this is no-op
 #[inline]
-#[doc(hidden)]
+#[cfg(feature = "non-stub-code")]
 pub fn set_psp_os_functions() {
     cfg_select! {
         feature = "non-stub-code" => {
@@ -244,12 +244,13 @@ unsafe extern "C" {
 ///
 /// This API does not have destructor support yet. You can manually setup an
 /// exit callback if you need this, see the source code of this function.
+#[cfg(feature = "non-stub-code")]
 pub fn enable_home_button() {
     use core::{ffi::c_void, ptr};
     use sys::thread::ThreadAttributes;
 
     unsafe {
-        unsafe extern "C" fn exit_thread(_args: usize, _argp: *mut c_void) -> SceResult<u32> {
+        unsafe extern "C" fn exit_thread(_args: usize, _argp: *const c_void) -> SceResult<u32> {
             unsafe extern "C" fn exit_callback(
                 _arg1: u32, _arg2: u32, _arg: *mut c_void,
             ) -> CallbackTermState {
@@ -295,9 +296,46 @@ pub fn enable_home_button() {
     }
 }
 
+const MAX_ARGC: usize = 19;
+
+/// Process `argc_bytes` and `argp` from `module_start` and creates a `argc` and `argv` to pass to
+/// be passed to [`sceKernelStartThread`]. when starting the module main thread.
+///
+/// [`sceKernelStartThread`]: crate::sys::thread::sceKernelStartThread
+///
+/// # Safety
+/// `argp` must be valid for `argc_bytes`. And this function is only to be used with `module_start`.
+#[cfg(feature = "non-stub-code")]
+pub unsafe fn process_argc_argv(
+    argc_bytes: usize, argp: *const core::ffi::c_void,
+) -> (usize, [*const core::ffi::c_char; MAX_ARGC + 1]) {
+    let mut argv: [*const core::ffi::c_char; 20] = [core::ptr::null(); 20];
+    let mut argc = 0;
+    let mut loc = 0;
+    let ptr: *const core::ffi::c_char = argp.cast();
+
+    while loc < argc_bytes {
+        unsafe {
+            argv[argc] = ptr.add(loc) as *const core::ffi::c_char;
+
+            let arg_len = private::strlen(argv[argc]) + 1;
+
+            loc += arg_len;
+            argc += 1;
+
+            if argc == 19 {
+                break;
+            }
+        }
+    }
+
+    (argc, argv)
+}
+
 /// Cleanup procedure to be run after `main`
 ///
 /// If you are a plugin, remember to do this manually
+#[cfg(feature = "non-stub-code")]
 pub fn cleanup() {
     static CLEANUP: Once = Once::new();
     CLEANUP.call_once(|| unsafe {

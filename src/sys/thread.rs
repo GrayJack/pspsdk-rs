@@ -22,7 +22,7 @@ pub struct ThreadId(SceRawUid);
 ///
 /// The returns value will be the end result of the function of the status of
 /// [`sceKernelExitThread`] or [`sceKernelExitDeleteThread`].
-pub type ThreadEntryFn = unsafe extern "C" fn(args: SceSize, argp: *mut c_void) -> SceResult<u32>;
+pub type ThreadEntryFn = unsafe extern "C" fn(args: SceSize, argp: *const c_void) -> SceResult<u32>;
 
 /// Attributes for threads.
 #[bitflag(u32)]
@@ -1116,7 +1116,7 @@ extern "C" {
     #[nid(0xF475845D)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn sceKernelStartThread(
-        id: ThreadId, arg_len: SceSize, argp: *mut c_void,
+        id: ThreadId, arg_len: SceSize, argp: *const c_void,
     ) -> SceResult<()>;
 
     /// Exits a thread.
@@ -3478,7 +3478,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xF475845D)]
     pub unsafe fn sceKernelStartThread(
-        id: ThreadId, arg_len: SceSize, argp: *mut c_void,
+        id: ThreadId, arg_len: SceSize, argp: *const c_void,
     ) -> SceResult<()>;
 
     /// Exits a thread.

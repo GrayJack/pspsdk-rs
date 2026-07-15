@@ -477,10 +477,22 @@ pub unsafe trait SceResultOk: Sized + crate::private::Sealed {
     }
 }
 
+/// # Safety
+///
+/// For this trait to be correct, the implementation must:
+/// - Be valid for the `0..=0x7FFFFFFF` range
+/// - Have a max size of 4 bytes
+/// - If a struct, be `repr(transparent)`
 pub unsafe trait SceIntoOkValue: Sized + crate::private::Sealed {
     fn into_ok_value(self) -> u32;
 }
 
+/// # Safety
+///
+/// For this trait to be correct, the implementation must:
+/// - Be valid for the `0..=0x7FFFFFFF` range
+/// - Have a max size of 4 bytes
+/// - If a struct, be `repr(transparent)`
 pub unsafe trait SceInto64OkValue: Sized + crate::private::Sealed {
     fn into_ok_value64(self) -> u64;
 }
@@ -609,7 +621,7 @@ unsafe impl SceIntoOkValue for () {
     }
 }
 unsafe impl SceResultOk for core::convert::Infallible {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(_: u32) -> Result<Self, SceError> {
         Err(SceError::INVALID_VALUE)
     }
 }
