@@ -1,10 +1,11 @@
 use core::{
+    cell::UnsafeCell,
     fmt,
     sync::atomic::{AtomicPtr, Ordering},
 };
 
 use crate::{
-    sync::nonpoison::Mutex,
+    sync::nonpoison::ReentrantLock,
     sys::{
         display::{
             sceDisplaySetFrameBuf, sceDisplaySetMode, DisplayMode, DisplayUpdateSync, PixelFormat,
@@ -25,7 +26,8 @@ const DISPLAY_WIDTH: usize = 480;
 
 static VRAM_BASE: AtomicPtr<u32> = AtomicPtr::new(core::ptr::null_mut());
 
-static CHARS: Mutex<CharBuffer, SpinMutex> = Mutex::new_with(CharBuffer::new(), SpinMutex::new());
+static CHARS: ReentrantLock<UnsafeCell<CharBuffer>, SpinMutex> =
+    ReentrantLock::new_with(UnsafeCell::new(CharBuffer::new()), SpinMutex::new());
 
 // TODO: Wait for better const generics.
 const ROWS: usize = MsxFont::ROWS;
@@ -236,6 +238,7 @@ fn update() {
         clear_screen(0);
 
         let chars = CHARS.lock();
+        let chars = &mut *chars.get();
         for (i, line) in chars.lines().enumerate() {
             put_str::<MsxFont>(&line.chars[0..line.len], 0, i * MsxFont::CHAR_HEIGHT, 0xFFFF_FFFF)
         }
@@ -254,7 +257,8 @@ pub fn _dprint(arguments: core::fmt::Arguments<'_>) {
     use fmt::Write;
 
     {
-        let mut chars = CHARS.lock();
+        let chars = CHARS.lock();
+        let chars = unsafe { &mut *chars.get() };
         if let Err(e) = chars.write_fmt(arguments) {
             panic!("failed printing to debug screen: {e}");
         }
