@@ -15,6 +15,7 @@ extern "C" fn module_start(argc_bytes: usize, argv: *mut c_void) -> isize {
     // Set OS functions for pspsdk::io module
     pspsdk::set_psp_os_functions();
 
+    // pspsdk::println!("Hello from module start! argc: {argc_bytes} argv:{:?}", argv);
 
     unsafe {
         let Ok(id) = sceKernelCreateThread(
@@ -22,16 +23,16 @@ extern "C" fn module_start(argc_bytes: usize, argv: *mut c_void) -> isize {
             psp_main_thread,
             32,
             256 * 1024,
-            ThreadAttributes::UserMode | ThreadAttributes::UseVFPU,
+            ThreadAttributes::empty(),
             None,
         )
-        .inspect_err(|err| pspsdk::eprintln!("{}", err.to_inner()))
+        .inspect_err(|err| pspsdk::println!("{}", err.to_inner()))
         .into_result() else {
             return -1;
         };
 
         let Ok(()) = sceKernelStartThread(id, 0, core::ptr::null_mut())
-            .inspect_err(|err| pspsdk::eprintln!("{}", err.to_inner()))
+            .inspect_err(|err| pspsdk::println!("{}", err.to_inner()))
             .into_result()
         else {
             return -1;
@@ -43,8 +44,9 @@ extern "C" fn module_start(argc_bytes: usize, argv: *mut c_void) -> isize {
 extern "C" fn psp_main_thread(_argc: usize, _argv: *mut c_void) -> SceResult<u32> {
     pspsdk::enable_home_button();
 
-    pspsdk::dprintln!("Hello PSP from rust!");
     pspsdk::println!("Hello PSP from rust! {_argc} {_argv:?}");
+
+    let _ = pspsdk::sys::thread::sceKernelSleepThread();
 
     pspsdk::cleanup();
     SceResult::new(0)
