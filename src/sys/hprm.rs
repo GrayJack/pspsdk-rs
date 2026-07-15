@@ -4,7 +4,7 @@
 use bitflag_attr::bitflag;
 use pspsdk_macros::psp_stub;
 
-use crate::sys::{SceError, SceResult, SceResultOk, SceUid};
+use crate::sys::{SceError, SceIntoOkValue, SceResult, SceResultOk, SceUid};
 
 /// The callback slot for headphone remote module.
 #[repr(transparent)]
@@ -299,5 +299,10 @@ unsafe impl SceResultOk for HprmCallbackSlot {
             0..0x20 => Ok(unsafe { Self::new_unchecked(ok_value) }),
             _ => Err(SceError::INVALID_VALUE),
         }
+    }
+}
+unsafe impl SceIntoOkValue for HprmCallbackSlot {
+    fn into_ok_value(self) -> u32 {
+        self.to_inner()
     }
 }

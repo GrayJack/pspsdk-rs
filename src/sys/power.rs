@@ -1,7 +1,7 @@
 use bitflag_attr::bitflag;
 use pspsdk_macros::psp_stub;
 
-use crate::sys::{thread::CallbackId, SceError, SceResult, SceResultOk, SceSize};
+use crate::sys::{thread::CallbackId, SceError, SceIntoOkValue, SceResult, SceResultOk, SceSize};
 
 /// Bitflags that are passed to the `arg` parameter of [`CallbackFunction`]
 /// when registered with [`scePowerRegisterCallback`].
@@ -1730,6 +1730,11 @@ unsafe impl SceResultOk for PowerCallbackSlot {
         }
     }
 }
+unsafe impl SceIntoOkValue for PowerCallbackSlot {
+    fn into_ok_value(self) -> u32 {
+        self.0
+    }
+}
 
 impl crate::private::Sealed for WlanCoexistenceClock {}
 unsafe impl SceResultOk for WlanCoexistenceClock {
@@ -1738,6 +1743,14 @@ unsafe impl SceResultOk for WlanCoexistenceClock {
             0 => Ok(Self::MaxClock222MHz),
             1 => Ok(Self::MaxClock333MHz),
             _ => Err(SceError::INVALID_VALUE),
+        }
+    }
+}
+unsafe impl SceIntoOkValue for WlanCoexistenceClock {
+    fn into_ok_value(self) -> u32 {
+        match self {
+            WlanCoexistenceClock::MaxClock222MHz => 0,
+            WlanCoexistenceClock::MaxClock333MHz => 1,
         }
     }
 }

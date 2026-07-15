@@ -4,7 +4,7 @@ mod non_stub;
 pub(crate) use non_stub::{Instant, SystemTime, UNIX_EPOCH};
 use pspsdk_macros::psp_stub;
 
-use crate::sys::{thread::CallbackId, SceError, SceResult, SceResultOk};
+use crate::sys::{thread::CallbackId, SceError, SceIntoOkValue, SceResult, SceResultOk};
 
 /// The 64-bit system clock type.
 #[repr(C)]
@@ -1816,5 +1816,10 @@ unsafe impl SceResultOk for DayOfWeek {
             6 => Ok(Self::Sunday),
             _ => Err(SceError::INVALID_VALUE),
         }
+    }
+}
+unsafe impl SceIntoOkValue for DayOfWeek {
+    fn into_ok_value(self) -> u32 {
+        self as u8 as u32
     }
 }

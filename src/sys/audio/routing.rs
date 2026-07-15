@@ -3,7 +3,7 @@
 
 use pspsdk_macros::psp_stub;
 
-use crate::sys::{SceError, SceResult, SceResultOk};
+use crate::sys::{SceError, SceIntoOkValue, SceResult, SceResultOk};
 
 /// The routing mode behavior.
 #[repr(u32)]
@@ -166,6 +166,16 @@ unsafe impl SceResultOk for AudioRoutingMode {
         }
     }
 }
+unsafe impl SceIntoOkValue for AudioRoutingMode {
+    fn into_ok_value(self) -> u32 {
+        match self {
+            AudioRoutingMode::Auto => 0x00,
+            AudioRoutingMode::PreferSpeakers => 0x01,
+            AudioRoutingMode::OnlySpeakers => 0x02,
+            AudioRoutingMode::OnlyHeadphone => 0x03,
+        }
+    }
+}
 
 impl crate::private::Sealed for AudioRoutingVolumeMode {}
 unsafe impl SceResultOk for AudioRoutingVolumeMode {
@@ -174,6 +184,14 @@ unsafe impl SceResultOk for AudioRoutingVolumeMode {
             0x00 => Ok(Self::Normal),
             0x01 => Ok(Self::ForceMaximum),
             _ => Err(SceError::INVALID_VALUE),
+        }
+    }
+}
+unsafe impl SceIntoOkValue for AudioRoutingVolumeMode {
+    fn into_ok_value(self) -> u32 {
+        match self {
+            AudioRoutingVolumeMode::Normal => 0x00,
+            AudioRoutingVolumeMode::ForceMaximum => 0x01,
         }
     }
 }

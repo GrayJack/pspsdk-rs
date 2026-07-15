@@ -6,7 +6,7 @@ use pspsdk_macros::psp_stub;
 use crate::sys::{
     thread::{CallbackId, EventFlagId, SemaId, ThreadId},
     time::DateTime,
-    SceError, SceResult, SceResult64, SceResultOk, SceSize, SceUid,
+    SceError, SceIntoOkValue, SceResult, SceResult64, SceResultOk, SceSize, SceUid,
 };
 
 /// File descriptor UID.
@@ -2130,6 +2130,11 @@ unsafe impl SceResultOk for FileId {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
+unsafe impl SceIntoOkValue for FileId {
+    fn into_ok_value(self) -> u32 {
+        self.to_inner()
+    }
+}
 
 impl DeviceAttribute {
     pub const fn device_kind(self) -> DeviceKind {
@@ -2143,5 +2148,10 @@ impl crate::private::Sealed for DeviceAttribute {}
 unsafe impl SceResultOk for DeviceAttribute {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         Ok(Self::from_bits_retain(ok_value))
+    }
+}
+unsafe impl SceIntoOkValue for DeviceAttribute {
+    fn into_ok_value(self) -> u32 {
+        self.0
     }
 }

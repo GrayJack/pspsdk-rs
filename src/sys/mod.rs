@@ -1,4 +1,4 @@
-use core::marker::PhantomData;
+use core::{marker::PhantomData, ops::ControlFlow};
 
 use bitflag_attr::bitflag;
 
@@ -477,12 +477,32 @@ pub unsafe trait SceResultOk: Sized + crate::private::Sealed {
     }
 }
 
+pub unsafe trait SceIntoOkValue: Sized + crate::private::Sealed {
+    fn into_ok_value(self) -> u32;
+}
+
+pub unsafe trait SceInto64OkValue: Sized + crate::private::Sealed {
+    fn into_ok_value64(self) -> u64;
+}
+
+unsafe impl<T: SceIntoOkValue> SceInto64OkValue for T {
+    fn into_ok_value64(self) -> u64 {
+        self.into_ok_value() as u64
+    }
+}
+
 macro_rules! __result_ok_int {
     ($($ty:ty),+) => {
         $(
             unsafe impl SceResultOk for $ty {
                 unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
                     <$ty>::try_from(ok_value).map_err(|_| SceError::INVALID_VALUE)
+                }
+            }
+
+            unsafe impl SceIntoOkValue for $ty {
+                fn into_ok_value(self) -> u32 {
+                    self as u32
                 }
             }
         )+
@@ -498,10 +518,20 @@ unsafe impl SceResultOk for i32 {
         Ok(u32::cast_signed(ok_value))
     }
 }
+unsafe impl SceIntoOkValue for i32 {
+    fn into_ok_value(self) -> u32 {
+        self as u32
+    }
+}
 unsafe impl SceResultOk for u32 {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         debug_assert!(ok_value <= 0x7FFFFFFF);
         Ok(ok_value)
+    }
+}
+unsafe impl SceIntoOkValue for u32 {
+    fn into_ok_value(self) -> u32 {
+        self
     }
 }
 unsafe impl SceResultOk for i64 {
@@ -528,6 +558,16 @@ unsafe impl SceResultOk for u64 {
         }
     }
 }
+unsafe impl SceInto64OkValue for i64 {
+    fn into_ok_value64(self) -> u64 {
+        self as u64
+    }
+}
+unsafe impl SceInto64OkValue for u64 {
+    fn into_ok_value64(self) -> u64 {
+        self
+    }
+}
 
 #[cfg(target_pointer_width = "32")]
 unsafe impl SceResultOk for isize {
@@ -537,10 +577,22 @@ unsafe impl SceResultOk for isize {
     }
 }
 #[cfg(target_pointer_width = "32")]
+unsafe impl SceIntoOkValue for isize {
+    fn into_ok_value(self) -> u32 {
+        self as u32
+    }
+}
+#[cfg(target_pointer_width = "32")]
 unsafe impl SceResultOk for usize {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         debug_assert!(ok_value <= 0x7FFFFFFF);
         Ok(ok_value as usize)
+    }
+}
+#[cfg(target_pointer_width = "32")]
+unsafe impl SceIntoOkValue for usize {
+    fn into_ok_value(self) -> u32 {
+        self as u32
     }
 }
 unsafe impl SceResultOk for () {
@@ -551,11 +603,82 @@ unsafe impl SceResultOk for () {
         }
     }
 }
+unsafe impl SceIntoOkValue for () {
+    fn into_ok_value(self) -> u32 {
+        0
+    }
+}
+unsafe impl SceResultOk for core::convert::Infallible {
+    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+        Err(SceError::INVALID_VALUE)
+    }
+}
 unsafe impl SceResultOk for SceUid {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         debug_assert!(ok_value <= 0x7FFFFFFF);
         // SAFETY: SceUid is always on the ok value range
         Ok(unsafe { Self::from_raw_unchecked(ok_value) })
+    }
+}
+unsafe impl SceIntoOkValue for SceUid {
+    fn into_ok_value(self) -> u32 {
+        self.to_inner()
+    }
+}
+
+impl<T: SceResultOk + SceIntoOkValue> core::ops::Residual<T>
+    for SceResult<core::convert::Infallible>
+{
+    type TryType = SceResult<T>;
+}
+
+impl<T: SceResultOk + SceIntoOkValue> core::ops::FromResidual for SceResult<T> {
+    fn from_residual(residual: <Self as core::ops::Try>::Residual) -> Self {
+        Self::new(residual.as_inner())
+    }
+}
+
+impl<T: SceResultOk + SceIntoOkValue> core::ops::Try for SceResult<T> {
+    type Output = T;
+    type Residual = SceResult<core::convert::Infallible>;
+
+    fn from_output(output: Self::Output) -> Self {
+        SceResult::new(output.into_ok_value())
+    }
+
+    fn branch(self) -> ControlFlow<Self::Residual, Self::Output> {
+        match self.into_result() {
+            Ok(v) => ControlFlow::Continue(v),
+            Err(err) => ControlFlow::Break(SceResult::new(err.to_inner())),
+        }
+    }
+}
+
+impl<T: SceResultOk + SceInto64OkValue> core::ops::Residual<T>
+    for SceResult64<core::convert::Infallible>
+{
+    type TryType = SceResult64<T>;
+}
+
+impl<T: SceResultOk + SceInto64OkValue> core::ops::FromResidual for SceResult64<T> {
+    fn from_residual(residual: <Self as core::ops::Try>::Residual) -> Self {
+        Self::new(residual.as_inner())
+    }
+}
+
+impl<T: SceResultOk + SceInto64OkValue> core::ops::Try for SceResult64<T> {
+    type Output = T;
+    type Residual = SceResult64<core::convert::Infallible>;
+
+    fn from_output(output: Self::Output) -> Self {
+        SceResult64::new(output.into_ok_value64())
+    }
+
+    fn branch(self) -> ControlFlow<Self::Residual, Self::Output> {
+        match self.into_result() {
+            Ok(v) => ControlFlow::Continue(v),
+            Err(err) => ControlFlow::Break(SceResult64::new(err.to_inner() as u64)),
+        }
     }
 }
 

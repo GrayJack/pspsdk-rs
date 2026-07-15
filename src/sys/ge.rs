@@ -2,7 +2,7 @@ use core::{ffi::c_void, fmt};
 
 use pspsdk_macros::psp_stub;
 
-use crate::sys::{SceError, SceResult, SceResultOk, SceSize, SceUid};
+use crate::sys::{SceError, SceIntoOkValue, SceResult, SceResultOk, SceSize, SceUid};
 
 /// A Valid Display list ID.
 #[repr(transparent)]
@@ -1515,6 +1515,17 @@ unsafe impl SceResultOk for TranslationMemWidth {
         }
     }
 }
+unsafe impl SceIntoOkValue for TranslationMemWidth {
+    fn into_ok_value(self) -> u32 {
+        match self {
+            TranslationMemWidth::LinearMode => 0,
+            TranslationMemWidth::Bytes512 => 512,
+            TranslationMemWidth::Bytes1024 => 1024,
+            TranslationMemWidth::Bytes2048 => 2048,
+            TranslationMemWidth::Bytes4096 => 4096,
+        }
+    }
+}
 
 impl MatrixRegister {
     /// Get the Graphics Engine matrix size of the this kind of matrix register.
@@ -1582,6 +1593,11 @@ unsafe impl SceResultOk for DisplayListId {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
+unsafe impl SceIntoOkValue for DisplayListId {
+    fn into_ok_value(self) -> u32 {
+        self.to_inner()
+    }
+}
 
 impl fmt::Debug for DisplayListId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1639,6 +1655,11 @@ unsafe impl SceResultOk for GeCallbackId {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
+unsafe impl SceIntoOkValue for GeCallbackId {
+    fn into_ok_value(self) -> u32 {
+        self.to_inner()
+    }
+}
 
 impl fmt::Debug for GeCallbackId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1656,6 +1677,17 @@ unsafe impl SceResultOk for DisplayListState {
             3 => Ok(Self::Stalling),
             4 => Ok(Self::Paused),
             _ => Err(SceError::INVALID_VALUE),
+        }
+    }
+}
+unsafe impl SceIntoOkValue for DisplayListState {
+    fn into_ok_value(self) -> u32 {
+        match self {
+            DisplayListState::Completed => 0,
+            DisplayListState::Queued => 1,
+            DisplayListState::Drawing => 2,
+            DisplayListState::Stalling => 3,
+            DisplayListState::Paused => 4,
         }
     }
 }

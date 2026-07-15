@@ -8,7 +8,7 @@ use core::ptr::NonNull;
 use bitflag_attr::bitflag;
 use pspsdk_macros::psp_stub;
 
-use crate::sys::{SceError, SceIsize, SceResult, SceResultOk, SceSize, SceUid};
+use crate::sys::{SceError, SceIntoOkValue, SceIsize, SceResult, SceResultOk, SceSize, SceUid};
 
 /// The memory block UID.
 #[repr(transparent)]
@@ -1673,6 +1673,11 @@ unsafe impl SceResultOk for MemoryBlockId {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
+unsafe impl SceIntoOkValue for MemoryBlockId {
+    fn into_ok_value(self) -> u32 {
+        self.to_inner()
+    }
+}
 
 impl HeapId {
     /// Create a new heap ID from a raw value.
@@ -1712,11 +1717,21 @@ unsafe impl SceResultOk for HeapId {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
+unsafe impl SceIntoOkValue for HeapId {
+    fn into_ok_value(self) -> u32 {
+        self.to_inner()
+    }
+}
 
 impl crate::private::Sealed for HeapCreateFlag {}
 unsafe impl SceResultOk for HeapCreateFlag {
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         Ok(Self::from_bits_retain(ok_value))
+    }
+}
+unsafe impl SceIntoOkValue for HeapCreateFlag {
+    fn into_ok_value(self) -> u32 {
+        self.bits()
     }
 }
 

@@ -4,7 +4,7 @@ use core::ffi::c_void;
 
 use pspsdk_macros::psp_stub;
 
-use crate::sys::{SceError, SceResult, SceResultOk, SceSize, SceUid};
+use crate::sys::{SceError, SceIntoOkValue, SceResult, SceResultOk, SceSize, SceUid};
 
 /// Identification of Atrac3 objects.
 #[repr(transparent)]
@@ -415,5 +415,10 @@ unsafe impl SceResultOk for AtracId {
             0..6 => Ok(unsafe { Self::from_raw_unchecked(ok_value) }),
             _ => Err(SceError::INVALID_VALUE),
         }
+    }
+}
+unsafe impl SceIntoOkValue for AtracId {
+    fn into_ok_value(self) -> u32 {
+        self.to_inner()
     }
 }

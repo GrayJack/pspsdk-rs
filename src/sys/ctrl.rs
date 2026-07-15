@@ -4,7 +4,7 @@ use bitflag_attr::bitflag;
 
 use pspsdk_macros::psp_stub;
 
-use crate::sys::{SceError, SceResult, SceResultOk, SceSize};
+use crate::sys::{SceError, SceIntoOkValue, SceResult, SceResultOk, SceSize};
 
 /// The callback function used by [`sceCtrlSetSpecialButtonCallback`].
 ///
@@ -1664,6 +1664,14 @@ unsafe impl SceResultOk for InputMode {
         }
     }
 }
+unsafe impl SceIntoOkValue for InputMode {
+    fn into_ok_value(self) -> u32 {
+        match self {
+            InputMode::DigitalOnly => 0,
+            InputMode::DigitalAndAnalog => 1,
+        }
+    }
+}
 
 
 impl SamplingCycle {
@@ -1700,6 +1708,11 @@ unsafe impl SceResultOk for SamplingCycle {
     #[inline]
     unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
         Self::new(ok_value)
+    }
+}
+unsafe impl SceIntoOkValue for SamplingCycle {
+    fn into_ok_value(self) -> u32 {
+        self.to_inner()
     }
 }
 

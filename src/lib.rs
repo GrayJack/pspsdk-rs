@@ -13,7 +13,9 @@
     std_internals,
     core_intrinsics,
     lang_items,
-    negative_impls
+    negative_impls,
+    try_trait_v2,
+    try_trait_v2_residual
 )]
 #![cfg_attr(feature = "non-stub-code", feature(panic_unwind))]
 // #![cfg_attr(feature = "std", feature(psp_std))]
@@ -84,6 +86,7 @@ mod private {
     impl<T> Sealed for *mut T {}
     impl<T> Sealed for &T {}
     impl<T> Sealed for &mut T {}
+    impl Sealed for core::convert::Infallible {}
 
     // Libc functions that we need for rust linker
 
