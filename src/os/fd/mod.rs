@@ -42,7 +42,7 @@ impl FileDesc {
                 )
             };
 
-            let ret = res.into_result().map_err(Into::<io::Error>::into)?;
+            let ret = res.into_result()?;
 
             // SAFETY: `ret` bytes were written to the initialized portion of the buffer
             unsafe {
