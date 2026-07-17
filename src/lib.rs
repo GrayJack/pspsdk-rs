@@ -37,22 +37,24 @@ use crate::{
 
 pub mod sys;
 
+// Custom modules to provide higher level API to things outside of rust STD
 #[cfg(feature = "non-stub-code")]
 pub mod allocators;
 #[cfg(feature = "non-stub-code")]
-pub mod panic;
+pub mod power;
 
-#[cfg(feature = "non-stub-code")]
-pub mod sync;
-
+// STD-like modules
 #[cfg(feature = "non-stub-code")]
 pub mod io;
-
 #[cfg(feature = "non-stub-code")]
 pub mod os;
-
+#[cfg(feature = "non-stub-code")]
+pub mod panic;
+#[cfg(feature = "non-stub-code")]
+pub mod sync;
 #[cfg(feature = "non-stub-code")]
 pub mod time;
+
 #[cfg(all(feature = "non-stub-code"))]
 mod rt;
 #[cfg(all(feature = "non-stub-code", not(feature = "std")))]
