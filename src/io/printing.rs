@@ -280,3 +280,13 @@ pub fn _eprint(arguments: core::fmt::Arguments<'_>) {
 
     print_to(arguments, io::stderr, "stderr")
 }
+
+/// Used by impl Termination for Result to print error after `main` or a test
+/// has returned. Should avoid panicking, although we can't help it if one of
+/// the Display impls inside args decides to.
+pub(crate) fn attempt_print_to_stderr(args: fmt::Arguments<'_>) {
+    use crate::io::{self, Write};
+    // Ignore error if the write fails, for example because stderr is already
+    // closed. There is not much point panicking at this point.
+    let _ = io::stderr().write_fmt(args);
+}

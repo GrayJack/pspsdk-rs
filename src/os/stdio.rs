@@ -94,3 +94,7 @@ impl io::Write for Stderr {
         Ok(())
     }
 }
+
+pub fn panic_output() -> Option<impl io::Write> {
+    Some(Stderr::new())
+}

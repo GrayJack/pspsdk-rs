@@ -26,11 +26,10 @@ unsafe extern "C" {}
 fn print_and_die(s: String) -> ! {
     crate::println!("{}", s);
 
-    unsafe {
+    loop {
         if sys::is_interrupt_enabled() {
             let _res = sys::thread::sceKernelExitDeleteThread(1);
         }
-        core::intrinsics::unreachable()
     }
 }
 
@@ -38,8 +37,36 @@ fn print_and_die(s: String) -> ! {
 #[cfg(all(not(feature = "std"), panic = "abort"))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
+    let message = info.message();
+    let location = info.location().unwrap();
+
+    update_panic_count(1);
+
+    let panic_out = crate::os::stdio::panic_output();
+    if let Some(mut panic_out) = panic_out {
+        // Try to write the panic message to a buffer first to prevent other concurrent outputs
+        // interleaving with it.
+        let mut buffer = [0u8; 512];
+        let mut cursor = crate::io::Cursor::new(&mut buffer[..]);
+
+        let write_msg = |dst: &mut dyn Write| {
+            // We add a newline to ensure the panic message appears at the start of a line.
+            writeln!(dst, "\nPSPSDK: panicked at {location}:\n\t{message}")
+        };
+
+        if write_msg(&mut cursor).is_ok() {
+            let pos = cursor.position() as usize;
+            let _ = panic_out.write_all(&buffer[0..pos]);
+        } else {
+            // The message did not fit into the buffer, write it directly instead.
+            let _ = write_msg(&mut panic_out);
+        }
+    }
+
     loop {
-        crate::sys::spin_loop();
+        if sys::is_interrupt_enabled() {
+            let _res = sys::thread::sceKernelExitDeleteThread(1);
+        }
     }
 }
 
@@ -199,6 +226,13 @@ pub use std::panic::catch_unwind;
 
 /// Invoke a closure, capturing the cause of an unwinding panic if one occurs.
 #[inline(never)]
+#[cfg(all(not(feature = "std"), panic = "abort"))]
+pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>> {
+    Ok(f())
+}
+
+/// Invoke a closure, capturing the cause of an unwinding panic if one occurs.
+#[inline(never)]
 #[cfg(all(not(feature = "std"), panic = "unwind"))]
 pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>> {
     // This whole function is directly lifted out of rustc. See comments there
@@ -214,15 +248,13 @@ pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>>
         f: ManuallyDrop::new(f),
     };
 
-    let data_ptr = &mut data as *mut _ as *mut u8;
-
-    return unsafe {
-        if !core::intrinsics::catch_unwind(do_call::<F, R>, data_ptr, do_catch::<F, R>) {
-            Ok(ManuallyDrop::into_inner(data.r))
-        } else {
+    unsafe {
+        return if core::intrinsics::catch_unwind(do_call, &raw mut data, do_catch) {
             Err(ManuallyDrop::into_inner(data.p))
-        }
-    };
+        } else {
+            Ok(ManuallyDrop::into_inner(data.r))
+        };
+    }
 
     #[cold]
     unsafe fn cleanup(payload: *mut u8) -> Box<dyn Any + Send + 'static> {
@@ -232,22 +264,18 @@ pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>>
     }
 
     #[inline]
-    fn do_call<F: FnOnce() -> R, R>(data: *mut u8) {
+    unsafe fn do_call<F: FnOnce() -> R, R>(data: *mut Data<F, R>) {
         unsafe {
-            let data = data as *mut Data<F, R>;
-            let data = &mut (*data);
-            let f = ManuallyDrop::take(&mut data.f);
-            data.r = ManuallyDrop::new(f());
+            let f = ManuallyDrop::take(&mut (*data).f);
+            (*data).r = ManuallyDrop::new(f());
         }
     }
 
     #[inline]
-    fn do_catch<F: FnOnce() -> R, R>(data: *mut u8, payload: *mut u8) {
+    unsafe fn do_catch<F: FnOnce() -> R, R>(data: *mut Data<F, R>, payload: *mut u8) {
         unsafe {
-            let data = data as *mut Data<F, R>;
-            let data = &mut (*data);
             let obj = cleanup(payload);
-            data.p = ManuallyDrop::new(obj);
+            (*data).p = ManuallyDrop::new(obj);
         }
     }
 }
@@ -320,3 +348,6 @@ mod libunwind_shims {
     #[unsafe(no_mangle)]
     static _impure_ptr: [usize; 0] = [];
 }
+
+pub(crate) struct AssertUnwindSafe<T>(pub T);
+impl<T> core::panic::UnwindSafe for AssertUnwindSafe<T> {}

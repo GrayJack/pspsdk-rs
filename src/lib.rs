@@ -53,6 +53,12 @@ pub mod os;
 
 #[cfg(feature = "non-stub-code")]
 pub mod time;
+#[cfg(all(feature = "non-stub-code"))]
+mod rt;
+#[cfg(all(feature = "non-stub-code", not(feature = "std")))]
+pub use rt::{process_argc_argv, psp_start};
+#[cfg(feature = "non-stub-code")]
+mod termination;
 
 #[doc(hidden)]
 pub mod eabi;
@@ -294,54 +300,4 @@ pub fn enable_home_button() {
 
         let _res = sys::thread::sceKernelStartThread(id, 0, ptr::null_mut());
     }
-}
-
-const MAX_ARGC: usize = 19;
-
-/// Process `argc_bytes` and `argp` from `module_start` and creates a `argc` and `argv` to pass to
-/// be passed to [`sceKernelStartThread`]. when starting the module main thread.
-///
-/// [`sceKernelStartThread`]: crate::sys::thread::sceKernelStartThread
-///
-/// # Safety
-/// `argp` must be valid for `argc_bytes`. And this function is only to be used with `module_start`.
-#[cfg(feature = "non-stub-code")]
-pub unsafe fn process_argc_argv(
-    argc_bytes: usize, argp: *const core::ffi::c_void,
-) -> (usize, [*const core::ffi::c_char; MAX_ARGC + 1]) {
-    let mut argv: [*const core::ffi::c_char; 20] = [core::ptr::null(); 20];
-    let mut argc = 0;
-    let mut loc = 0;
-    let ptr: *const core::ffi::c_char = argp.cast();
-
-    while loc < argc_bytes {
-        unsafe {
-            argv[argc] = ptr.add(loc) as *const core::ffi::c_char;
-
-            let arg_len = private::strlen(argv[argc]) + 1;
-
-            loc += arg_len;
-            argc += 1;
-
-            if argc == 19 {
-                break;
-            }
-        }
-    }
-
-    (argc, argv)
-}
-
-/// Cleanup procedure to be run after `main`
-///
-/// If you are a plugin, remember to do this manually
-#[cfg(feature = "non-stub-code")]
-pub fn cleanup() {
-    static CLEANUP: Once = Once::new();
-    CLEANUP.call_once(|| unsafe {
-        // Flush stdout and disable buffering.
-        crate::io::cleanup();
-        // SAFETY: Only called once during runtime cleanup.
-        sys::cleanup();
-    });
 }

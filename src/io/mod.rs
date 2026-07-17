@@ -14,7 +14,7 @@ pub use stdio::{
 pub use io_core::io::*;
 use io_core::os::OsFunctions;
 
-use crate::sys::SceError;
+use crate::sys::{SceError, SceIntoOkValue, SceResult, SceResultOk};
 
 impl From<SceError> for Error {
     fn from(value: SceError) -> Self {
@@ -152,4 +152,22 @@ pub(crate) fn error_str(error: i32) -> &'static str {
 
 pub(crate) fn error_string(error: i32) -> String {
     error_str(error).to_string()
+}
+
+impl<T: SceResultOk, E> From<SceResult<T>> for core::result::Result<T, E>
+where
+    SceError: Into<E>,
+{
+    fn from(value: SceResult<T>) -> Self {
+        value.into_result().map_err(Into::into)
+    }
+}
+
+impl<T: SceIntoOkValue, E: Into<SceError>> From<core::result::Result<T, E>> for SceResult<T> {
+    fn from(value: core::result::Result<T, E>) -> Self {
+        match value {
+            Ok(v) => SceResult::new(v.into_ok_value()),
+            Err(e) => SceResult::new(e.into().to_inner()),
+        }
+    }
 }

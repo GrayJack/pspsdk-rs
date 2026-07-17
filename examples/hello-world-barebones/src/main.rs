@@ -41,14 +41,17 @@ extern "C" fn module_start(argc_bytes: usize, argp: *const c_void) -> isize {
     0
 }
 
-extern "C" fn psp_main_thread(_argc: usize, _argv: *const c_void) -> SceResult<u32> {
+extern "C" fn psp_main_thread(argc: usize, argv: *const c_void) -> SceResult<u32> {
+    let res = pspsdk::call_main!(psp_main, argc, argv);
+
+    SceResult::new(res as u32)
+}
+
+fn psp_main() {
     pspsdk::enable_home_button();
 
     pspsdk::dprintln!("Hello PSP from rust!");
-    pspsdk::println!("Hello PSP from rust! {_argc} {_argv:?}");
-
-    pspsdk::cleanup();
-    SceResult::new(0)
+    pspsdk::println!("Hello PSP from rust!");
 }
 
 #[unsafe(no_mangle)]

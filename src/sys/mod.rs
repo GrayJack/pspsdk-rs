@@ -440,6 +440,11 @@ impl<T: SceResultOk> SceResult64<T> {
     }
 }
 
+impl SceResult<()> {
+    /// Everything ok.
+    pub const OK: Self = SceResult::new(0);
+}
+
 /// Trait of types that can be the ok result of [`SceResult`] or [`SceResult64`].
 ///
 /// # Safety
