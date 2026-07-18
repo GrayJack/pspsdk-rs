@@ -1,8 +1,12 @@
+use std::{
+    collections::HashMap,
+    error::Error,
+    fs::File,
+    io::{prelude::*, SeekFrom},
+    path::PathBuf,
+};
+
 use clap::Parser;
-use std::io::prelude::*;
-use std::io::SeekFrom;
-use std::{collections::HashMap, path::PathBuf};
-use std::{error::Error, fs::File};
 
 #[repr(C, packed)]
 struct SfoHeader {
@@ -59,7 +63,7 @@ enum EntryType {
     // TODO this type is undocumented, unused in mksfoext
     Binary = 0,
     String = 2,
-    Dword = 4,
+    Dword  = 4,
 }
 
 const MAX_OPTIONS: usize = 256;
@@ -94,6 +98,8 @@ struct Args {
         help = "key=VALUE Add a new STRING value"
     )]
     string: Vec<(String, String)>,
+    #[arg(short, long, action, help = "Produce a PBOOT SFO")]
+    pboot: bool,
     #[arg(help = "Display title")]
     title: String,
     #[arg(help = "Output file name")]
@@ -116,13 +122,16 @@ where
 fn main() {
     let args = Args::parse();
     // TODO this type is undocumented, unused in mksfoext
-    //let mut binaries: HashMap<String, Vec<u8>> = HashMap::new();
+    // let mut binaries: HashMap<String, Vec<u8>> = HashMap::new();
 
     let mut strings: HashMap<String, String> = args.string.into_iter().collect();
     let mut dwords: HashMap<String, u32> = args.dword.into_iter().collect();
 
     if !args.bare {
         strings.insert("TITLE".to_string(), args.title);
+        if args.pboot {
+            strings.insert("PBOOT_TITLE".to_string(), args.title);
+        }
 
         // Default Values
         strings.insert("CATEGORY".to_string(), "MG".to_string());
@@ -140,44 +149,17 @@ fn main() {
         ("CATEGORY", (EntryType::String, false, true, true, true)),
         ("DISC_ID", (EntryType::String, false, false, true, true)),
         ("DISC_NUMBER", (EntryType::Dword, false, false, false, true)),
-        (
-            "DISC_VERSION",
-            (EntryType::String, false, false, true, true),
-        ),
-        (
-            "DRIVER_PATH",
-            (EntryType::String, false, false, true, false),
-        ),
+        ("DISC_VERSION", (EntryType::String, false, false, true, true)),
+        ("DRIVER_PATH", (EntryType::String, false, false, true, false)),
         ("LANGUAGE", (EntryType::String, false, false, true, false)),
-        (
-            "PARENTAL_LEVEL",
-            (EntryType::Dword, false, true, true, true),
-        ),
-        (
-            "PSP_SYSTEM_VER",
-            (EntryType::String, false, false, true, true),
-        ),
+        ("PARENTAL_LEVEL", (EntryType::Dword, false, true, true, true)),
+        ("PSP_SYSTEM_VER", (EntryType::String, false, false, true, true)),
         ("REGION", (EntryType::Dword, false, false, true, true)),
-        (
-            "SAVEDATA_DETAIL",
-            (EntryType::String, false, true, false, false),
-        ),
-        (
-            "SAVEDATA_DIRECTORY",
-            (EntryType::String, false, true, false, false),
-        ),
-        (
-            "SAVEDATA_FILE_LIST",
-            (EntryType::Binary, false, true, false, false),
-        ),
-        (
-            "SAVEDATA_PARAMS",
-            (EntryType::Binary, false, true, false, false),
-        ),
-        (
-            "SAVEDATA_TITLE",
-            (EntryType::String, false, true, false, false),
-        ),
+        ("SAVEDATA_DETAIL", (EntryType::String, false, true, false, false)),
+        ("SAVEDATA_DIRECTORY", (EntryType::String, false, true, false, false)),
+        ("SAVEDATA_FILE_LIST", (EntryType::Binary, false, true, false, false)),
+        ("SAVEDATA_PARAMS", (EntryType::Binary, false, true, false, false)),
+        ("SAVEDATA_TITLE", (EntryType::String, false, true, false, false)),
         ("TITLE", (EntryType::String, false, true, true, true)),
         ("TITLE_0", (EntryType::String, false, true, true, true)),
         ("TITLE_2", (EntryType::String, false, true, true, true)),
@@ -187,10 +169,7 @@ fn main() {
         ("TITLE_6", (EntryType::String, false, true, true, true)),
         ("TITLE_7", (EntryType::String, false, true, true, true)),
         ("TITLE_8", (EntryType::String, false, true, true, true)),
-        (
-            "UPDATER_VER",
-            (EntryType::String, false, false, true, false),
-        ),
+        ("UPDATER_VER", (EntryType::String, false, false, true, false)),
     ]
     .iter()
     .cloned()
@@ -240,10 +219,7 @@ fn main() {
 
     let num_options = dwords.len() + strings.len();
     if num_options > MAX_OPTIONS {
-        panic!(
-            "Maximum number of options is {}, you have {}",
-            MAX_OPTIONS, num_options
-        );
+        panic!("Maximum number of options is {}, you have {}", MAX_OPTIONS, num_options);
     }
 
     let mut keys = [0u8; 8192];
@@ -320,7 +296,6 @@ fn main() {
         file.write_all(&sfo_entry.to_le_bytes()).unwrap();
     }
     file.write_all(&keys[0..key_offset as usize]).unwrap();
-    file.seek(SeekFrom::Start(aligned_val_offset as u64))
-        .unwrap();
+    file.seek(SeekFrom::Start(aligned_val_offset as u64)).unwrap();
     file.write_all(&data[0..data_offset as usize]).unwrap();
 }
