@@ -121,7 +121,7 @@ extern "C" {
     /// If you need to use this memory for long periods and want to maintain such functionalities
     /// working, you, theoretically, can [create] and [register] a power callback that handles
     /// values of the `arg` parameter of [`CallbackFunction`] (namely [`PowerCallbackArg::Standby`]
-    /// and [`PowerCallbackArg::Suspending`] to unlock and [`PowerCallbackArg::ResumeComplete`] ro
+    /// and [`PowerCallbackArg::Suspending`] to unlock and [`PowerCallbackArg::ResumeComplete`] to
     /// lock again).
     ///
     /// # Firmware Version
@@ -296,7 +296,7 @@ extern "C" {
     /// If you need to use this memory for long periods and want to maintain such functionalities
     /// working, you, theoretically, can [create] and [register] a power callback that handles
     /// values of the `arg` parameter of [`CallbackFunction`] (namely [`PowerCallbackArg::Standby`]
-    /// and [`PowerCallbackArg::Suspending`] to unlock and [`PowerCallbackArg::ResumeComplete`] ro
+    /// and [`PowerCallbackArg::Suspending`] to unlock and [`PowerCallbackArg::ResumeComplete`] to
     /// lock again).
     ///
     /// # Firmware Version

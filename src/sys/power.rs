@@ -68,9 +68,17 @@ pub enum WlanCoexistenceClock {
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash, Default)]
 pub enum PowerLockKind {
-    /// Default lock.
+    /// A power lock that locks all timers.
     #[default]
-    Default = 0,
+    All = 0,
+    /// A power lock that locks only auto-suspend related timers.
+    ///
+    /// I.e. prevents the system from suspending.
+    SuspendOnly = 1,
+    /// A power lock that locks only display related timers.
+    ///
+    /// I.e. prevents the system display from turning off.
+    DisplayOnly = 6,
 }
 
 /// Possible power tick configurations.
@@ -607,7 +615,7 @@ extern "C" {
     /// If you need to use this memory for long periods and want to maintain such functionalities
     /// working, you, theoretically, can [create] and [register] a power callback that handles
     /// values of the `arg` parameter of [`CallbackFunction`] (namely [`PowerCallbackArg::Standby`]
-    /// and [`PowerCallbackArg::Suspending`] to unlock and [`PowerCallbackArg::ResumeComplete`] ro
+    /// and [`PowerCallbackArg::Suspending`] to unlock and [`PowerCallbackArg::ResumeComplete`] to
     /// lock again).
     ///
     /// # Firmware Version
@@ -1596,7 +1604,7 @@ extern "C" {
     /// If you need to use this memory for long periods and want to maintain such functionalities
     /// working, you, theoretically, can [create] and [register] a power callback that handles
     /// values of the `arg` parameter of [`CallbackFunction`] (namely [`PowerCallbackArg::Standby`]
-    /// and [`PowerCallbackArg::Suspending`] to unlock and [`PowerCallbackArg::ResumeComplete`] ro
+    /// and [`PowerCallbackArg::Suspending`] to unlock and [`PowerCallbackArg::ResumeComplete`] to
     /// lock again).
     ///
     /// # Firmware Version

@@ -1,9 +1,9 @@
+//! PSP system error.
+
 /// Type representing return errors from the PSP APIs, official or otherwise.
 ///
 /// It's valid range is `(0x80000001, 0xFFFFFFFF]`.
 #[repr(transparent)]
-// #[derive(Clone, Copy)]
-// pub struct SceError(pattern_type!(u32 is 0x80000001..=0xFFFFFFFF));
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SceError(u32);
 
