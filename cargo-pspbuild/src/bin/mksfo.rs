@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::BTreeMap,
     error::Error,
     fs::File,
     io::{prelude::*, SeekFrom},
@@ -122,10 +122,10 @@ where
 fn main() {
     let args = Args::parse();
     // TODO this type is undocumented, unused in mksfoext
-    // let mut binaries: HashMap<String, Vec<u8>> = HashMap::new();
+    // let mut binaries: BTreeMap<String, Vec<u8>> = BTreeMap::new();
 
-    let mut strings: HashMap<String, String> = args.string.into_iter().collect();
-    let mut dwords: HashMap<String, u32> = args.dword.into_iter().collect();
+    let mut strings: BTreeMap<String, String> = args.string.into_iter().collect();
+    let mut dwords: BTreeMap<String, u32> = args.dword.into_iter().collect();
 
     if !args.bare {
         strings.insert("TITLE".to_string(), args.title.clone());
@@ -144,7 +144,7 @@ fn main() {
         dwords.insert("REGION".to_string(), 0x8000);
     }
 
-    let valid: HashMap<&'static str, (EntryType, bool, bool, bool, bool)> = [
+    let valid: BTreeMap<&'static str, (EntryType, bool, bool, bool, bool)> = [
         ("BOOTABLE", (EntryType::Dword, false, false, true, true)),
         ("CATEGORY", (EntryType::String, false, true, true, true)),
         ("DISC_ID", (EntryType::String, false, false, true, true)),

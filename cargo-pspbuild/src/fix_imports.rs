@@ -1,5 +1,5 @@
 use goblin::elf::Elf;
-use std::{collections::HashMap, mem, path::Path};
+use std::{collections::BTreeMap, mem, path::Path};
 
 /// A stub library entry like the one found in the `psp` crate, but with types
 /// changed to be cross-platform.
@@ -50,7 +50,7 @@ pub fn fix<T: AsRef<Path>>(path: T) {
 
             (name, sh)
         })
-        .collect::<HashMap<_, _>>();
+        .collect::<BTreeMap<_, _>>();
 
     let lib_stub = match sections.get(".lib.stub") {
         Some(s) => s,

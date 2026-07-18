@@ -1,5 +1,5 @@
 use std::{
-    collections::HashSet,
+    collections::BTreeSet,
     env, fmt, fs,
     io::ErrorKind,
     process::{self, Command, Stdio},
@@ -282,7 +282,7 @@ fn main() {
         )
         .expect("failed to parse `cargo metadata` command's stdout");
 
-        let workspace_members: HashSet<_> = metadata.workspace_members.iter().collect();
+        let workspace_members: BTreeSet<_> = metadata.workspace_members.iter().collect();
         let total_executables = metadata
             .packages
             .iter()

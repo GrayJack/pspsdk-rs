@@ -10,7 +10,7 @@ use scroll::{
     ctx::{TryFromCtx, TryIntoCtx},
     Endian,
 };
-use std::{collections::HashMap, ffi::CStr, fs, path::PathBuf};
+use std::{collections::BTreeMap, ffi::CStr, fs, path::PathBuf};
 
 const ELF_EXEC_TYPE: u16 = 0x0002;
 const ELF_MACHINE_MIPS: u16 = 0x0008;
@@ -39,9 +39,7 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-    PrxBuilder::new(args.in_file, &args.minfo)
-        .modify()
-        .save(args.out_file);
+    PrxBuilder::new(args.in_file, &args.minfo).modify().save(args.out_file);
 }
 
 struct PrxBuilder<'a> {
@@ -50,7 +48,7 @@ struct PrxBuilder<'a> {
     header: Header,
     section_headers: Vec<SectionHeader>,
     program_headers: Vec<ProgramHeader>,
-    relocations: HashMap<usize, Vec<Rel>>,
+    relocations: BTreeMap<usize, Vec<Rel>>,
 }
 
 impl<'a> PrxBuilder<'a> {
@@ -73,7 +71,7 @@ impl<'a> PrxBuilder<'a> {
             header.e_phnum as usize,
         );
 
-        let relocations: HashMap<usize, Vec<Rel>> = section_headers
+        let relocations: BTreeMap<usize, Vec<Rel>> = section_headers
             .iter()
             .enumerate()
             .filter(|(_, sh)| {
@@ -155,7 +153,7 @@ impl<'a> PrxBuilder<'a> {
 
             // Set upper 24 bits to 0 (OFS_BASE, ADDR_BASE).
             for rel in rels {
-                rel.r_info &= 0xff;
+                rel.r_info &= 0xFF;
             }
         }
 
@@ -184,16 +182,9 @@ impl<'a> PrxBuilder<'a> {
         // Merge all `LOAD` segments, as the PSP seems to only be able to handle one.
         // This code assumes all segments appear sequentially, and start at zero.
         {
-            let load_segments = || {
-                self.program_headers
-                    .iter()
-                    .filter(|ph| ph.p_type == PT_LOAD)
-            };
+            let load_segments = || self.program_headers.iter().filter(|ph| ph.p_type == PT_LOAD);
 
-            let start_vaddr = load_segments()
-                .next()
-                .expect("program had no LOAD segments")
-                .p_vaddr;
+            let start_vaddr = load_segments().next().expect("program had no LOAD segments").p_vaddr;
             assert_eq!(start_vaddr, 0);
 
             let start_offset = load_segments().next().unwrap().p_offset;
