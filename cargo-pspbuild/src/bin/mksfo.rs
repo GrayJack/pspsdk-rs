@@ -128,7 +128,7 @@ fn main() {
     let mut dwords: HashMap<String, u32> = args.dword.into_iter().collect();
 
     if !args.bare {
-        strings.insert("TITLE".to_string(), args.title);
+        strings.insert("TITLE".to_string(), args.title.clone());
         if args.pboot {
             strings.insert("PBOOT_TITLE".to_string(), args.title);
         }

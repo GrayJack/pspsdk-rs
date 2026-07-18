@@ -1,8 +1,3 @@
-use cargo_metadata::{
-    semver::{BuildMetadata, Prerelease},
-    Message as CargoMessage, MetadataCommand,
-};
-use rustc_version::{Channel, Version};
 use std::{
     collections::HashSet,
     env, fmt, fs,
@@ -10,12 +5,48 @@ use std::{
     process::{self, Command, Stdio},
 };
 
+use cargo_metadata::{
+    semver::{BuildMetadata, Prerelease},
+    Message as CargoMessage, MetadataCommand,
+};
+use rustc_version::{Channel, Version};
+
 mod fix_imports;
 
 const CONFIG_NAME: &str = "Psp.toml";
 
 #[derive(serde_derive::Deserialize, Default)]
 struct PspConfig {
+    /// The kind of project to build.
+    project: PspProject,
+}
+
+#[derive(serde_derive::Deserialize, Default)]
+struct PspProject {
+    /// The kind of project to build.
+    kind: ProjectKind,
+    /// EBOOT/PBOOT configuration.
+    pbp: Option<PbpConfig>,
+}
+
+#[derive(serde_derive::Deserialize, Default, PartialEq, Eq, Clone, Copy)]
+enum ProjectKind {
+    /// A PRX project.
+    #[serde(alias = "PRX")]
+    #[serde(alias = "prx")]
+    Prx,
+    /// A EBOOT.PBP project.
+    #[default]
+    #[serde(alias = "eboot")]
+    Eboot,
+    /// A PBOOT.PBP project.
+    #[serde(alias = "PBOOT")]
+    #[serde(alias = "pboot")]
+    Pboot,
+}
+
+#[derive(serde_derive::Deserialize, Default, Clone)]
+struct PbpConfig {
     /// Title shown in the XMB menu.
     title: Option<String>,
 
@@ -298,25 +329,32 @@ fn main() {
 
         assert!(status.success(), "prxgen failed: {}", status);
 
-        let config_args = vec![
-            ("-s", "DISC_ID", config.disc_id.clone()),
-            ("-s", "DISC_VERSION", config.disc_version.clone()),
-            ("-s", "LANGUAGE", config.language.clone()),
-            ("-d", "PARENTAL_LEVEL", config.parental_level.as_ref().map(u32::to_string)),
-            ("-s", "PSP_SYSTEM_VER", config.psp_system_ver.clone()),
-            ("-d", "REGION", config.region.as_ref().map(u32::to_string)),
-            ("-s", "TITLE_0", config.title_jp.clone()),
-            ("-s", "TITLE_2", config.title_fr.clone()),
-            ("-s", "TITLE_3", config.title_es.clone()),
-            ("-s", "TITLE_4", config.title_de.clone()),
-            ("-s", "TITLE_5", config.title_it.clone()),
-            ("-s", "TITLE_6", config.title_nl.clone()),
-            ("-s", "TITLE_7", config.title_pt.clone()),
-            ("-s", "TITLE_8", config.title_ru.clone()),
-            ("-s", "UPDATER_VER", config.updater_version.clone()),
-        ];
+        if let ProjectKind::Eboot | ProjectKind::Pboot = config.project.kind {
+            let pbp_config = config.project.pbp.clone().unwrap_or_default();
 
-        let status = Command::new("mksfo")
+            let config_args = vec![
+                ("-s", "DISC_ID", pbp_config.disc_id.clone()),
+                ("-s", "DISC_VERSION", pbp_config.disc_version.clone()),
+                ("-s", "LANGUAGE", pbp_config.language.clone()),
+                (
+                    "-d",
+                    "PARENTAL_LEVEL",
+                    pbp_config.parental_level.as_ref().map(u32::to_string),
+                ),
+                ("-s", "PSP_SYSTEM_VER", pbp_config.psp_system_ver.clone()),
+                ("-d", "REGION", pbp_config.region.as_ref().map(u32::to_string)),
+                ("-s", "TITLE_0", pbp_config.title_jp.clone()),
+                ("-s", "TITLE_2", pbp_config.title_fr.clone()),
+                ("-s", "TITLE_3", pbp_config.title_es.clone()),
+                ("-s", "TITLE_4", pbp_config.title_de.clone()),
+                ("-s", "TITLE_5", pbp_config.title_it.clone()),
+                ("-s", "TITLE_6", pbp_config.title_nl.clone()),
+                ("-s", "TITLE_7", pbp_config.title_pt.clone()),
+                ("-s", "TITLE_8", pbp_config.title_ru.clone()),
+                ("-s", "UPDATER_VER", pbp_config.updater_version.clone()),
+            ];
+
+            let status = Command::new("mksfo")
             // Add the optional config args
             .args({
                 config_args
@@ -327,7 +365,14 @@ fn main() {
                     .flat_map(|(flag, key, value)| vec![flag.into(), format!("{}={}", key, value)])
             })
             .arg(
-                config
+                if let ProjectKind::Pboot = config.project.kind {
+                    "-p"
+                } else {
+                    ""
+                }
+            )
+            .arg(
+                pbp_config
                     .title
                     .as_ref()
                     .map(|s| s.as_ref())
@@ -338,21 +383,22 @@ fn main() {
             .status()
             .expect("failed to run mksfo");
 
-        assert!(status.success(), "mksfo failed: {}", status);
+            assert!(status.success(), "mksfo failed: {}", status);
 
-        let status = Command::new("pack-pbp")
-            .arg(&pbp_path)
-            .arg(&sfo_path)
-            .arg(config.xmb_icon_png.as_deref().unwrap_or("NULL"))
-            .arg(config.xmb_icon_pmf.as_deref().unwrap_or("NULL"))
-            .arg(config.xmb_background_overlay_png.as_deref().unwrap_or("NULL"))
-            .arg(config.xmb_background_png.as_deref().unwrap_or("NULL"))
-            .arg(config.xmb_music_at3.as_deref().unwrap_or("NULL"))
-            .arg(&prx_path)
-            .arg(config.psar.as_deref().unwrap_or("NULL"))
-            .status()
-            .expect("failed to run pack-pbp");
+            let status = Command::new("pack-pbp")
+                .arg(&pbp_path)
+                .arg(&sfo_path)
+                .arg(pbp_config.xmb_icon_png.as_deref().unwrap_or("NULL"))
+                .arg(pbp_config.xmb_icon_pmf.as_deref().unwrap_or("NULL"))
+                .arg(pbp_config.xmb_background_overlay_png.as_deref().unwrap_or("NULL"))
+                .arg(pbp_config.xmb_background_png.as_deref().unwrap_or("NULL"))
+                .arg(pbp_config.xmb_music_at3.as_deref().unwrap_or("NULL"))
+                .arg(&prx_path)
+                .arg(pbp_config.psar.as_deref().unwrap_or("NULL"))
+                .status()
+                .expect("failed to run pack-pbp");
 
-        assert!(status.success(), "pack-pbp failed: {}", status);
+            assert!(status.success(), "pack-pbp failed: {}", status);
+        }
     }
 }
