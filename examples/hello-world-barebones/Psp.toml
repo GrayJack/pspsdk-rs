@@ -1,0 +1,5 @@
+[project]
+kind = "EBOOT"
+
+[project.pbp]
+title = "Hello World Barebones"

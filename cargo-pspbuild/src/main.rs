@@ -37,6 +37,7 @@ enum ProjectKind {
     Prx,
     /// A EBOOT.PBP project.
     #[default]
+    #[serde(alias = "EBOOT")]
     #[serde(alias = "eboot")]
     Eboot,
     /// A PBOOT.PBP project.
@@ -354,7 +355,11 @@ fn main() {
                 ("-s", "UPDATER_VER", pbp_config.updater_version.clone()),
             ];
 
-            let status = Command::new("mksfo")
+            let mut mksfo = Command::new("mksfo");
+            if let ProjectKind::Pboot = config.project.kind {
+                mksfo.arg("-p");
+            }
+            let status = mksfo
             // Add the optional config args
             .args({
                 config_args
@@ -364,13 +369,6 @@ fn main() {
                     // Map into 2 arguments, e.g. "-s" "NAME=VALUE"
                     .flat_map(|(flag, key, value)| vec![flag.into(), format!("{}={}", key, value)])
             })
-            .arg(
-                if let ProjectKind::Pboot = config.project.kind {
-                    "-p"
-                } else {
-                    ""
-                }
-            )
             .arg(
                 pbp_config
                     .title
