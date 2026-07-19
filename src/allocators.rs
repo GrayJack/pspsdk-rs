@@ -6,10 +6,12 @@ use core::{
 use crate::sys::{
     mem::{
         sceKernelAllocPartitionMemory, sceKernelFreePartitionMemory, sceKernelGetBlockHeadAddr,
-        MemoryBlockId, MemoryBlockKind, MemoryPartitionId,
+        MemoryBlockId, MemoryBlockKind,
     },
     SceUid,
 };
+
+pub use crate::sys::mem::MemoryPartitionId;
 
 #[global_allocator]
 static GLOBAL_ALLOC: SystemAlloc = SystemAlloc;
@@ -156,7 +158,7 @@ unsafe impl GlobalAlloc for PartitionAlloc {
         let res = unsafe {
             sceKernelAllocPartitionMemory(
                 self.partition,
-                c"SystemAlloc".as_ptr().cast(),
+                c"PartitionAlloc".as_ptr().cast(),
                 MemoryBlockKind::Low,
                 size,
                 0,
@@ -213,7 +215,7 @@ unsafe impl Allocator for PartitionAlloc {
                 let res = unsafe {
                     sceKernelAllocPartitionMemory(
                         self.partition,
-                        c"SystemAlloc".as_ptr().cast(),
+                        c"PartitionAlloc".as_ptr().cast(),
                         MemoryBlockKind::Low,
                         size,
                         0,
@@ -265,8 +267,18 @@ unsafe impl Allocator for PartitionAlloc {
 
 #[alloc_error_handler]
 #[cfg(not(feature = "std"))]
-fn aeh(_: core::alloc::Layout) -> ! {
+fn aeh(layout: core::alloc::Layout) -> ! {
+    crate::println!(
+        "Failed to allocate {} bytes with {} alignment",
+        layout.size(),
+        layout.align()
+    );
     loop {
+        if crate::sys::is_interrupt_enabled() {
+            use crate::sys::{thread::sceKernelExitDeleteThread, SceError};
+
+            let _ = sceKernelExitDeleteThread(SceError::NO_MEMORY.to_inner());
+        }
         core::hint::spin_loop()
     }
 }
