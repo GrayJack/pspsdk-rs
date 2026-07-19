@@ -83,8 +83,8 @@ fn handle_rt_panic<T>(e: alloc::boxed::Box<dyn core::any::Any + Send>) -> T {
 // the real work.
 #[cfg(not(test))]
 fn psp_start_internal(
-    main: &(dyn Fn() -> i32 + Sync + core::panic::RefUnwindSafe), argc: isize,
-    argv: *const *const u8,
+    main: &(dyn Fn() -> i32 + Sync + core::panic::RefUnwindSafe), _argc: isize,
+    _argv: *const *const u8,
 ) -> isize {
     // Guard against the code called by this function from unwinding outside of the Rust-controlled
     // code, which is UB. This is a requirement imposed by a combination of how the

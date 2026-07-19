@@ -52,6 +52,7 @@ use crate::sys::{SceResult, SceResultOk};
 ///     ExitCode::SUCCESS
 /// }
 /// ```
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ExitCode(i32);
 
 impl ExitCode {

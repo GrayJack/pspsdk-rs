@@ -30,10 +30,7 @@ extern crate std;
 // Re-export proc-macros
 pub use pspsdk_macros::{export, exports, psp_stub};
 
-use crate::{
-    sync::nonpoison::Once,
-    sys::{thread::CallbackTermState, SceResult},
-};
+use crate::sys::{thread::CallbackTermState, SceResult};
 
 pub mod sys;
 
@@ -55,7 +52,7 @@ pub mod sync;
 #[cfg(feature = "non-stub-code")]
 pub mod time;
 
-#[cfg(all(feature = "non-stub-code"))]
+#[cfg(feature = "non-stub-code")]
 mod rt;
 #[cfg(all(feature = "non-stub-code", not(feature = "std")))]
 pub use rt::{process_argc_argv, psp_start};
