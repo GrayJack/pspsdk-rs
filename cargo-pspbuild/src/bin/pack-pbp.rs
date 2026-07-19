@@ -64,7 +64,7 @@ fn main() {
     let args = Args::parse();
 
     let read = |value: PathBuf| {
-        if value == PathBuf::from("NULL") {
+        if &value == "NULL" {
             None
         } else {
             match fs::read(&value) {

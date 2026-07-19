@@ -231,10 +231,10 @@ fn main() {
     let mut sfo_entries: Vec<SfoEntry> = Vec::new();
 
     let mut sorted_keys: Vec<String> = Vec::new();
-    for (key, _value) in dwords.iter() {
+    for key in dwords.keys() {
         sorted_keys.push(key.to_string());
     }
-    for (key, _value) in strings.iter() {
+    for key in strings.keys() {
         sorted_keys.push(key.to_string());
     }
     sorted_keys.sort();

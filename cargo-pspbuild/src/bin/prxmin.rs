@@ -13,7 +13,6 @@ use std::{
     borrow::Cow,
     fs::{self, File},
     io::Write,
-    iter,
     path::PathBuf,
 };
 
@@ -68,10 +67,7 @@ fn main() {
                 Cow::Borrowed(&bin[start..start + size])
             },
             name: {
-                let end = &shstrtab[header.sh_name..]
-                    .iter()
-                    .position(|&b| b == 0)
-                    .unwrap();
+                let end = &shstrtab[header.sh_name..].iter().position(|&b| b == 0).unwrap();
 
                 let bytes = &shstrtab[header.sh_name..header.sh_name + end];
 
@@ -123,21 +119,12 @@ fn main() {
 
     new_sections.push(shstrtab);
 
-    let names = new_sections
-        .iter()
-        .map(|s| s.name.clone())
-        .collect::<Vec<_>>();
+    let names = new_sections.iter().map(|s| s.name.clone()).collect::<Vec<_>>();
 
     // Fix relocation sh_info index.
-    for s in new_sections
-        .iter_mut()
-        .filter(|s| s.header.sh_type == SHT_PRXREL)
-    {
+    for s in new_sections.iter_mut().filter(|s| s.header.sh_type == SHT_PRXREL) {
         let old_idx = s.header.sh_info as usize;
-        let idx = names
-            .iter()
-            .position(|n| *n == sections[old_idx].name)
-            .unwrap();
+        let idx = names.iter().position(|n| *n == sections[old_idx].name).unwrap();
 
         s.header.to_mut().sh_info = idx as u32;
         s.header.to_mut().sh_link = 0;
@@ -155,7 +142,7 @@ fn main() {
         if align > 0 {
             // Add padding.
             let padding = (align - ((body.len() + DATA_OFFSET) & (align - 1))) & (align - 1);
-            let padding = iter::repeat(0).take(padding);
+            let padding = std::iter::repeat_n(0, padding);
             body.extend(padding);
         }
 
@@ -198,11 +185,7 @@ fn main() {
             .map(|s| s.header.sh_offset + s.header.sh_size - text_start)
             .unwrap(),
 
-        p_align: new_sections
-            .iter()
-            .map(|s| s.header.sh_addralign)
-            .max()
-            .unwrap(),
+        p_align: new_sections.iter().map(|s| s.header.sh_addralign).max().unwrap(),
     };
 
     let header = Header {
