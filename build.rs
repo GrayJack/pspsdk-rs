@@ -1,6 +1,9 @@
 use std::env;
 
+const ALLOWED_CFGS: &[&str] = &["pbp", "eboot", "pboot", "prx"];
+
 fn main() {
+    set_check_cfg();
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=libunwind.a");
     println!("cargo:rerun-if-changed=libunwind_lto.a");
@@ -23,4 +26,10 @@ fn main() {
 
     println!("cargo:rustc-link-lib=static={unwind}");
     println!("cargo:rustc-link-search=native=./");
+}
+
+fn set_check_cfg() {
+    for cfg in ALLOWED_CFGS.iter() {
+        println!("cargo::rustc-check-cfg=cfg({cfg})");
+    }
 }

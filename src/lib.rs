@@ -60,7 +60,7 @@ pub mod time;
 #[cfg(feature = "non-stub-code")]
 mod rt;
 #[cfg(all(feature = "non-stub-code", not(feature = "std")))]
-pub use rt::{process_argc_argv, psp_start};
+pub use rt::{init_cwd, module_start_init, process_argc_argv, psp_start};
 
 #[doc(hidden)]
 pub mod eabi;
@@ -259,7 +259,7 @@ pub fn enable_home_button() {
     use sys::thread::ThreadAttributes;
 
     unsafe {
-        unsafe extern "C" fn exit_thread(_args: usize, _argp: *const c_void) -> SceResult<u32> {
+        unsafe extern "C" fn exit_thread(_args: usize, _argp: *mut c_void) -> SceResult<u32> {
             unsafe extern "C" fn exit_callback(
                 _arg1: u32, _arg2: u32, _arg: *mut c_void,
             ) -> CallbackTermState {

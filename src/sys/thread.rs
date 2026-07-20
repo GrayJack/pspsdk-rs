@@ -22,7 +22,7 @@ pub struct ThreadId(SceRawUid);
 ///
 /// The returns value will be the end result of the function of the status of
 /// [`sceKernelExitThread`] or [`sceKernelExitDeleteThread`].
-pub type ThreadEntryFn = unsafe extern "C" fn(args: SceSize, argp: *const c_void) -> SceResult<u32>;
+pub type ThreadEntryFn = unsafe extern "C" fn(args: SceSize, argp: *mut c_void) -> SceResult<u32>;
 
 /// Attributes for threads.
 #[bitflag(u32)]

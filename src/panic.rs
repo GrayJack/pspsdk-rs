@@ -4,9 +4,6 @@
 // been adapted to run on the PSP.
 #![allow(unexpected_cfgs)]
 
-#[cfg(not(feature = "std"))]
-use crate::sys;
-
 #[cfg(feature = "std")]
 use core::any::Any;
 #[cfg(not(feature = "std"))]

@@ -379,7 +379,7 @@ macro_rules! dbg {
 #[macro_export]
 macro_rules! call_main {
     ($psp_main:expr, $argc:expr, $argv:expr) => {{
-        $crate::psp_start($psp_main, $argc as isize, (&raw const $argv).cast())
+        $crate::psp_start($psp_main, $argc, (&raw const $argv).cast())
     }};
 }
 
@@ -399,31 +399,7 @@ macro_rules! _start {
 #[macro_export]
 macro_rules! _start {
     ($psp_main:expr, $argc:expr, $argv:expr) => {{
-        unsafe fn init_cwd(arg0: *mut u8) {
-            let mut len = 0;
-            while *arg0.add(len) != 0 {
-                len += 1;
-            }
-
-            // Truncate until last '/'
-            while len > 0 && *arg0.add(len - 1) != b'/' {
-                len -= 1;
-            }
-
-            if len > 0 {
-                let tmp = *arg0.add(len);
-                *arg0.add(len) = 0;
-                let _res = $crate::sys::io::sceIoChdir(arg0 as *const u8);
-                *arg0.add(len) = tmp;
-            }
-        }
-
-        if $argc > 0 {
-            unsafe { init_cwd($argv as *mut u8) };
-        }
-
-        // TODO: Maybe print any error to debug screen?
-        let res = $crate::psp_start($psp_main, $argc as isize, (&raw const $argv).cast());
+        let res = $crate::psp_start($psp_main, $argc, (&raw const $argv).cast());
 
         $crate::sys::SceResult::new(res as u32)
     }};
@@ -484,17 +460,16 @@ macro_rules! module {
             $crate::module_info!($name, $version_major, $version_minor);
 
             #[unsafe(no_mangle)]
-            extern "C" fn module_start(
-                argc_bytes: usize, argp: *const ::core::ffi::c_void,
-            ) -> isize {
+            extern "C" fn module_start(argc_bytes: usize, argp: *mut ::core::ffi::c_void) -> isize {
                 extern "C" fn main_thread(
-                    argc: usize, argv: *const ::core::ffi::c_void,
+                    argc: usize, argv: *mut ::core::ffi::c_void,
                 ) -> $crate::sys::SceResult<u32> {
                     $crate::_start!(super::psp_main, argc, argv)
                 }
 
-                $crate::set_psp_os_functions();
-                let (argc, argv) = unsafe { $crate::process_argc_argv(argc_bytes, argp) };
+                let (argc, mut argv) =
+                    unsafe { $crate::module_start_init(argc_bytes, argp.cast()) };
+
                 unsafe {
                     let Ok(id) = $crate::sys::thread::sceKernelCreateThread(
                         c"main_thread".as_ptr().cast(),
@@ -511,10 +486,12 @@ macro_rules! module {
                         return -1;
                     };
 
-                    let Ok(()) =
-                        $crate::sys::thread::sceKernelStartThread(id, argc, argv.as_ptr().cast())
-                            .into_result()
-                    else {
+                    let Ok(()) = $crate::sys::thread::sceKernelStartThread(
+                        id,
+                        argc,
+                        argv.as_mut_ptr().cast(),
+                    )
+                    .into_result() else {
                         return -1;
                     };
                 }

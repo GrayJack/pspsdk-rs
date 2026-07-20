@@ -626,7 +626,7 @@ unsafe impl SceIntoOkValue for () {
     }
 }
 unsafe impl SceResultOk for ! {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(_ok_value: u32) -> Result<Self, SceError> {
         Err(SceError::INVALID_VALUE)
     }
 }
