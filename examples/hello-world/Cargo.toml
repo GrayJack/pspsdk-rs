@@ -7,7 +7,7 @@ edition = "2024"
 [profile.release]
 opt-level = "z"
 lto = "thin"
-panic = "abort"
+# panic = "abort"
 
 [dependencies]
 pspsdk = { path = "../../" }

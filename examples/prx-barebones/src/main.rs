@@ -8,17 +8,25 @@ use pspsdk::sys::{
     SceResult,
 };
 
-pspsdk::module_info!("sample_module", 1, 1);
+pspsdk::module_info!("PrxExampleBare", 1, 1);
+
+fn psp_main() -> SceResult<()> {
+    pspsdk::println!("Hello PSP from rust!");
+
+    pspsdk::sys::thread::sceKernelSleepThread()?;
+
+    SceResult::OK
+}
 
 #[unsafe(no_mangle)]
 extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
-    // Set OS functions for pspsdk::io module
-    pspsdk::set_psp_os_functions();
+    extern "C" fn psp_main_thread(argc_bytes: usize, argp: *mut c_void) -> SceResult<u32> {
+        let res = pspsdk::call_main!(psp_main, argc_bytes, argp);
 
-    // Set argc argv
-    let (argc, argv) = unsafe { pspsdk::process_argc_argv(argc_bytes, argp) };
+        SceResult::new(res as u32)
+    }
 
-    // pspsdk::println!("Hello from module start! argc: {argc_bytes} argv:{:?}", argv);
+    let (argc, argv) = unsafe { pspsdk::module_start_init(argc_bytes, argp) };
 
     unsafe {
         let Ok(id) = sceKernelCreateThread(
@@ -34,7 +42,7 @@ extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
             return -1;
         };
 
-        let Ok(()) = sceKernelStartThread(id, argc, argv.as_ptr().cast())
+        let Ok(()) = sceKernelStartThread(id, argc, argv)
             .inspect_err(|err| pspsdk::println!("{}", err.to_inner()))
             .into_result()
         else {
@@ -42,22 +50,6 @@ extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
         };
     }
     0
-}
-
-extern "C" fn psp_main_thread(argc: usize, argv: *const c_void) -> SceResult<u32> {
-    let res = pspsdk::call_main!(psp_main, argc, argv);
-
-    SceResult::new(res as u32)
-}
-
-fn psp_main() -> SceResult<()> {
-    pspsdk::enable_home_button();
-
-    pspsdk::println!("Hello PSP from rust!");
-
-    pspsdk::sys::thread::sceKernelSleepThread()?;
-
-    SceResult::OK
 }
 
 #[unsafe(no_mangle)]
