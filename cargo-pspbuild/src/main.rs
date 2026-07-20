@@ -258,6 +258,11 @@ fn main() {
         .arg("mipsel-sony-psp")
         .arg("--message-format=json-render-diagnostics")
         .args(args)
+        .env("RUSTFLAGS", match config.project.kind {
+            ProjectKind::Prx => "--cfg prx",
+            ProjectKind::Eboot => "--cfg eboot --cfg pbp",
+            ProjectKind::Pboot => "--cfg pboot --cfg pbp",
+        })
         .stdout(Stdio::piped())
         .spawn()
         .unwrap();
