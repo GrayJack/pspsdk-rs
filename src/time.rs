@@ -452,6 +452,72 @@ impl fmt::Debug for Instant {
 }
 
 impl SystemTime {
+    /// Represents the maximum value representable by [`SystemTime`] on this platform.
+    ///
+    /// This value differs a lot between platforms, but it is always the case
+    /// that any positive addition of a [`Duration`], whose value is greater
+    /// than or equal to the time precision of the operating system, to
+    /// [`SystemTime::MAX`] will fail.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use pspsdk::time::{Duration, SystemTime};
+    ///
+    /// // Adding zero will change nothing.
+    /// assert_eq!(SystemTime::MAX.checked_add(Duration::ZERO), Some(SystemTime::MAX));
+    ///
+    /// // But adding just one second will already fail ...
+    /// //
+    /// // Keep in mind that this in fact may succeed, if the Duration is
+    /// // smaller than the time precision of the operating system, which
+    /// // happens to be 1ns on most operating systems, with Windows being the
+    /// // notable exception by using 100ns, hence why this example uses 1s.
+    /// assert_eq!(SystemTime::MAX.checked_add(Duration::new(1, 0)), None);
+    ///
+    /// // Utilize this for saturating arithmetic to improve error handling.
+    /// // In this case, we will use a certificate with a timestamp in the
+    /// // future as a practical example.
+    /// let configured_offset = Duration::from_secs(60 * 60 * 24);
+    /// let valid_after = SystemTime::now().checked_add(configured_offset).unwrap_or(SystemTime::MAX);
+    /// ```
+    pub const MAX: SystemTime = SystemTime(time::SystemTime::MAX);
+    /// Represents the minimum value representable by [`SystemTime`] on this platform.
+    ///
+    /// This value differs a lot between platforms, but it is always the case
+    /// that any positive subtraction of a [`Duration`] from, whose value is
+    /// greater than or equal to the time precision of the operating system, to
+    /// [`SystemTime::MIN`] will fail.
+    ///
+    /// Depending on the platform, this may be either less than or equal to
+    /// [`SystemTime::UNIX_EPOCH`], depending on whether the operating system
+    /// supports the representation of timestamps before the Unix epoch or not.
+    /// However, it is always guaranteed that a [`SystemTime::UNIX_EPOCH`] fits
+    /// between a [`SystemTime::MIN`] and [`SystemTime::MAX`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pspsdk::time::{Duration, SystemTime};
+    ///
+    /// // Subtracting zero will change nothing.
+    /// assert_eq!(SystemTime::MIN.checked_sub(Duration::ZERO), Some(SystemTime::MIN));
+    ///
+    /// // But subtracting just one second will already fail.
+    /// //
+    /// // Keep in mind that this in fact may succeed, if the Duration is
+    /// // smaller than the time precision of the operating system, which
+    /// // happens to be 1ns on most operating systems, with Windows being the
+    /// // notable exception by using 100ns, hence why this example uses 1s.
+    /// assert_eq!(SystemTime::MIN.checked_sub(Duration::new(1, 0)), None);
+    ///
+    /// // Utilize this for saturating arithmetic to improve error handling.
+    /// // In this case, we will use a cache expiry as a practical example.
+    /// let configured_expiry = Duration::from_secs(60 * 3);
+    /// let expiry_threshold =
+    ///     SystemTime::now().checked_sub(configured_expiry).unwrap_or(SystemTime::MIN);
+    /// ```
+    pub const MIN: SystemTime = SystemTime(time::SystemTime::MIN);
     /// An anchor in time which can be used to create new `SystemTime` instances or
     /// learn about where in time a `SystemTime` lies.
     // NOTE! this documentation is duplicated, here and in std::time::UNIX_EPOCH.
@@ -555,6 +621,9 @@ impl SystemTime {
     /// Returns `Some(t)` where `t` is the time `self + duration` if `t` can be represented as
     /// `SystemTime` (which means it's inside the bounds of the underlying data structure), `None`
     /// otherwise.
+    ///
+    /// In the case that the `duration` is smaller than the time precision of the operating
+    /// system, `Some(self)` will be returned.
     pub fn checked_add(&self, duration: Duration) -> Option<SystemTime> {
         self.0.checked_add_duration(&duration).map(SystemTime)
     }
@@ -562,8 +631,57 @@ impl SystemTime {
     /// Returns `Some(t)` where `t` is the time `self - duration` if `t` can be represented as
     /// `SystemTime` (which means it's inside the bounds of the underlying data structure), `None`
     /// otherwise.
+    ///
+    /// In the case that the `duration` is smaller than the time precision of the operating
+    /// system, `Some(self)` will be returned.
     pub fn checked_sub(&self, duration: Duration) -> Option<SystemTime> {
         self.0.checked_sub_duration(&duration).map(SystemTime)
+    }
+
+    /// Saturating [`SystemTime`] addition, computing `self + duration`,
+    /// returning [`SystemTime::MAX`] if overflow occurred.
+    ///
+    /// In the case that the `duration` is smaller than the time precision of
+    /// the operating system, `self` will be returned.
+    pub fn saturating_add(&self, duration: Duration) -> SystemTime {
+        self.checked_add(duration).unwrap_or(SystemTime::MAX)
+    }
+
+    /// Saturating [`SystemTime`] subtraction, computing `self - duration`,
+    /// returning [`SystemTime::MIN`] if overflow occurred.
+    ///
+    /// In the case that the `duration` is smaller than the time precision of
+    /// the operating system, `self` will be returned.
+    pub fn saturating_sub(&self, duration: Duration) -> SystemTime {
+        self.checked_sub(duration).unwrap_or(SystemTime::MIN)
+    }
+
+    /// Saturating computation of time elapsed from an earlier point in time,
+    /// returning [`Duration::ZERO`] in the case that `earlier` is later or
+    /// equal to `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use pspsdk::time::{Duration, SystemTime};
+    ///
+    /// let now = SystemTime::now();
+    /// let prev = now.saturating_sub(Duration::new(1, 0));
+    ///
+    /// // now - prev should return non-zero.
+    /// assert_eq!(now.saturating_duration_since(prev), Duration::new(1, 0));
+    /// assert!(now.duration_since(prev).is_ok());
+    ///
+    /// // prev - now should return zero (and fail with the non-saturating).
+    /// assert_eq!(prev.saturating_duration_since(now), Duration::ZERO);
+    /// assert!(prev.duration_since(now).is_err());
+    ///
+    /// // now - now should return zero (and work with the non-saturating).
+    /// assert_eq!(now.saturating_duration_since(now), Duration::ZERO);
+    /// assert!(now.duration_since(now).is_ok());
+    /// ```
+    pub fn saturating_duration_since(&self, earlier: SystemTime) -> Duration {
+        self.duration_since(earlier).unwrap_or(Duration::ZERO)
     }
 }
 
