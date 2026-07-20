@@ -41,7 +41,7 @@ pub unsafe fn process_argc_argv(
     (argc, argv)
 }
 
-/// Initialization of stuff required to live on `module_start`.
+/// Initialization of stuff required to live on `module_start`. Returns `argc` and `argv` tuple.
 ///
 /// For barebones projects, it is the user responsibility to call this function on `module_start`.
 ///
@@ -56,6 +56,10 @@ pub unsafe fn module_start_init(
     unsafe { process_argc_argv(argc_bytes, argp.cast()) }
 }
 
+/// Initialize the current working directory.
+///
+/// # Safety
+/// `arg0` must be valid for null-terminated string.
 pub unsafe fn init_cwd(arg0: *mut u8) {
     if arg0.is_null() {
         return;
@@ -81,7 +85,7 @@ pub unsafe fn init_cwd(arg0: *mut u8) {
     }
 }
 
-pub unsafe fn init(_argc: usize, argv: *const *mut u8) {
+pub(crate) unsafe fn init(_argc: usize, argv: *const *mut u8) {
     // Ideally this is called on module_start, but people doing barebones project may forget, so we
     // call it here too.
     crate::set_psp_os_functions();

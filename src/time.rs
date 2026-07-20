@@ -539,7 +539,7 @@ impl SystemTime {
     /// use pspsdk::time::SystemTime;
     ///
     /// match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-    ///     Ok(n) => println!("1970-01-01 00:00:00 UTC was {} seconds ago!", n.as_secs()),
+    ///     Ok(n) => pspsdk::println!("1970-01-01 00:00:00 UTC was {} seconds ago!", n.as_secs()),
     ///     Err(_) => panic!("SystemTime before UNIX EPOCH!"),
     /// }
     /// ```
@@ -582,7 +582,7 @@ impl SystemTime {
     /// let difference = new_sys_time
     ///     .duration_since(sys_time)
     ///     .expect("Clock may have gone backwards");
-    /// println!("{difference:?}");
+    /// pspsdk::println!("{difference:?}");
     /// ```
     pub fn duration_since(&self, earlier: SystemTime) -> Result<Duration, SystemTimeError> {
         self.0.sub_time(&earlier.0).map_err(SystemTimeError)
@@ -742,10 +742,10 @@ impl fmt::Debug for SystemTime {
 /// # Examples
 ///
 /// ```no_run
-/// use psp::time::{SystemTime, UNIX_EPOCH};
+/// use pspsdk::time::{SystemTime, UNIX_EPOCH};
 ///
 /// match SystemTime::now().duration_since(UNIX_EPOCH) {
-///     Ok(n) => println!("1970-01-01 00:00:00 UTC was {} seconds ago!", n.as_secs()),
+///     Ok(n) => pspsdk::println!("1970-01-01 00:00:00 UTC was {} seconds ago!", n.as_secs()),
 ///     Err(_) => panic!("SystemTime before UNIX EPOCH!"),
 /// }
 /// ```
@@ -762,7 +762,7 @@ impl SystemTimeError {
     /// # Examples
     ///
     /// ```no_run
-    /// use std::thread::sleep;
+    /// use pspsdk::thread::sleep;
     ///
     /// use pspsdk::time::{Duration, SystemTime};
     ///
@@ -771,7 +771,7 @@ impl SystemTimeError {
     /// let new_sys_time = SystemTime::now();
     /// match sys_time.duration_since(new_sys_time) {
     ///     Ok(_) => {},
-    ///     Err(e) => println!("SystemTimeError difference: {:?}", e.duration()),
+    ///     Err(e) => pspsdk::println!("SystemTimeError difference: {:?}", e.duration()),
     /// }
     /// ```
     #[must_use]
