@@ -3494,7 +3494,7 @@ extern "C" {
     ///
     /// Error value on error, no_returns on success;
     #[nid(0xAA73C935)]
-    pub fn sceKernelExitThread(status: u32) -> SceResult<()>;
+    pub fn sceKernelExitThread(status: u32) -> SceResult<!>;
 
     /// Exits and deletes a thread.
     ///
@@ -3509,7 +3509,7 @@ extern "C" {
     ///
     /// Error value on error, no_returns on success;
     #[nid(0x809CE29B)]
-    pub fn sceKernelExitDeleteThread(status: u32) -> SceResult<()>;
+    pub fn sceKernelExitDeleteThread(status: u32) -> SceResult<!>;
 
     /// Forcibly terminates a thread.
     ///
