@@ -18,7 +18,12 @@ pub use crate::sys::power::PowerLockKind;
 /// A guard for power lock.
 ///
 /// When it gets out of the scope, it will execute a power unlock.
+///
+/// This structure is created by the [`power::lock`] function.
+///
+/// [`power::lock`]: crate::power::lock
 #[derive(Debug)]
+#[must_use = "if unused the lock will immediately unlock"]
 pub struct PowerLockGuard {
     lock_kind: PowerLockKind,
 }
@@ -51,7 +56,11 @@ impl Drop for PowerLockGuard {
 ///
 /// It can be dereferenced into a slice of bytes of the PSP volatile memory, and it will
 /// automatically unlocked when it reaches out of the scope.
+///
+/// This structure is created by the [`acquire_volatile_memory`] and
+/// [`acquire_volatile_memory_blocking`] functions.
 #[derive(Debug)]
+#[must_use = "if unused the lock will immediately unlock"]
 pub struct VolatileMemoryLockGuard<'a> {
     mem: &'a mut [u8],
 }

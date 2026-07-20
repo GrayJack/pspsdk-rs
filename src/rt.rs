@@ -47,7 +47,7 @@ pub unsafe fn process_argc_argv(
 ///
 /// If you are a plugin, remember to do this manually
 #[cfg(feature = "non-stub-code")]
-fn cleanup() {
+pub(crate) fn cleanup() {
     use crate::sync::nonpoison::Once;
 
     static CLEANUP: Once = Once::new();
@@ -75,8 +75,7 @@ fn handle_rt_panic<T>(e: alloc::boxed::Box<dyn core::any::Any + Send>) -> T {
             }
         }
     }
-    // FIXME ABORT HERE
-    todo!()
+    crate::process::abort()
 }
 
 // To reduce the generated code of the new `psp_start`, this function is doing
@@ -143,7 +142,7 @@ fn psp_start_internal(
 
 #[cfg(not(any(test, doctest)))]
 #[doc(hidden)]
-pub fn psp_start<T: crate::termination::Termination + 'static>(
+pub fn psp_start<T: crate::process::Termination + 'static>(
     main: fn() -> T, argc: isize, argv: *const *const u8,
 ) -> isize {
     psp_start_internal(&move || main().report().to_i32(), argc, argv)

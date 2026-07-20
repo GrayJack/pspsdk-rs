@@ -24,13 +24,12 @@ unsafe extern "C" {}
 
 #[cfg(not(feature = "std"))]
 fn print_and_die(s: String) -> ! {
+    if cfg!(pbp) {
+        crate::dprintln!("{}", s);
+    }
     crate::println!("{}", s);
 
-    loop {
-        if sys::is_interrupt_enabled() {
-            let _res = sys::thread::sceKernelExitDeleteThread(1);
-        }
-    }
+    crate::process::abort();
 }
 
 #[inline(never)]
@@ -63,11 +62,7 @@ fn panic(info: &PanicInfo) -> ! {
         }
     }
 
-    loop {
-        if sys::is_interrupt_enabled() {
-            let _res = sys::thread::sceKernelExitDeleteThread(1);
-        }
-    }
+    crate::process::abort()
 }
 
 #[inline(never)]
@@ -151,7 +146,10 @@ fn rust_panic_with_hook(payload: &mut dyn panic::PanicPayload) -> ! {
     }
 
     payload.get(); // populate the payload's string
-                   // dprintln!("{}", payload);
+
+    if cfg!(pbp) {
+        crate::dprintln!("{}", payload);
+    }
     crate::println!("{payload}");
 
     if panics > 1 {

@@ -15,7 +15,8 @@
     lang_items,
     negative_impls,
     try_trait_v2,
-    try_trait_v2_residual
+    try_trait_v2_residual,
+    never_type
 )]
 #![cfg_attr(feature = "non-stub-code", feature(panic_unwind))]
 // #![cfg_attr(feature = "std", feature(psp_std))]
@@ -40,6 +41,10 @@ pub mod allocators;
 #[cfg(feature = "non-stub-code")]
 pub mod power;
 
+// Mixed modules (part STD-like and part custom).
+#[cfg(feature = "non-stub-code")]
+pub mod process;
+
 // STD-like modules
 #[cfg(feature = "non-stub-code")]
 pub mod io;
@@ -56,8 +61,6 @@ pub mod time;
 mod rt;
 #[cfg(all(feature = "non-stub-code", not(feature = "std")))]
 pub use rt::{process_argc_argv, psp_start};
-#[cfg(feature = "non-stub-code")]
-mod termination;
 
 #[doc(hidden)]
 pub mod eabi;
@@ -92,6 +95,7 @@ mod private {
     impl<T> Sealed for &T {}
     impl<T> Sealed for &mut T {}
     impl Sealed for core::convert::Infallible {}
+    impl Sealed for ! {}
 
     // Libc functions that we need for rust linker
 
