@@ -114,8 +114,10 @@
 //!
 //! - [`Arc`]: Atomically Reference-Counted pointer, which can be used in multithreaded environments
 //!   to prolong the lifetime of some data until all the threads have finished using it.
-// ! - [`Barrier`]: Ensures multiple threads will wait for each other to reach a point in the
-// !   program, before continuing execution all together.
+//!
+//! - [`Barrier`]: Ensures multiple threads will wait for each other to reach a point in the
+//!   program, before continuing execution all together.
+//!
 //! - [`Condvar`]: Condition Variable, providing the ability to block a thread while waiting for an
 //!   event to occur.
 // ! - [`mpsc`]: Multi-producer, single-consumer queues, used for message-based communication. Can
@@ -142,14 +144,14 @@
 //!   a mutex.
 //!
 //! [`Arc`]: alloc::sync::Arc
-//! [`Barrier`]: crate::sync::Barrier
-//! [`Condvar`]: crate::sync::poison::Condvar
+//! [`Barrier`]: crate::sync::nonpoison::Barrier
+//! [`Condvar`]: crate::sync::nonpoison::Condvar
 //! [`mpmc`]: crate::sync::mpmc
 //! [`mpsc`]: crate::sync::mpsc
-//! [`Mutex`]: crate::sync::poison::Mutex
-//! [`Once`]: crate::sync::poison::Once
+//! [`Mutex`]: crate::sync::nonpoison::Mutex
+//! [`Once`]: crate::sync::nonpoison::Once
 //! [`OnceLock`]: crate::sync::nonpoison::OnceLock
-//! [`RwLock`]: crate::sync::poison::RwLock
+//! [`RwLock`]: crate::sync::nonpoison::RwLock
 //! [`LazyLock`]: crate::sync::nonpoison::LazyLock
 use core::fmt;
 
@@ -159,6 +161,13 @@ pub use core::sync::atomic;
 
 pub mod nonpoison;
 pub mod poison;
+
+pub use nonpoison::{
+    Barrier, BarrierWaitResult, Condvar, LazyLock, MappedMutexGuard, MappedRwLockReadGuard,
+    MappedRwLockWriteGuard, Mutex, MutexGuard, OnceLock, ReentrantLock, ReentrantLockGuard, RwLock,
+    RwLockReadGuard, RwLockWriteGuard,
+};
+pub use poison::{Once, PoisonError};
 
 mod traits;
 
@@ -237,5 +246,63 @@ impl OnceState {
 impl fmt::Debug for OnceState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("OnceState").field("poisoned", &self.is_poisoned()).finish()
+    }
+}
+
+/// A type indicating whether a timed wait on a condition variable returned
+/// due to a time out or not.
+///
+/// It is returned by the [`wait_timeout`] method.
+///
+/// [`wait_timeout`]: Condvar::wait_timeout
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+pub struct WaitTimeoutResult(bool);
+
+impl WaitTimeoutResult {
+    /// Returns `true` if the wait was known to have timed out.
+    ///
+    /// # Examples
+    ///
+    /// This example spawns a thread which will sleep 20 milliseconds before
+    /// updating a boolean value and then notifying the condvar.
+    ///
+    /// The main thread will wait with a 10 millisecond timeout on the condvar
+    /// and will leave the loop upon timeout.
+    ///
+    /// ```
+    /// use std::{sync::Arc, thread, time::Duration};
+    ///
+    /// use pspsdk::sync::nonpoison::{Condvar, Mutex};
+    ///
+    /// let pair = Arc::new((Mutex::new(false), Condvar::new()));
+    /// let pair2 = Arc::clone(&pair);
+    ///
+    /// thread::spawn(move || {
+    ///     let (lock, cvar) = &*pair2;
+    ///
+    ///     // Let's wait 20 milliseconds before notifying the condvar.
+    ///     thread::sleep(Duration::from_millis(20));
+    ///
+    ///     let mut started = lock.lock();
+    ///     // We update the boolean value.
+    ///     *started = true;
+    ///     cvar.notify_one();
+    /// });
+    ///
+    /// // Wait for the thread to start up.
+    /// let (lock, cvar) = &*pair;
+    /// loop {
+    ///     // Let's put a timeout on the condvar's wait.
+    ///     let result = cvar.wait_timeout(lock.lock(), Duration::from_millis(10));
+    ///     // 10 milliseconds have passed.
+    ///     if result.1.timed_out() {
+    ///         // timed out now and we can leave.
+    ///         break;
+    ///     }
+    /// }
+    /// ```
+    #[must_use]
+    pub fn timed_out(&self) -> bool {
+        self.0
     }
 }

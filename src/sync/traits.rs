@@ -78,16 +78,64 @@ pub trait RawMutexTimed: RawMutex {
 pub trait RawRwLock: Sealed {
     const NEW: Self;
 
+    /// Acquires a read lock, blocking the current thread until it is able to do so.
     fn read(&self);
+
+    /// Attempts to acquire a read lock without blocking.
     fn try_read(&self) -> bool;
 
+    /// Acquires an write lock, blocking the current thread until it is able to do so.
     fn write(&self);
+
+    /// Attempts to acquire an write lock without blocking.
     fn try_write(&self) -> bool;
 
+    /// Releases a read lock.
+    ///
+    /// # Safety
+    ///
+    /// This method may only be called if a read lock is held in the current context.
     unsafe fn read_unlock(&self);
+
+    /// Releases an write lock.
+    ///
+    /// # Safety
+    ///
+    /// This method may only be called if an write lock is held in the current context.
     unsafe fn write_unlock(&self);
 
+    /// Atomically downgrades an write lock into a read lock without
+    /// allowing any thread to take an write lock in the meantime.
+    ///
+    /// # Safety
+    ///
+    /// This method may only be called if an write lock is held in the current context.
     unsafe fn downgrade(&self);
+
+    /// Checks if this `RwLock` is currently locked in any way.
+    #[inline]
+    fn is_locked(&self) -> bool {
+        let acquired_lock = self.try_write();
+        if acquired_lock {
+            // Safety: A lock was successfully acquired above.
+            unsafe {
+                self.write_unlock();
+            }
+        }
+        !acquired_lock
+    }
+
+    /// Check if this `RwLock` is currently exclusively locked (write locked).
+    fn is_locked_exclusive(&self) -> bool {
+        let acquired_lock = self.try_read();
+        if acquired_lock {
+            // Safety: A shared lock was successfully acquired above.
+            unsafe {
+                self.write_unlock();
+            }
+        }
+        !acquired_lock
+    }
 }
 
 pub trait RawRwLockTimed: RawRwLock {

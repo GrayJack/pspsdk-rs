@@ -1,72 +1,13 @@
-use core::{fmt, time::Duration};
+use core::{fmt, ops::DerefMut, time::Duration};
 
 use crate::{
     sync::{
         nonpoison::{mutex, mutex::MutexGuard},
-        RawMutex,
+        RawMutex, WaitTimeoutResult,
     },
     sys::sync as sys,
     time::Instant,
 };
-
-
-/// A type indicating whether a timed wait on a condition variable returned
-/// due to a time out or not.
-///
-/// It is returned by the [`wait_timeout`] method.
-///
-/// [`wait_timeout`]: Condvar::wait_timeout
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub struct WaitTimeoutResult(bool);
-
-impl WaitTimeoutResult {
-    /// Returns `true` if the wait was known to have timed out.
-    ///
-    /// # Examples
-    ///
-    /// This example spawns a thread which will sleep 20 milliseconds before
-    /// updating a boolean value and then notifying the condvar.
-    ///
-    /// The main thread will wait with a 10 millisecond timeout on the condvar
-    /// and will leave the loop upon timeout.
-    ///
-    /// ```
-    /// use std::{sync::Arc, thread, time::Duration};
-    ///
-    /// use pspsdk::sync::nonpoison::{Condvar, Mutex};
-    ///
-    /// let pair = Arc::new((Mutex::new(false), Condvar::new()));
-    /// let pair2 = Arc::clone(&pair);
-    ///
-    /// thread::spawn(move || {
-    ///     let (lock, cvar) = &*pair2;
-    ///
-    ///     // Let's wait 20 milliseconds before notifying the condvar.
-    ///     thread::sleep(Duration::from_millis(20));
-    ///
-    ///     let mut started = lock.lock();
-    ///     // We update the boolean value.
-    ///     *started = true;
-    ///     cvar.notify_one();
-    /// });
-    ///
-    /// // Wait for the thread to start up.
-    /// let (lock, cvar) = &*pair;
-    /// loop {
-    ///     // Let's put a timeout on the condvar's wait.
-    ///     let result = cvar.wait_timeout(lock.lock(), Duration::from_millis(10));
-    ///     // 10 milliseconds have passed.
-    ///     if result.1.timed_out() {
-    ///         // timed out now and we can leave.
-    ///         break;
-    ///     }
-    /// }
-    /// ```
-    #[must_use]
-    pub fn timed_out(&self) -> bool {
-        self.0
-    }
-}
 
 /// A Condition Variable
 ///
@@ -83,9 +24,12 @@ impl WaitTimeoutResult {
 /// # Examples
 ///
 /// ```
-/// use std::{sync::Arc, thread};
+/// use alloc::sync::Arc;
 ///
-/// use pspsdk::sync::nonpoison::{Condvar, Mutex};
+/// use pspsdk::{
+///     sync::nonpoison::{Condvar, Mutex},
+///     thread,
+/// };
 ///
 /// let pair = Arc::new((Mutex::new(false), Condvar::new()));
 /// let pair2 = Arc::clone(&pair);
@@ -147,9 +91,12 @@ impl Condvar {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::nonpoison::{Condvar, Mutex};
+    /// use pspsdk::{
+    ///     sync::nonpoison::{Condvar, Mutex},
+    ///     thread,
+    /// };
     ///
     /// let pair = Arc::new((Mutex::new(false), Condvar::new()));
     /// let pair2 = Arc::clone(&pair);
@@ -187,9 +134,12 @@ impl Condvar {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::nonpoison::{Condvar, Mutex};
+    /// use pspsdk::{
+    ///     sync::nonpoison::{Condvar, Mutex},
+    ///     thread,
+    /// };
     ///
     /// let pair = Arc::new((Mutex::new(false), Condvar::new()));
     /// let pair2 = Arc::clone(&pair);
@@ -237,9 +187,12 @@ impl Condvar {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::nonpoison::{Condvar, Mutex};
+    /// use pspsdk::{
+    ///     sync::nonpoison::{Condvar, Mutex},
+    ///     thread,
+    /// };
     ///
     /// let pair = Arc::new((Mutex::new(false), Condvar::new()));
     /// let pair2 = Arc::clone(&pair);
@@ -257,13 +210,12 @@ impl Condvar {
     /// let mut started = lock.lock();
     /// // As long as the value inside the `Mutex<bool>` is `false`, we wait.
     /// while !*started {
-    ///     started = cvar.wait(started);
+    ///     cvar.wait(&mut started);
     /// }
     /// ```
-    pub fn wait<'a, T, M: RawMutex>(&self, guard: MutexGuard<'a, T, M>) -> MutexGuard<'a, T, M> {
-        let lock = mutex::guard_lock(&guard);
+    pub fn wait<'a, T, M: RawMutex>(&self, guard: &mut MutexGuard<'a, T, M>) {
+        let lock = mutex::guard_lock(guard);
         unsafe { self.inner.wait(lock) };
-        guard
     }
 
     /// Blocks the current thread until this condition variable receives a
@@ -282,9 +234,12 @@ impl Condvar {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::nonpoison::{Condvar, Mutex};
+    /// use pspsdk::{
+    ///     sync::nonpoison::{Condvar, Mutex},
+    ///     thread,
+    /// };
     ///
     /// let pair = Arc::new((Mutex::new(true), Condvar::new()));
     /// let pair2 = Arc::clone(&pair);
@@ -300,19 +255,17 @@ impl Condvar {
     /// // Wait for the thread to start up.
     /// let (lock, cvar) = &*pair;
     /// // As long as the value inside the `Mutex<bool>` is `true`, we wait.
-    /// let _guard = cvar.wait_while(lock.lock(), |pending| *pending);
+    /// let mut guard = lock.lock();
+    /// cvar.wait_while(&mut guard, |pending| *pending);
     /// ```
-    pub fn wait_while<'a, T, F, M>(
-        &self, mut guard: MutexGuard<'a, T, M>, mut condition: F,
-    ) -> MutexGuard<'a, T, M>
+    pub fn wait_while<'a, T, F, M>(&self, guard: &mut MutexGuard<'a, T, M>, mut condition: F)
     where
         F: FnMut(&mut T) -> bool,
         M: RawMutex,
     {
         while condition(&mut *guard) {
-            guard = self.wait(guard);
+            self.wait(guard);
         }
-        guard
     }
 
     /// Waits on this condition variable for a notification, timing out after a
@@ -347,9 +300,13 @@ impl Condvar {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread, time::Duration};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::nonpoison::{Condvar, Mutex};
+    /// use pspsdk::{
+    ///     sync::nonpoison::{Condvar, Mutex},
+    ///     thread,
+    ///     time::Duration,
+    /// };
     ///
     /// let pair = Arc::new((Mutex::new(false), Condvar::new()));
     /// let pair2 = Arc::clone(&pair);
@@ -367,9 +324,8 @@ impl Condvar {
     /// let mut started = lock.lock();
     /// // as long as the value inside the `Mutex<bool>` is `false`, we wait
     /// loop {
-    ///     let result = cvar.wait_timeout(started, Duration::from_millis(10));
+    ///     let result = cvar.wait_timeout(&mut started, Duration::from_millis(10));
     ///     // 10 milliseconds have passed, or maybe the value changed!
-    ///     started = result.0;
     ///     if *started == true {
     ///         // We received the notification and the value has been updated, we can leave.
     ///         break;
@@ -377,14 +333,13 @@ impl Condvar {
     /// }
     /// ```
     pub fn wait_timeout<'a, T, M: RawMutex>(
-        &self, guard: MutexGuard<'a, T, M>, dur: Duration,
-    ) -> (MutexGuard<'a, T, M>, WaitTimeoutResult) {
-        let result = unsafe {
-            let lock = mutex::guard_lock(&guard);
-            let success = self.inner.wait_timeout(lock, dur);
-            WaitTimeoutResult(!success)
+        &self, guard: &mut MutexGuard<'a, T, M>, dur: Duration,
+    ) -> WaitTimeoutResult {
+        let success = unsafe {
+            let lock = mutex::guard_lock(guard);
+            self.inner.wait_timeout(lock, dur)
         };
-        (guard, result)
+        WaitTimeoutResult(!success)
     }
 
     /// Waits on this condition variable for a notification, timing out after a
@@ -412,9 +367,13 @@ impl Condvar {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread, time::Duration};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::nonpoison::{Condvar, Mutex};
+    /// use pspsdk::{
+    ///     sync::nonpoison::{Condvar, Mutex},
+    ///     thread,
+    ///     time::Duration,
+    /// };
     ///
     /// let pair = Arc::new((Mutex::new(true), Condvar::new()));
     /// let pair2 = Arc::clone(&pair);
@@ -429,31 +388,33 @@ impl Condvar {
     ///
     /// // wait for the thread to start up
     /// let (lock, cvar) = &*pair;
+    /// let mut guard = lock.lock();
     /// let result =
-    ///     cvar.wait_timeout_while(lock.lock(), Duration::from_millis(100), |&mut pending| pending);
-    /// if result.1.timed_out() {
+    ///     cvar.wait_timeout_while(&mut guard, Duration::from_millis(100), |&mut pending| pending);
+    /// if result.timed_out() {
     ///     // timed-out without the condition ever evaluating to false.
     /// }
     /// // access the locked mutex via result.0
     /// ```
     pub fn wait_timeout_while<'a, T, F, M>(
-        &self, mut guard: MutexGuard<'a, T, M>, dur: Duration, mut condition: F,
-    ) -> (MutexGuard<'a, T, M>, WaitTimeoutResult)
+        &self, guard: &mut MutexGuard<'a, T, M>, dur: Duration, mut condition: F,
+    ) -> WaitTimeoutResult
     where
         F: FnMut(&mut T) -> bool,
         M: RawMutex,
     {
         let start = Instant::now();
-        loop {
-            if !condition(&mut *guard) {
-                return (guard, WaitTimeoutResult(false));
-            }
+
+        while condition(guard.deref_mut()) {
             let timeout = match dur.checked_sub(start.elapsed()) {
                 Some(timeout) => timeout,
-                None => return (guard, WaitTimeoutResult(true)),
+                None => return WaitTimeoutResult(true),
             };
-            guard = self.wait_timeout(guard, timeout).0;
+
+            self.wait_timeout(guard, timeout);
         }
+
+        WaitTimeoutResult(false)
     }
 }
 

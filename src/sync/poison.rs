@@ -73,7 +73,9 @@ mod once;
 pub use once::Once;
 
 mod condvar;
-pub use condvar::{Condvar, WaitTimeoutResult};
+pub use condvar::Condvar;
+
+// mod barrier;
 
 pub struct Flag {
     #[cfg(panic = "unwind")]

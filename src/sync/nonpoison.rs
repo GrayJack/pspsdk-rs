@@ -17,17 +17,19 @@ pub use rwlock::{
     MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 
-mod once;
-pub use once::Once;
+pub use super::poison::Once;
 
 mod once_lock;
 pub use once_lock::OnceLock;
 
 mod condvar;
-pub use condvar::{Condvar, WaitTimeoutResult};
+pub use condvar::Condvar;
 
 mod lazy_lock;
 pub use lazy_lock::LazyLock;
+
+mod barrier;
+pub use barrier::{Barrier, BarrierWaitResult};
 
 /// An enumeration of possible errors associated with a [`TryLockResult`] which
 /// can occur while trying to acquire a lock, from the [`try_lock`] method on a
