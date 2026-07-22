@@ -9,8 +9,11 @@ build = "build.rs"
 [lib]
 crate-type = ["lib", "staticlib"]
 
+[package.metadata.rust-analyzer]
+rustc_private = true
+
 [dependencies]
-bitflag-attr = { version = "0.13.0", features = ["const-mut-ref"] }
+bitflag-attr = { version = "0.13.1", features = ["const-mut-ref"] }
 io_core = { version = "0.4.4", features = ["alloc", "nightly"] }
 pspsdk-macros = { path = "pspsdk-macros", features = [] }
 

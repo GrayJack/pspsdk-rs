@@ -3,7 +3,7 @@ use quote::{quote, ToTokens};
 use sha1::{Digest, Sha1};
 use syn::{
     meta::ParseNestedMeta, parse::Parse, spanned::Spanned, Error, Expr, ExprLit, ExprTuple,
-    ForeignItem, ForeignItemFn, Ident, ItemForeignMod, Lit, LitInt, LitStr, Meta, Signature,
+    ForeignItem, ForeignItemFn, Ident, ItemForeignMod, Lit, LitInt, LitStr, Meta, Safety,
 };
 
 pub struct PspStub {
@@ -103,8 +103,6 @@ impl ToTokens for PspStub {
                 attrs, vis, sig, ..
             }) = item
             {
-                let Signature { unsafety, .. } = sig;
-
                 let cfg_attrs: Vec<_> =
                     attrs.iter().filter(|attr| attr.path().is_ident("cfg")).collect();
 
@@ -159,47 +157,25 @@ impl ToTokens for PspStub {
                         eabi: EabiKind::Arg5,
                         ..
                     }) => {
-                        quote! {
-                            // #(#cfg_attrs)*
-                            // #[doc(hidden)]
-                            // #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32) -> u32
-                        }
+                        quote! {}
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::Arg6,
                         ..
                     }) => {
-                        quote! {
-                            // #(#cfg_attrs)*
-                            // #[doc(hidden)]
-                            // #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
-                        }
+                        quote! {}
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::Arg7,
                         ..
                     }) => {
-                        quote! {
-                            // #(#cfg_attrs)*
-                            // #[doc(hidden)]
-                            // #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
-                        }
+                        quote! {}
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::Arg8,
                         ..
                     }) => {
-                        // let unsafety = if unsafety.is_some() {
-                        //     // No need as it will show up in the signature already
-                        //     quote! {}
-                        // } else {
-                        //     quote! {safe}
-                        // };
-                        quote! {
-                            // #(#cfg_attrs)*
-                            // #[doc(hidden)]
-                            // #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32, _: u32) -> u32
-                        }
+                        quote! {}
                     },
                     Some(EabiAttr {
                         eabi: EabiKind::I_II_I_RI,
@@ -218,16 +194,10 @@ impl ToTokens for PspStub {
                         #vis(crate) unsafe fn #fn_stub_var(_: u32, _: u64, _: u32) -> u64;
                     },
                     None => {
-                        let unsafety = if unsafety.is_some() {
-                            // No need as it will show up in the signature already
-                            quote! {}
-                        } else {
-                            quote! {safe}
-                        };
                         quote! {
                             #(#attrs)*
                             #[link_name = #fn_libname_link]
-                            #vis #unsafety #sig ;
+                            #vis #sig ;
                         }
                     },
                 };
@@ -268,14 +238,19 @@ impl ToTokens for PspStub {
                             .collect();
 
                         let mut sig = sig.clone();
-                        sig.unsafety = None;
+                        let safety = if let Safety::Unsafe(_) = sig.safety {
+                            quote! {unsafe}
+                        } else {
+                            quote! {}
+                        };
+                        sig.safety = Safety::Default;
 
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
                             #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
-                            #vis #unsafety extern "C" #sig {
+                            #vis #safety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
                                     unsafe {
                                         // ::core::mem::transmute(#crate_path::eabi::i5(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
@@ -318,14 +293,19 @@ impl ToTokens for PspStub {
                             .collect();
 
                         let mut sig = sig.clone();
-                        sig.unsafety = None;
+                        let safety = if let Safety::Unsafe(_) = sig.safety {
+                            quote! {unsafe}
+                        } else {
+                            quote! {}
+                        };
+                        sig.safety = Safety::Default;
 
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
                             #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
-                            #vis #unsafety extern "C" #sig {
+                            #vis #safety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
                                     unsafe {
                                         // ::core::mem::transmute(#crate_path::eabi::i5(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
@@ -369,14 +349,19 @@ impl ToTokens for PspStub {
                             .collect();
 
                         let mut sig = sig.clone();
-                        sig.unsafety = None;
+                        let safety = if let Safety::Unsafe(_) = sig.safety {
+                            quote! {unsafe}
+                        } else {
+                            quote! {}
+                        };
+                        sig.safety = Safety::Default;
 
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
                             #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
-                            #vis #unsafety extern "C" #sig {
+                            #vis #safety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
                                     unsafe {
                                         let result: u32;
@@ -419,14 +404,19 @@ impl ToTokens for PspStub {
                             .collect();
 
                         let mut sig = sig.clone();
-                        sig.unsafety = None;
+                        let safety = if let Safety::Unsafe(_) = sig.safety {
+                            quote! {unsafe}
+                        } else {
+                            quote! {}
+                        };
+                        sig.safety = Safety::Default;
 
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
                             #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
-                            #vis #unsafety extern "C" #sig {
+                            #vis #safety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
                                     unsafe {
                                         // ::core::mem::transmute(#crate_path::eabi::i5(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
@@ -471,14 +461,19 @@ impl ToTokens for PspStub {
                             .collect();
 
                         let mut sig = sig.clone();
-                        sig.unsafety = None;
+                        let safety = if let Safety::Unsafe(_) = sig.safety {
+                            quote! {unsafe}
+                        } else {
+                            quote! {}
+                        };
+                        sig.safety = Safety::Default;
 
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
                             #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
-                            #vis #unsafety extern "C" #sig {
+                            #vis #safety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
                                     unsafe {
                                         ::core::mem::transmute(#crate_path::eabi::i_ii_i_ri(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
@@ -506,14 +501,19 @@ impl ToTokens for PspStub {
                             .collect();
 
                         let mut sig = sig.clone();
-                        sig.unsafety = None;
+                        let safety = if let Safety::Unsafe(_) = sig.safety {
+                            quote! {unsafe}
+                        } else {
+                            quote! {}
+                        };
+                        sig.safety = Safety::Default;
 
                         quote! {
                             #(#attrs)*
                             #[cfg(any(target_os = "psp", doc))]
                             #[allow(non_snake_case, clippy::transmutes_expressible_as_ptr_casts, clippy::missing_safety_doc, clippy::missing_transmute_annotations, clippy::useless_transmute)]
                             #[allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
-                            #vis #unsafety extern "C" #sig {
+                            #vis #safety extern "C" #sig {
                                 #[cfg(target_os = "psp")] {
                                     unsafe {
                                         ::core::mem::transmute(#crate_path::eabi::i_ii_i_rii(#( ::core::mem::transmute( #args ), )* #fn_stub_var))
