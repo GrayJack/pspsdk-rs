@@ -6,9 +6,11 @@ pub mod printing;
 
 mod stdio;
 pub use stdio::{
-    cleanup, stderr, stderr_raw, stdin, stdin_raw, stdout, stdout_raw, Stderr, StderrLock,
-    StderrRaw, Stdin, StdinLock, StdinRaw, Stdout, StdoutLock, StdoutRaw,
+    stderr, stderr_raw, stdin, stdin_raw, stdout, stdout_raw, Stderr, StderrLock, StderrRaw, Stdin,
+    StdinLock, StdinRaw, Stdout, StdoutLock, StdoutRaw,
 };
+
+pub(crate) use stdio::cleanup;
 
 // Re-export io_core::io
 pub use io_core::io::*;

@@ -421,7 +421,7 @@ pub fn abort() -> ! {
         cfg_select! {
             prx => {
                 if crate::process::is_interrupt_enabled() {
-                    let _ = crate::sys::modulemgr::sceKernelSelfStopUnloadModule(0xDEADCAFE, 0, core::ptr::null_mut());
+                    let _ = unsafe { crate::sys::modulemgr::sceKernelSelfStopUnloadModule(0xDEADCAFE, 0, core::ptr::null_mut()) };
                 }
             },
             all(pbp, feature = "kernel") => {
@@ -445,7 +445,7 @@ pub(crate) fn exit_main(status: i32) -> ! {
         cfg_select! {
             prx => {
                 if crate::process::is_interrupt_enabled() {
-                    let _ = crate::sys::modulemgr::sceKernelSelfStopUnloadModule(status.cast_signed(), 0, core::ptr::null_mut());
+                    let _ = unsafe { crate::sys::modulemgr::sceKernelSelfStopUnloadModule(status.cast_unsigned(), 0, core::ptr::null_mut()) };
                 }
             },
             all(pbp, feature = "kernel") => {
@@ -455,7 +455,7 @@ pub(crate) fn exit_main(status: i32) -> ! {
             }
             all(pbp, not(feature = "kernel")) => {
                 if crate::process::is_interrupt_enabled() {
-                    let _ = crate::sys::loadexec::sceKernelExitGameWithStatus(status.cast_signed());
+                    let _ = crate::sys::loadexec::sceKernelExitGameWithStatus(status.cast_unsigned());
                 }
             }
             _ => {

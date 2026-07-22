@@ -20,6 +20,7 @@
     sync_unsafe_cell
 )]
 #![cfg_attr(feature = "non-stub-code", feature(panic_unwind))]
+#![cfg_attr(doc, feature(doc_cfg))]
 // #![cfg_attr(feature = "std", feature(psp_std))]
 
 #[cfg(feature = "non-stub-code")]
