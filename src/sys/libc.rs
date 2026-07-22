@@ -1,4 +1,4 @@
-//! Module for libc functions
+//! Libc functions.
 //!
 //! PSP has many sources for those functions:
 //!

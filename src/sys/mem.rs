@@ -1,4 +1,4 @@
-//! Memory management
+//! Memory management.
 #![allow(unused_imports)]
 
 use core::ffi::{c_char, c_void, VaList};

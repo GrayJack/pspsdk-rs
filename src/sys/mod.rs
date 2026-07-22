@@ -10,7 +10,6 @@ pub mod macro_helpers;
 mod error;
 pub use error::{ErrorFacility, SceError};
 
-pub mod atrac;
 pub mod audio;
 pub mod ctrl;
 pub mod display;
@@ -22,7 +21,7 @@ pub mod libc;
 pub mod library;
 pub mod loadexec;
 pub mod mem;
-pub mod modulemgr;
+pub mod module;
 pub mod openpsid;
 pub mod power;
 pub mod suspend;
@@ -483,6 +482,8 @@ pub unsafe trait SceResultOk: Sized + crate::private::Sealed {
     }
 }
 
+/// Trait that specifies that it can safely be turned to a `SceResult` ok-valid value.
+///
 /// # Safety
 ///
 /// For this trait to be correct, the implementation must:
@@ -493,6 +494,8 @@ pub unsafe trait SceIntoOkValue: Sized + crate::private::Sealed {
     fn into_ok_value(self) -> u32;
 }
 
+/// Trait that specifies that it can safely be turned to a `SceResult64` ok-valid value.
+///
 /// # Safety
 ///
 /// For this trait to be correct, the implementation must:
@@ -777,7 +780,7 @@ macro_rules! impl_ranged_ty {
     };
 }
 
-/// Sets the processor K1 register to a known value.
+/// Sets the processor K1 register to a given value.
 ///
 /// This function is for use in kernel mode syscall exports. The kernel sets the `k1` register to
 /// indicate what mode called the function, i.e. whether it was directly called, was called via a
@@ -941,6 +944,7 @@ pub extern "C" fn get_current_interrupt_status() -> u32 {
     )
 }
 
+/// Returns `true` if the the interrupt is enabled, `false` otherwise.
 #[cfg(all(target_os = "psp", feature = "non-stub-code"))]
 pub fn is_interrupt_enabled() -> bool {
     get_current_interrupt_status() != 0
@@ -962,3 +966,57 @@ pub fn spin_loop() {
 // NOTE: this is not guaranteed to run, for example when the program aborts.
 #[cfg(all(target_os = "psp", feature = "non-stub-code"))]
 pub(crate) unsafe fn cleanup() {}
+
+/// Performs a volatile write of a memory location `addr` with the given `value` without
+/// reading or dropping the old value.
+///
+/// Volatile operations are intended to act on I/O memory, and are guaranteed
+/// to not be elided or reordered by the compiler across other volatile
+/// operations.
+///
+/// # Safety
+///
+/// Behavior is undefined if any of the following conditions are violated:
+///
+/// * `addr` must be either valid for writes, or `addr` must point to memory outside of all Rust
+///   allocations and writing to that memory must:
+///   - not trap, and
+///   - not cause any memory inside a Rust allocation to be modified.
+///
+/// * `addr` must be properly aligned.
+#[track_caller]
+#[inline(always)]
+#[cfg(feature = "non-stub-code")]
+pub unsafe fn volatile_write<T>(addr: usize, value: T)
+where
+    T: crate::private::VolatileOpAllowed,
+{
+    unsafe { core::ptr::with_exposed_provenance_mut::<T>(addr).write_volatile(value) };
+}
+
+/// Performs a volatile read of the value from `addr` without moving it. This
+/// leaves the memory in `addr` unchanged.
+///
+/// Volatile operations are intended to act on I/O memory, and are guaranteed
+/// to not be elided or reordered by the compiler across other volatile
+/// operations.
+///
+/// # Safety
+///
+/// Behavior is undefined if any of the following conditions are violated:
+///
+/// * `addr` must be either valid for reads, or `addr` must point to memory outside of all Rust
+///   allocations and reading from that memory must:
+///   - not trap, and
+///   - not cause any memory inside a Rust allocation to be modified.
+///
+/// * `addr` must be properly aligned.
+#[track_caller]
+#[inline(always)]
+#[cfg(feature = "non-stub-code")]
+pub unsafe fn volatile_read<T>(addr: usize) -> T
+where
+    T: crate::private::VolatileOpAllowed,
+{
+    unsafe { core::ptr::with_exposed_provenance_mut::<T>(addr).read_volatile() }
+}

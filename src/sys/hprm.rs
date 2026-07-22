@@ -1,4 +1,4 @@
-//! Headphone Remote
+//! Headphone Remote control.
 #![allow(unused_imports)]
 
 use bitflag_attr::bitflag;

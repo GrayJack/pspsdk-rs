@@ -1,3 +1,5 @@
+//! Module management.
+
 use core::{ffi::c_void, num::NonZero};
 
 use bitflag_attr::bitflag;

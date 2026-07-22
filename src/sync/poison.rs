@@ -1,3 +1,60 @@
+//! Synchronization objects that employ poisoning.
+//!
+//! # Poisoning
+//!
+//! All synchronization objects in this module implement a strategy called
+//! "poisoning" where a primitive becomes poisoned if it recognizes that some
+//! thread has panicked while holding the exclusive access granted by the
+//! primitive. This information is then propagated to all other threads
+//! to signify that the data protected by this primitive is likely tainted
+//! (some invariant is not being upheld).
+//!
+//! The specifics of how this "poisoned" state affects other threads and whether
+//! the panics are recognized reliably or on a best-effort basis depend on the
+//! primitive. See [Overview](#overview) below.
+//!
+//! The synchronization objects in this module have alternative implementations that do not employ
+//! poisoning in the [`pspsdk::sync::nonpoison`] module.
+//!
+//! [`pspsdk::sync::nonpoison`]: crate::sync::nonpoison
+//!
+//! # Overview
+//!
+//! Below is a list of synchronization objects provided by this module
+//! with a high-level overview for each object and a description
+//! of how it employs "poisoning".
+//!
+//! - [`Condvar`]: Condition Variable, providing the ability to block a thread while waiting for an
+//!   event to occur.
+//!
+//!   Condition variables are typically associated with
+//!   a boolean predicate (a condition) and a mutex.
+//!   This implementation is associated with [`poison::Mutex`](Mutex),
+//!   which employs poisoning.
+//!   For this reason, [`Condvar::wait()`] will return a [`LockResult`],
+//!   just like [`poison::Mutex::lock()`](Mutex::lock) does.
+//!
+//! - [`Mutex`]: Mutual Exclusion mechanism, which ensures that at most one thread at a time is able
+//!   to access some data.
+//!
+//!   Panicking while holding the lock typically poisons the mutex, but it is
+//!   not guaranteed to detect this condition in all circumstances.
+//!   [`Mutex::lock()`] returns a [`LockResult`], providing a way to deal with
+//!   the poisoned state. See [`Mutex`'s documentation](Mutex#poisoning) for more.
+//!
+//! - [`RwLock`]: Provides a mutual exclusion mechanism which allows multiple readers at the same
+//!   time, while allowing only one writer at a time. In some cases, this can be more efficient than
+//!   a mutex.
+//!
+//!   This implementation, like [`Mutex`], usually becomes poisoned on a panic.
+//!   Note, however, that an `RwLock` may only be poisoned if a panic occurs
+//!   while it is locked exclusively (write mode). If a panic occurs in any reader,
+//!   then the lock will not be poisoned.
+//!
+//! Note that the [`Once`] type also employs poisoning, but since it has non-poisoning `force`
+//! methods available on it, there is no separate `nonpoison` and `poison` version.
+//!
+//! [`Once`]: crate::sync::poison::Once
 use core::{
     error::Error,
     fmt,

@@ -1,3 +1,4 @@
+//! Display operations.
 #![allow(unused_imports)]
 use core::ffi::c_void;
 
@@ -87,7 +88,9 @@ unsafe extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x0E20F177)]
     #[cfg(not(feature = "kernel"))]
-    pub safe fn sceDisplaySetMode(mode: DisplayMode, width: SceSize, height: SceSize) -> SceResult<()>;
+    pub safe fn sceDisplaySetMode(
+        mode: DisplayMode, width: SceSize, height: SceSize,
+    ) -> SceResult<()>;
 
     /// Gets the current display mode and display proportions.
     ///
@@ -344,7 +347,9 @@ unsafe extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x0E20F177)]
-    pub safe fn sceDisplaySetMode(mode: DisplayMode, width: SceSize, height: SceSize) -> SceResult<()>;
+    pub safe fn sceDisplaySetMode(
+        mode: DisplayMode, width: SceSize, height: SceSize,
+    ) -> SceResult<()>;
 
     /// Gets the current display mode and display proportions.
     ///

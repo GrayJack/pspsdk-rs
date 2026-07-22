@@ -1,4 +1,4 @@
-//! Audio routing control
+//! Audio routing control.
 #![allow(unused_imports)]
 
 use pspsdk_macros::psp_stub;
@@ -73,7 +73,9 @@ unsafe extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x44B384EF)]
     #[cfg(not(feature = "kernel"))]
-    pub safe fn sceAudioRoutingSetVolumeMode(vol_mode: AudioRoutingVolumeMode) -> Result<(), SceError>;
+    pub safe fn sceAudioRoutingSetVolumeMode(
+        vol_mode: AudioRoutingVolumeMode,
+    ) -> Result<(), SceError>;
 }
 
 #[cfg(feature = "kernel")]
@@ -151,7 +153,9 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xBE9B6FF5 }
         else { 0xBB548475 }
     )]
-    pub safe fn sceAudioRoutingSetVolumeMode(vol_mode: AudioRoutingVolumeMode) -> Result<(), SceError>;
+    pub safe fn sceAudioRoutingSetVolumeMode(
+        vol_mode: AudioRoutingVolumeMode,
+    ) -> Result<(), SceError>;
 }
 
 impl crate::private::Sealed for AudioRoutingMode {}

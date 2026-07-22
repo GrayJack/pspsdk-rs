@@ -1,3 +1,4 @@
+//! Audio operation and management.
 #![allow(unused_imports)]
 
 use core::ffi::c_void;
@@ -6,6 +7,7 @@ use pspsdk_macros::psp_stub;
 
 use crate::sys::{SceError, SceIntoOkValue, SceResult, SceResultOk};
 
+pub mod atrac;
 pub mod routing;
 
 /// Minimum value for audio sample value.

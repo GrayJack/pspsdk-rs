@@ -99,6 +99,20 @@ mod private {
     impl Sealed for core::convert::Infallible {}
     impl Sealed for ! {}
 
+    /// Types that can work on volatile operation.
+    pub trait VolatileOpAllowed: Sealed {}
+    impl VolatileOpAllowed for bool {}
+    impl VolatileOpAllowed for u8 {}
+    impl VolatileOpAllowed for i8 {}
+    impl VolatileOpAllowed for u16 {}
+    impl VolatileOpAllowed for i16 {}
+    impl VolatileOpAllowed for u32 {}
+    impl VolatileOpAllowed for i32 {}
+    impl VolatileOpAllowed for u64 {}
+    impl VolatileOpAllowed for i64 {}
+    impl VolatileOpAllowed for usize {}
+    impl VolatileOpAllowed for isize {}
+
     // Libc functions that we need for rust linker
 
     #[unsafe(no_mangle)]

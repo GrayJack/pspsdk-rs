@@ -1,3 +1,4 @@
+//! Sync primitives implementation.
 #![allow(clippy::mut_from_ref, clippy::new_without_default, clippy::missing_safety_doc)]
 
 mod once;

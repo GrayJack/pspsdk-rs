@@ -1,10 +1,10 @@
-//! Module for types related to libraries.
+//! Libraries information and types.
 
 use core::ffi::c_void;
 
 use crate::sys::{LibFlags, SceSize};
 
-pub use crate::sys::modulemgr::ModuleAttributes;
+pub use crate::sys::module::ModuleAttributes;
 
 pub const STUB_LIBRARY_ENTRY_TABLE_OLD_LEN: u8 = 6;
 pub const STUB_LIBRARY_ENTRY_TABLE_NEW_LEN: u8 = 7;

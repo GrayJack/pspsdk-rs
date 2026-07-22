@@ -1,3 +1,4 @@
+//! PS ID operations.
 #![allow(unused_imports)]
 
 use pspsdk_macros::psp_stub;

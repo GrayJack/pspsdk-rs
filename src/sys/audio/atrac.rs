@@ -1,3 +1,4 @@
+//! Atrac format operation and processing.
 #![allow(unused_imports)]
 
 use core::ffi::c_void;

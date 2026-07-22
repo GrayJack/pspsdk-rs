@@ -1,3 +1,4 @@
+//! Input control operations.
 use core::ffi::c_void;
 
 use bitflag_attr::bitflag;

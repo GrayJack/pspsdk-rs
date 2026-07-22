@@ -1,4 +1,4 @@
-//! Direct Memory Access (DMA) functions.
+//! Direct Memory Access (DMA) operations.
 #[cfg(any(target_os = "psp", doc))]
 use core::ffi::c_void;
 

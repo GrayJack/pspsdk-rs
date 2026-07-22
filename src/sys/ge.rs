@@ -1,3 +1,4 @@
+//! Graphic Engine operation and management.
 use core::{ffi::c_void, fmt};
 
 use pspsdk_macros::psp_stub;

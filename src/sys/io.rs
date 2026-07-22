@@ -1,3 +1,4 @@
+//! Input/Output operations.
 use core::{ffi::c_void, mem, ptr::NonNull};
 
 use bitflag_attr::bitflag;

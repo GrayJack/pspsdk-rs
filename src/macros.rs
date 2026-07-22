@@ -449,7 +449,7 @@ macro_rules! _start {
 /// With attributes
 ///
 /// ```no_run
-/// use pspsdk::sys::modulemgr::ModuleAttributes;
+/// use pspsdk::sys::module::ModuleAttributes;
 ///
 /// pspsdk::module_info!("MyModule", 1, 0, ModuleAttributes::User);
 /// ```

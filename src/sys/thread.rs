@@ -1,3 +1,4 @@
+//! Thread operations and management.
 use core::ffi::c_void;
 
 use bitflag_attr::bitflag;

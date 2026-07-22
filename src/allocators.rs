@@ -1,3 +1,4 @@
+//! Allocators for the PSP system.
 use core::{
     alloc::{AllocError, Allocator, GlobalAlloc},
     ptr::{self, NonNull},

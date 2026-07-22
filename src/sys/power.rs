@@ -1,3 +1,4 @@
+//! Power management.
 use bitflag_attr::bitflag;
 use pspsdk_macros::psp_stub;
 

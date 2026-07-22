@@ -1,3 +1,4 @@
+//! Load, execution and exit management.
 use core::ffi::c_void;
 
 use pspsdk_macros::psp_stub;

@@ -1,3 +1,5 @@
+//! Time operation and management.
+
 #[cfg(feature = "non-stub-code")]
 mod non_stub;
 #[cfg(feature = "non-stub-code")]

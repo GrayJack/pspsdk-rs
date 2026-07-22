@@ -1,3 +1,4 @@
+//! Suspend operations.
 use pspsdk_macros::psp_stub;
 
 use crate::sys::{
