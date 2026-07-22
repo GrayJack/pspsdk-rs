@@ -20,7 +20,7 @@ extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
     extern "C" fn psp_main_thread(argc: usize, argv: *mut c_void) -> SceResult<u32> {
         let res = pspsdk::call_main!(psp_main, argc, argv);
 
-        SceResult::new(res as u32)
+        pspsdk::process::exit(res as i32);
     }
 
     // Set OS functions for pspsdk::io module

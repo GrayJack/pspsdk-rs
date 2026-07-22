@@ -6,7 +6,12 @@
 //! and should be considered as private implementation details for the
 //! time being.
 
-use crate::{panic, sys};
+use core::cell::SyncUnsafeCell;
+
+use crate::{
+    panic,
+    sys::{self, thread::ThreadId},
+};
 
 const MAX_ARGC: usize = 19;
 
@@ -85,10 +90,23 @@ pub unsafe fn init_cwd(arg0: *mut u8) {
     }
 }
 
+pub(crate) static MAIN_THREAD_ID: SyncUnsafeCell<Option<ThreadId>> = SyncUnsafeCell::new(None);
+
+pub(crate) fn main_thread_id() -> Option<ThreadId> {
+    let id = unsafe { &*MAIN_THREAD_ID.get() };
+    *id
+}
+
 pub(crate) unsafe fn init(_argc: usize, argv: *const *mut u8) {
     // Ideally this is called on module_start, but people doing barebones project may forget, so we
     // call it here too.
     crate::set_psp_os_functions();
+
+    let main_thread_id = sys::thread::sceKernelGetThreadId().into_result();
+
+    if let Ok(id) = main_thread_id {
+        unsafe { MAIN_THREAD_ID.get().write_volatile(Some(id)) };
+    }
 
     unsafe {
         init_cwd(*argv);

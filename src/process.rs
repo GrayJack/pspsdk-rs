@@ -329,6 +329,17 @@ pub fn is_interrupt_enabled() -> bool {
 pub fn exit(code: i32) -> ! {
     crate::rt::cleanup();
 
+    let main_thread_id = crate::rt::main_thread_id();
+
+    if let Some(main_thread_id) = main_thread_id {
+        let thread_id = sys::thread::sceKernelGetThreadId().into_result();
+        if let Ok(curr_thread_id) = thread_id
+            && curr_thread_id == main_thread_id
+        {
+            exit_main(code)
+        }
+    }
+
     loop {
         if crate::process::is_interrupt_enabled() {
             let _ = sys::thread::sceKernelExitDeleteThread(code.cast_unsigned());
@@ -400,6 +411,7 @@ pub fn exit(code: i32) -> ! {
 /// ```
 #[cold]
 #[cfg_attr(miri, track_caller)] // even without panics, this helps for Miri backtraces
+#[allow(clippy::never_loop)]
 pub fn abort() -> ! {
     if cfg!(debug_assertions) {
         crate::println!("Abort called");
@@ -407,12 +419,17 @@ pub fn abort() -> ! {
 
     loop {
         cfg_select! {
-            feature = "kernel" => {
+            prx => {
+                if crate::process::is_interrupt_enabled() {
+                    let _ = crate::sys::modulemgr::sceKernelSelfStopUnloadModule(0xDEADCAFE, 0, core::ptr::null_mut());
+                }
+            },
+            all(pbp, feature = "kernel") => {
                 if crate::process::is_interrupt_enabled() {
                     let _ = crate::sys::loadexec::sceKernelExitVSHVSH(None);
                 }
-            },
-            pbp => {
+            }
+            all(pbp, not(feature = "kernel")) => {
                 if crate::process::is_interrupt_enabled() {
                     let _ = crate::sys::loadexec::sceKernelExitGameWithStatus(0xDEADCAFE);
                 }
@@ -422,15 +439,30 @@ pub fn abort() -> ! {
     }
 }
 
-
-// pub(crate) fn exit_main(status: i32) -> ! {
-
-//     loop {
-//         cfg_select! {
-//             pbp => {
-//                 let _ =
-// crate::sys::loadexec::sceKernelExitGameWithStatus(status.cast_unsigned());             }
-//             _ => exit(status),
-//         }
-//     }
-// }
+#[allow(clippy::never_loop)]
+pub(crate) fn exit_main(status: i32) -> ! {
+    loop {
+        cfg_select! {
+            prx => {
+                if crate::process::is_interrupt_enabled() {
+                    let _ = crate::sys::modulemgr::sceKernelSelfStopUnloadModule(status.cast_signed(), 0, core::ptr::null_mut());
+                }
+            },
+            all(pbp, feature = "kernel") => {
+                if crate::process::is_interrupt_enabled() {
+                    let _ = crate::sys::loadexec::sceKernelExitVSHVSH(None);
+                }
+            }
+            all(pbp, not(feature = "kernel")) => {
+                if crate::process::is_interrupt_enabled() {
+                    let _ = crate::sys::loadexec::sceKernelExitGameWithStatus(status.cast_signed());
+                }
+            }
+            _ => {
+                if crate::process::is_interrupt_enabled() {
+                    let _ = sys::thread::sceKernelExitDeleteThread(status.cast_unsigned());
+                }
+            },
+        }
+    }
+}

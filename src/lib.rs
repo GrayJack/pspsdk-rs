@@ -16,7 +16,8 @@
     negative_impls,
     try_trait_v2,
     try_trait_v2_residual,
-    never_type
+    never_type,
+    sync_unsafe_cell
 )]
 #![cfg_attr(feature = "non-stub-code", feature(panic_unwind))]
 // #![cfg_attr(feature = "std", feature(psp_std))]
@@ -260,10 +261,11 @@ pub fn enable_home_button() {
 
     unsafe {
         unsafe extern "C" fn exit_thread(_args: usize, _argp: *mut c_void) -> SceResult<u32> {
+            #[allow(unreachable_code)]
             unsafe extern "C" fn exit_callback(
                 _arg1: u32, _arg2: u32, _arg: *mut c_void,
             ) -> CallbackTermState {
-                let _res = sys::loadexec::sceKernelExitGame();
+                process::exit_main(0);
                 CallbackTermState::NormalTermination
             }
 

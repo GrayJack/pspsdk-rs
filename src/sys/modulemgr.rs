@@ -1,17 +1,13 @@
-#[cfg(feature = "kernel")]
-use core::ffi::c_void;
-use core::num::NonZero;
+use core::{ffi::c_void, num::NonZero};
 
 use bitflag_attr::bitflag;
 use pspsdk_macros::psp_stub;
 
-#[cfg(feature = "kernel")]
-use crate::sys::io::FileId;
 use crate::{
     allocators::MemoryPartitionId,
     sys::{
-        mem::MemoryBlockId, thread::ThreadAttributes, SceError, SceIntoOkValue, SceResult,
-        SceResultOk, SceSize, SceUid,
+        io::FileId, mem::MemoryBlockId, thread::ThreadAttributes, SceError, SceIntoOkValue,
+        SceResult, SceResultOk, SceSize, SceUid,
     },
 };
 

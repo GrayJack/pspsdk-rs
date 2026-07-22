@@ -403,6 +403,7 @@ macro_rules! _start {
     ($psp_main:expr, $argc:expr, $argv:expr) => {{
         let res = $crate::psp_start($psp_main, $argc, (&raw const $argv).cast());
 
+        pspsdk::process::exit(res as i32);
         $crate::sys::SceResult::new(res as u32)
     }};
 }
@@ -465,6 +466,7 @@ macro_rules! module {
 
             #[unsafe(no_mangle)]
             extern "C" fn module_start(argc_bytes: usize, argp: *mut ::core::ffi::c_void) -> isize {
+                #[allow(unreachable_code)]
                 extern "C" fn main_thread(
                     argc: usize, argv: *mut ::core::ffi::c_void,
                 ) -> $crate::sys::SceResult<u32> {
