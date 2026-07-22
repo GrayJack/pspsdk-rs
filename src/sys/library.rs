@@ -2,9 +2,9 @@
 
 use core::ffi::c_void;
 
-use bitflag_attr::bitflag;
-
 use crate::sys::{LibFlags, SceSize};
+
+pub use crate::sys::modulemgr::ModuleAttributes;
 
 pub const STUB_LIBRARY_ENTRY_TABLE_OLD_LEN: u8 = 6;
 pub const STUB_LIBRARY_ENTRY_TABLE_NEW_LEN: u8 = 7;
@@ -137,65 +137,6 @@ pub struct ResidentLibraryEntry {
     pub unk1: u16,
     pub unk2: u8,
     pub unk3: u8,
-}
-
-/// The attributes for modules.
-///
-/// Module attributes can be split into three categories:
-/// - Mode flag: Attributes that dictates how the module behaves.
-/// - Privilege flag: Attribute that set the permissions of the module.
-/// - KIRK flag: Attribute related to KIRK encryption libraries used.
-#[bitflag(u16)]
-#[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-pub enum ModuleAttributes {
-    /// Mode flag. The default mode.
-    #[default]
-    #[doc(alias("SCE_MODULE_ATTR_NONE"))]
-    DefaultMode = 0x0000,
-    /// Mode flag. The module stays in memory and cannot be unloaded.
-    #[doc(alias("SCE_MODULE_ATTR_CANT_STOP"))]
-    NoStopMode = 0x0001,
-    /// Mode flag. Only one instance (version) of the module can be loaded into the system.
-    ///
-    /// If loading another version of that module is desired, it needs to delete the loaded
-    /// version first.
-    #[doc(alias("SCE_MODULE_ATTR_EXCLUSIVE_LOAD"))]
-    ExclusiveLoadMode = 0x0002,
-    /// Mode flag. Only one instance (version) of the module can be started.
-    ///
-    /// If starting another version of that module is desired, it needs to stop the running
-    /// version first.
-    #[doc(alias("SCE_MODULE_ATTR_EXCLUSIVE_START"))]
-    ExclusiceStartMode = 0x0004,
-
-    /// Privilege flag. User level module.
-    #[doc(alias("SCE_MODULE_USER"))]
-    User   = 0x0000,
-    /// Privilege flag. Privilege level for Memory Stick modules (e.g. POPS/Demo).
-    #[doc(alias("SCE_MODULE_MS"))]
-    MemoryStick = 0x0200,
-    /// Privilege flag. Privilege level for USB and WLAN modules (e.g. Gameshare).
-    #[doc(alias("SCE_MODULE_USB_WLAN"))]
-    UsbWlan = 0x0400,
-    /// Privilege flag. Privilege level for Application modules (e.g. ComicReader/Skype).
-    #[doc(alias("SCE_MODULE_APP"))]
-    App    = 0x0600,
-    /// Privilege flag. Privilege level for VSH/XMB modules.
-    #[doc(alias("SCE_MODULE_VSH"))]
-    Vsh    = 0x0800,
-    /// Privilege flag. Privilege level for kernel modules.
-    #[doc(alias("SCE_MODULE_KERNEL"))]
-    Kernel = 0x1000,
-
-    /// KIRK flag. No KIRK usage.
-    NoKirk = 0x0000,
-    /// KIRK flag. The module uses KIRK's `memlmd`` resident library.
-    #[doc(alias("SCE_MODULE_KIRK_MEMLMD_LIB"))]
-    MemlmdKirk = 0x2000,
-    /// KIRK flag. The module uses KIRK's semaphore resident library.
-    #[doc(alias("SCE_MODULE_KIRK_SEMAPHORE_LIB"))]
-    SemaKirk = 0x4000,
 }
 
 /// The information of a module.

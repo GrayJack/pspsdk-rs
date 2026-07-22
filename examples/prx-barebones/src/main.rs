@@ -26,7 +26,7 @@ extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
         SceResult::new(res as u32)
     }
 
-    let (argc, argv) = unsafe { pspsdk::module_start_init(argc_bytes, argp) };
+    let (argc, mut argv) = unsafe { pspsdk::module_start_init(argc_bytes, argp) };
 
     unsafe {
         let Ok(id) = sceKernelCreateThread(
@@ -42,7 +42,7 @@ extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
             return -1;
         };
 
-        let Ok(()) = sceKernelStartThread(id, argc, argv)
+        let Ok(()) = sceKernelStartThread(id, argc, argv.as_mut_ptr().cast())
             .inspect_err(|err| pspsdk::println!("{}", err.to_inner()))
             .into_result()
         else {

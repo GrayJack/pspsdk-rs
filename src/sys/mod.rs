@@ -22,6 +22,7 @@ pub mod libc;
 pub mod library;
 pub mod loadexec;
 pub mod mem;
+pub mod modulemgr;
 pub mod openpsid;
 pub mod power;
 pub mod suspend;
