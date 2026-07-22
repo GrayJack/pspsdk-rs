@@ -868,7 +868,7 @@ pub unsafe extern "C" fn suspend_interrupts() -> u32 {
 ///
 /// # Safety
 ///
-/// The `state` must be a value returned by [`disable_interrupts`].
+/// The `state` must be a value returned by [`suspend_interrupts`].
 #[cfg(all(target_os = "psp", feature = "non-stub-code"))]
 #[unsafe(naked)]
 pub unsafe extern "C" fn resume_interrupts(state: u32) {

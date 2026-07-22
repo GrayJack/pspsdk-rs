@@ -13,7 +13,7 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `lock_kind`: The power processing lock kind. Only [`PowerLockKind::Default`] is known.
+    /// - `lock_kind`: The power processing lock kind.
     ///
     /// # Return Value
     ///
@@ -33,7 +33,7 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `lock_kind`: The power processing lock kind. Only [`PowerLockKind::Default`] is known.
+    /// - `lock_kind`: The power processing lock kind.
     ///
     /// # Return Value
     ///
@@ -191,7 +191,7 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `lock_kind`: The power processing lock kind. Only [`PowerLockKind::Default`] is known.
+    /// - `lock_kind`: The power processing lock kind.
     ///
     /// # Return Value
     ///
@@ -210,7 +210,7 @@ extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `lock_kind`: The power processing lock kind. Only [`PowerLockKind::Default`] is known.
+    /// - `lock_kind`: The power processing lock kind.
     ///
     /// # Return Value
     ///

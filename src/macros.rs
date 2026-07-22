@@ -6,6 +6,8 @@
 /// Note that the macro is intended as a debugging tool and therefore you
 /// should avoid having uses of it in version control for long periods
 /// (other than in tests and similar).
+///
+/// [`dprintln!`]: crate::dprintln
 #[macro_export]
 #[cfg(feature = "non-stub-code")]
 macro_rules! dprint {
@@ -407,7 +409,9 @@ macro_rules! _start {
 
 /// Declare a PSP module info.
 ///
-/// This **does not** include basic `syslib` export like [`module`].
+/// This **does not** include basic `syslib` export like [`module!`].
+///
+/// [`module!`]: crate::module
 #[macro_export]
 macro_rules! module_info {
     ($name:expr, $version_major:expr, $version_minor:expr) => {

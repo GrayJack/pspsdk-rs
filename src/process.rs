@@ -27,23 +27,21 @@ use crate::sys::{self, SceResult, SceResultOk};
 ///
 /// [`SUCCESS`]: ExitCode::SUCCESS
 /// [`FAILURE`]: ExitCode::FAILURE
-///
-/// # Differences from `ExitStatus`
-///
-/// `ExitCode` is intended for terminating the currently running process, via
-/// the `Termination` trait, in contrast to [`ExitStatus`], which represents the
-/// termination of a child process. These APIs are separate due to platform
-/// compatibility differences and their expected usage; it is not generally
-/// possible to exactly reproduce an `ExitStatus` from a child for the current
-/// process after the fact.
-///
+// # Differences from `ExitStatus`
+//
+// `ExitCode` is intended for terminating the currently running process, via
+// the `Termination` trait, in contrast to [`ExitStatus`], which represents the
+// termination of a child process. These APIs are separate due to platform
+// compatibility differences and their expected usage; it is not generally
+// possible to exactly reproduce an `ExitStatus` from a child for the current
+// process after the fact.
 /// # Examples
 ///
 /// `ExitCode` can be returned from the `main` function of a crate, as it implements
 /// [`Termination`]:
 ///
 /// ```
-/// use std::process::ExitCode;
+/// use pspsdk::process::ExitCode;
 /// # fn check_foo() -> bool { true }
 ///
 /// fn main() -> ExitCode {
