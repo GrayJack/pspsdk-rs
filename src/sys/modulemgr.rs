@@ -203,7 +203,7 @@ pub struct KernelModuleInfoV1 {
 }
 
 #[psp_stub(libname = "ModuleMgrForUser", flags = 0x4001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Loads a module.
     ///
     /// This function restricts where it can load from (such as from flash0) unless you call it in
@@ -266,7 +266,7 @@ extern "C" {
     /// Returns the loaded module UID on success, error value otherwise.
     #[nid(0xB7F46618)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelLoadModuleByID(
+    pub safe fn sceKernelLoadModuleByID(
         fd: FileId, flags: u32, options: Option<&LoadModuleOptions>,
     ) -> SceResult<ModuleId>;
 
@@ -304,7 +304,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 3.50.
     #[nid(0xFBE27467)]
-    pub fn sceKernelLoadModuleByIDWithBlockOffset(
+    pub safe fn sceKernelLoadModuleByIDWithBlockOffset(
         fd: FileId, block_id: MemoryBlockId, offset: u64,
     ) -> SceResult<ModuleId>;
 
@@ -391,7 +391,7 @@ extern "C" {
     /// Returns the module UID of the unloaded module or zero, error value otherwise.
     #[nid(0x2E0911AA)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelUnloadModule(id: ModuleId) -> SceResult<ModuleId>;
+    pub safe fn sceKernelUnloadModule(id: ModuleId) -> SceResult<ModuleId>;
 
     /// Stops and unloads the current module.
     ///
@@ -481,7 +481,9 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x748CBED9)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelQueryModuleInfo(id: ModuleId, info: &mut KernelModuleInfo) -> SceResult<()>;
+    pub safe fn sceKernelQueryModuleInfo(
+        id: ModuleId, info: &mut KernelModuleInfo,
+    ) -> SceResult<()>;
 
     /// Gets the module ID of the caller module.
     ///
@@ -494,7 +496,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.50.
     #[nid(0xF0A26395)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetModuleId() -> SceResult<ModuleId>;
+    pub safe fn sceKernelGetModuleId() -> SceResult<ModuleId>;
 
     /// Get a list of module UIDs.
     ///
@@ -533,7 +535,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.50.
     #[nid(0xD8B73127)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetModuleIdByAddress(addr: SceSize) -> SceResult<ModuleId>;
+    pub safe fn sceKernelGetModuleIdByAddress(addr: SceSize) -> SceResult<ModuleId>;
 }
 
 
@@ -543,7 +545,7 @@ extern "C" {
 // - Others
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "ModuleMgrForKernel", flags = 0x0009, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Loads a module.
     ///
     /// This function restricts where it can load from (such as from flash0) unless you call it in
@@ -623,7 +625,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x25EDFE8C }
         else { 0xB7F46618 }
     )]
-    pub fn sceKernelLoadModuleByID(
+    pub safe fn sceKernelLoadModuleByID(
         fd: FileId, flags: u32, options: Option<&LoadModuleOptions>,
     ) -> SceResult<ModuleId>;
 
@@ -743,7 +745,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xB98CD891 }
         else { 0x2E0911AA }
     )]
-    pub fn sceKernelUnloadModule(id: ModuleId) -> SceResult<ModuleId>;
+    pub safe fn sceKernelUnloadModule(id: ModuleId) -> SceResult<ModuleId>;
 
     /// Stops and unloads the current module.
     ///
@@ -862,7 +864,9 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x4729151D }
         else { 0x748CBED9 }
     )]
-    pub fn sceKernelQueryModuleInfo(id: ModuleId, info: &mut KernelModuleInfo) -> SceResult<()>;
+    pub safe fn sceKernelQueryModuleInfo(
+        id: ModuleId, info: &mut KernelModuleInfo,
+    ) -> SceResult<()>;
 
     /// Gets the module ID of the caller module.
     ///
@@ -883,7 +887,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x8FF98580 }
         else { 0xF0A26395 }
     )]
-    pub fn sceKernelGetModuleId() -> SceResult<ModuleId>;
+    pub safe fn sceKernelGetModuleId() -> SceResult<ModuleId>;
 
     /// Get a list of module UIDs.
     ///
@@ -938,7 +942,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x5BE741EE }
         else { 0xD8B73127 }
     )]
-    pub fn sceKernelGetModuleIdByAddress(addr: SceSize) -> SceResult<ModuleId>;
+    pub safe fn sceKernelGetModuleIdByAddress(addr: SceSize) -> SceResult<ModuleId>;
 
 
     /// Load module from a buffer with the Boot Init BTCNF apitype.

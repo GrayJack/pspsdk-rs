@@ -422,7 +422,7 @@ pub enum GameInfoFlags {
 }
 
 #[psp_stub(libname = "SysMemUserForUser", flags = 0x4000, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Allocates a memory block from a memory partition.
     ///
     /// # Parameters
@@ -456,7 +456,7 @@ extern "C" {
     /// Returns the lowest address belonging to the memory block.
     #[nid(0x9D9A5BA1)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetBlockHeadAddr(block_id: MemoryBlockId) -> *mut c_void;
+    pub safe fn sceKernelGetBlockHeadAddr(block_id: MemoryBlockId) -> *mut c_void;
 
     /// Deallocates a memory block allocated with [`sceKernelAllocPartitionMemory`].
     ///
@@ -538,7 +538,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x2A3E5280)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelQueryMemoryInfo(
+    pub safe fn sceKernelQueryMemoryInfo(
         addr: SceSize, partition_id: &mut SceIsize, block_id: &mut SceIsize,
     ) -> SceResult<()>;
 
@@ -548,7 +548,7 @@ extern "C" {
     ///
     /// The total size of the main user memory partition in bytes.
     #[nid(0xACBD88CA)]
-    pub fn sceKernelTotalMemSize() -> SceSize;
+    pub safe fn sceKernelTotalMemSize() -> SceSize;
 
     /// Gets the total amount of free memory.
     ///
@@ -556,7 +556,7 @@ extern "C" {
     ///
     /// The total amount of free memory, in bytes.
     #[nid(0xF919F628)]
-    pub fn sceKernelTotalFreeMemSize() -> SceSize;
+    pub safe fn sceKernelTotalFreeMemSize() -> SceSize;
 
     /// Gets the size of the largest free memory block.
     ///
@@ -564,7 +564,7 @@ extern "C" {
     ///
     /// The size of the largest free memory block, in bytes.
     #[nid(0xA291F107)]
-    pub fn sceKernelMaxFreeMemSize() -> SceSize;
+    pub safe fn sceKernelMaxFreeMemSize() -> SceSize;
 
     /// Gets the firmware version.
     ///
@@ -583,7 +583,7 @@ extern "C" {
     /// - `0x02070110` on v2.71 unit.
     #[nid(0x3FC9AE6A)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDevkitVersion() -> u32;
+    pub safe fn sceKernelDevkitVersion() -> u32;
 
     /// Sets the version of the SDK with which the caller was compiled.
     ///
@@ -593,7 +593,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x7591C7DB)]
-    pub fn sceKernelSetCompiledSdkVersion(version: u32) -> SceResult<()>;
+    pub safe fn sceKernelSetCompiledSdkVersion(version: u32) -> SceResult<()>;
 
     /// Gets the SDK version set with [`sceKernelSetCompiledSdkVersion`].
     ///
@@ -602,7 +602,7 @@ extern "C" {
     /// Returns the version number, or `0` if unset.
     #[nid(0xFC114573)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetCompiledSdkVersion() -> u32;
+    pub safe fn sceKernelGetCompiledSdkVersion() -> u32;
 
     /// Kernel printf function.
     ///
@@ -682,7 +682,7 @@ extern "C" {
 // int sceKernelCheckDebugHandler();
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "SysMemForKernel", flags = 0x0001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Allocates a memory block from a memory partition.
     ///
     /// # Parameters
@@ -732,7 +732,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xBC3AFFF2 }
         else { 0x9D9A5BA1 }
     )]
-    pub fn sceKernelGetBlockHeadAddr(block_id: MemoryBlockId) -> *mut c_void;
+    pub safe fn sceKernelGetBlockHeadAddr(block_id: MemoryBlockId) -> *mut c_void;
 
     /// Deallocates a memory block allocated with [`sceKernelAllocPartitionMemory`].
     ///
@@ -778,7 +778,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x226C2C30 }
         else { 0x2A3E5280 }
     )]
-    pub fn sceKernelQueryMemoryInfo(
+    pub safe fn sceKernelQueryMemoryInfo(
         addr: SceSize, partition_id: &mut SceIsize, block_id: &mut SceIsize,
     ) -> SceResult<()>;
 
@@ -807,7 +807,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xEE1718BC }
         else { 0x3FC9AE6A }
     )]
-    pub fn sceKernelDevkitVersion() -> u32;
+    pub safe fn sceKernelDevkitVersion() -> u32;
 
     /// Gets the SDK version set with [`sceKernelSetCompiledSdkVersion`].
     ///
@@ -824,7 +824,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x9110439F }
         else { 0xFC114573 }
     )]
-    pub fn sceKernelGetCompiledSdkVersion() -> u32;
+    pub safe fn sceKernelGetCompiledSdkVersion() -> u32;
 
     /// Requests the information of a partition.
     ///
@@ -847,7 +847,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xECFE305B }
         else { 0x55A40B2C }
     )]
-    pub fn sceKernelQueryMemoryPartitionInfo(
+    pub safe fn sceKernelQueryMemoryPartitionInfo(
         partition_id: MemoryPartitionId, info: &mut MemoryPartitionInfo,
     ) -> SceResult<()>;
 
@@ -870,7 +870,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x40F41273 }
         else { 0x9697CD32 }
     )]
-    pub fn sceKernelPartitionTotalFreeMemSize(partition_id: MemoryPartitionId) -> SceSize;
+    pub safe fn sceKernelPartitionTotalFreeMemSize(partition_id: MemoryPartitionId) -> SceSize;
 
     /// Gets the size of the largest free memory block of a memory partition.
     ///
@@ -891,7 +891,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x8C2C0E71 }
         else { 0xE6581468 }
     )]
-    pub fn sceKernelPartitionMaxFreeMemSize(partition_id: MemoryPartitionId) -> SceSize;
+    pub safe fn sceKernelPartitionMaxFreeMemSize(partition_id: MemoryPartitionId) -> SceSize;
 
     /// Fills the free blocks with a value.
     ///
@@ -913,7 +913,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x8C0EEB1A }
         else { 0xA2A65F0E }
     )]
-    pub fn sceKernelFillFreeBlock(partition_id: MemoryPartitionId, val: u32) -> SceResult<()>;
+    pub safe fn sceKernelFillFreeBlock(partition_id: MemoryPartitionId, val: u32) -> SceResult<()>;
 
     /// Sets the protection of a block of DDR memory.
     ///
@@ -1087,7 +1087,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x3DBBB447 }
         else { 0xA823047E }
     )]
-    pub fn sceKernelHeapTotalFreeSize(heap_id: HeapId) -> SceResult<SceSize>;
+    pub safe fn sceKernelHeapTotalFreeSize(heap_id: HeapId) -> SceResult<SceSize>;
 
     /// Gets the information of a heap object.
     ///
@@ -1110,7 +1110,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x7EF4BDCB }
         else { 0x002BA296 }
     )]
-    pub fn sceKernelQueryHeapInfo(heap_id: HeapId, info: &mut HeapInfo) -> SceResult<()>;
+    pub safe fn sceKernelQueryHeapInfo(heap_id: HeapId, info: &mut HeapInfo) -> SceResult<()>;
 
     /// Get the low heap information
     ///
@@ -1152,7 +1152,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xA3B0B6BC }
         else { 0x6373995D }
     )]
-    pub fn sceKernelGetModel() -> PspHardwareModel;
+    pub safe fn sceKernelGetModel() -> PspHardwareModel;
 
     /// Gets the current status of the system.
     ///
@@ -1170,7 +1170,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xA48F9782 }
         else { 0x452E3696 }
     )]
-    pub fn sceKernelGetSystemStatus() -> u32;
+    pub safe fn sceKernelGetSystemStatus() -> u32;
 
     /// Sets the status of the system.
     ///
@@ -1212,7 +1212,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xB1634112 }
         else { 0xCD617A94 }
     )]
-    pub fn sceKernelGetGameInfo() -> NonNull<GameInfo>;
+    pub safe fn sceKernelGetGameInfo() -> NonNull<GameInfo>;
 
     /// Copy the global game information to a given local structure.
     ///
@@ -1273,7 +1273,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x9AB85DA9 }
         else { 0xCE8D3DB3 }
     )]
-    pub fn sceKernelGetQTGP2(qtgp2: &mut [u8; 8]) -> SceResult<()>;
+    pub safe fn sceKernelGetQTGP2(qtgp2: &mut [u8; 8]) -> SceResult<()>;
 
     /// Sets the QTGP2 value on the global [`GameInfo`].
     ///
@@ -1316,7 +1316,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xB015F84F }
         else { 0x6D8E0CDF }
     )]
-    pub fn sceKernelGetQTGP3(qtgp3: &mut [u8; 16]) -> SceResult<()>;
+    pub safe fn sceKernelGetQTGP3(qtgp3: &mut [u8; 16]) -> SceResult<()>;
 
     /// Sets the QTGP3 value on the global [`GameInfo`].
     ///
@@ -1359,7 +1359,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xEE010E3A }
         else { 0xA262FEF0 }
     )]
-    pub fn sceKernelGetAllowReplaceUmd(allow_replace_umd: &mut u32) -> SceResult<()>;
+    pub safe fn sceKernelGetAllowReplaceUmd(allow_replace_umd: &mut u32) -> SceResult<()>;
 
     /// Sets if replacing UMD is allowed on the global [`GameInfo`].
     ///
@@ -1376,7 +1376,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x8B9178EF }
         else { 0xCBB05241 }
     )]
-    pub fn sceKernelSetAllowReplaceUmd(allow_replace_umd: u32);
+    pub safe fn sceKernelSetAllowReplaceUmd(allow_replace_umd: u32);
 
     /// Gets the DNAS information from the globel [`GameInfo`].
     ///
@@ -1393,7 +1393,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xDB9BE041 }
         else { 0x7ECBDBD9 }
     )]
-    pub fn sceKernelGetDNAS() -> u32;
+    pub safe fn sceKernelGetDNAS() -> u32;
 
     /// Sets the DNAS information on the global [`GameInfo`].
     ///
@@ -1410,7 +1410,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x06BB6385 }
         else { 0x9C304ED7 }
     )]
-    pub fn sceKernelSetDNAS(dnas: u32);
+    pub safe fn sceKernelSetDNAS(dnas: u32);
 
     /// Sets if UMD cache is on is allowed from the global [`GameInfo`].
     ///
@@ -1419,7 +1419,7 @@ extern "C" {
     /// - `umd_cache_on`: The value to set.
     #[nid(0x1404C1AA)]
     #[cfg(feature = "psp_660")]
-    pub fn sceKernelSetUmdCacheOn(umd_cache_on: u32);
+    pub safe fn sceKernelSetUmdCacheOn(umd_cache_on: u32);
 
     /// Get a UID control block.
     ///
@@ -1487,7 +1487,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x54247DD8 }
         else { 0x536AD5E1 }
     )]
-    pub fn sceKernelGetUidmanCB() -> NonNull<UidList>;
+    pub safe fn sceKernelGetUidmanCB() -> NonNull<UidList>;
 
     /// Deletes a UID.
     ///
@@ -1521,7 +1521,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x9E7265D9 }
         else { 0x38495D84 }
     )]
-    pub fn sceKernelGetInitialRandomValue() -> u32;
+    pub safe fn sceKernelGetInitialRandomValue() -> u32;
 
     /// Sets the reboot kernel function.
     ///
@@ -1618,21 +1618,21 @@ extern "C" {
     /// # Warning
     /// This functions in only available between the version 1.00 and 3.40 of the PSP firmware.
     #[nid(0x26F96157)]
-    pub fn sceKernelSysMemDump();
+    pub safe fn sceKernelSysMemDump();
 
     /// Makes the kernel to dump the list of memory blocks to kernel stdout.
     ///
     /// # Warning
     /// This functions in only available between the version 1.00 and 3.40 of the PSP firmware.
     #[nid(0x6D6200DD)]
-    pub fn sceKernelSysMemDumpBlock();
+    pub safe fn sceKernelSysMemDumpBlock();
 
     /// Makes the kernel to dump the tail blocks to kernel stdout.
     ///
     /// # Warning
     /// This functions in only available between the version 1.00 and 3.40 of the PSP firmware.
     #[nid(0x621037F5)]
-    pub fn sceKernelSysMemDumpTail();
+    pub safe fn sceKernelSysMemDumpTail();
 }
 
 impl MemoryBlockId {

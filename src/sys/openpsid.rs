@@ -20,7 +20,7 @@ pub struct ProductCode {
 }
 
 #[psp_stub(libname = "sceOpenPSID", flags = 0x4001, version = (0x00, 0x11), use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Get the open PS ID.
     ///
     /// # Parameters
@@ -32,7 +32,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xC69BEBCE)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceOpenPSIDGetOpenPSID(openpsid: &mut OpenPSID) -> Result<(), SceError>;
+    pub safe fn sceOpenPSIDGetOpenPSID(openpsid: &mut OpenPSID) -> Result<(), SceError>;
 
     /// Get the product code.
     ///
@@ -45,12 +45,12 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xB29330DE)]
-    pub fn sceOpenPSIDGetProductCode(product_code: &mut ProductCode) -> Result<(), SceError>;
+    pub safe fn sceOpenPSIDGetProductCode(product_code: &mut ProductCode) -> Result<(), SceError>;
 }
 
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "sceOpenPSID_driver", flags = 0x0001, version = (0x00, 0x11), use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Get the open PS ID.
     ///
     /// # Parameters
@@ -61,5 +61,5 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xC69BEBCE)]
-    pub fn sceOpenPSIDGetOpenPSID(openpsid: &mut OpenPSID) -> Result<(), SceError>;
+    pub safe fn sceOpenPSIDGetOpenPSID(openpsid: &mut OpenPSID) -> Result<(), SceError>;
 }

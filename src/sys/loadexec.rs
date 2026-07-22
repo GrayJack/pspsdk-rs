@@ -51,7 +51,7 @@ pub struct LoadExecVshOptions {
 }
 
 #[psp_stub(libname = "LoadExecForUser", flags = 0x4001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Exits the game and reboot back to the XMB/VSH.
     ///
     /// You need to be in a thread in order for this function to work.
@@ -60,7 +60,7 @@ extern "C" {
     ///
     /// Returns an error value on error. Otherwise, this functions doesn't return.
     #[nid(0x05572A5F)]
-    pub fn sceKernelExitGame() -> SceResult<!>;
+    pub safe fn sceKernelExitGame() -> SceResult<!>;
 
     /// Exits the game and reboot back to the XMB/VSH with a status value.
     ///
@@ -74,7 +74,7 @@ extern "C" {
     ///
     /// Returns an error value on error. Otherwise, this functions doesn't return.
     #[nid(0x2AC9954B)]
-    pub fn sceKernelExitGameWithStatus(status: u32) -> SceResult<!>;
+    pub safe fn sceKernelExitGameWithStatus(status: u32) -> SceResult<!>;
 
     /// Registers a callback that is executed when "Exit Game" is confirmed in the home button menu.
     ///
@@ -87,7 +87,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x4AC57943)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelRegisterExitCallback(id: CallbackId) -> SceResult<()>;
+    pub safe fn sceKernelRegisterExitCallback(id: CallbackId) -> SceResult<()>;
 
     /// Load and execute a new executable.
     ///
@@ -108,7 +108,7 @@ extern "C" {
 
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "LoadExecForKernel", flags = 0x0009, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Registers a callback that is executed when "Exit Game" is confirmed in the home button menu.
     ///
     /// # Parameters
@@ -128,7 +128,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xDB7DF065 }
         else { 0x4AC57943 }
     )]
-    pub fn sceKernelRegisterExitCallback(id: CallbackId) -> SceResult<()>;
+    pub safe fn sceKernelRegisterExitCallback(id: CallbackId) -> SceResult<()>;
 
     /// Unregisters the exit callback.
     ///
@@ -149,7 +149,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xF1C99C38 }
         else { 0xD9739B89 }
     )]
-    pub fn sceKernelUnregisterExitCallback() -> SceResult<()>;
+    pub safe fn sceKernelUnregisterExitCallback() -> SceResult<()>;
 
     /// Invokes the exit callback.
     ///
@@ -166,7 +166,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x860783BF }
         else { 0x62A27008 }
     )]
-    pub fn sceKernelInvokeExitCallback() -> SceResult<()>;
+    pub safe fn sceKernelInvokeExitCallback() -> SceResult<()>;
 
     /// Executes a new executable from a buffer.
     ///
@@ -213,7 +213,7 @@ extern "C" {
         // else if cfg!(feature = "psp_370") { 0xA3D5E142 }
         else { 0xA3D5E142 }
     )]
-    pub fn sceKernelExitVSHVSH(options: Option<&LoadExecVshOptions>) -> SceResult<!>;
+    pub safe fn sceKernelExitVSHVSH(options: Option<&LoadExecVshOptions>) -> SceResult<!>;
 
     /// Restart the VSH (to be used by a kernel module).
     ///
@@ -242,7 +242,7 @@ extern "C" {
         // else if cfg!(feature = "psp_370") { 0x6D302D3D }
         else { 0x6D302D3D }
     )]
-    pub fn sceKernelExitVSHKernel(options: Option<&LoadExecVshOptions>) -> SceResult<!>;
+    pub safe fn sceKernelExitVSHKernel(options: Option<&LoadExecVshOptions>) -> SceResult<!>;
 
     /// Executes a executable from a disc.
     ///
@@ -499,7 +499,7 @@ extern "C" {
         // else if cfg!(feature = "psp_370") { 0x659188E1 }
         else { 0x659188E1 }
     )]
-    pub fn sceKernelCheckExitCallback() -> SceResult<CallbackId>;
+    pub safe fn sceKernelCheckExitCallback() -> SceResult<CallbackId>;
 }
 
 impl Default for LoadExecOptions {

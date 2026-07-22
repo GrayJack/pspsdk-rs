@@ -73,7 +73,7 @@ pub enum AudioInputFrequency {
 }
 
 #[psp_stub(libname = "sceAudio", flags = 0x4001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Allocate and initialize a hardware output channel.
     ///
     /// # Parameters
@@ -89,7 +89,7 @@ extern "C" {
     ///
     /// The channel ID on success, an error value otherwise.
     #[nid(0x5EC81C55)]
-    pub fn sceAudioChReserve(
+    pub safe fn sceAudioChReserve(
         channel: AudioChannelId, sample_count: i32, format: AudioFormats,
     ) -> SceResult<AudioChannelId>;
 }

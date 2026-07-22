@@ -123,7 +123,7 @@ pub enum ExclusiveWlanMode {
 // - `scePowerSetCallbackMode`
 // - `scePowerSetPowerSwMode`
 #[psp_stub(libname = "scePower", flags = 0x4001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Checks if power is supplied from external power source.
     ///
     /// # Return Value
@@ -132,7 +132,7 @@ extern "C" {
     /// error value otherwise.
     #[nid(0x87440F5E)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerIsPowerOnline() -> SceResult<bool>;
+    pub safe fn scePowerIsPowerOnline() -> SceResult<bool>;
 
     /// Checks if the battery charge level is low.
     ///
@@ -142,7 +142,7 @@ extern "C" {
     /// error value otherwise.
     #[nid(0xD3075926)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerIsLowBattery() -> SceResult<bool>;
+    pub safe fn scePowerIsLowBattery() -> SceResult<bool>;
 
     /// Checks if a battery is present.
     ///
@@ -152,7 +152,7 @@ extern "C" {
     /// error value otherwise.
     #[nid(0x0AFD0D8B)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerIsBatteryExist() -> SceResult<bool>;
+    pub safe fn scePowerIsBatteryExist() -> SceResult<bool>;
 
     /// Checks if the battery is charging.
     ///
@@ -162,7 +162,7 @@ extern "C" {
     /// error value otherwise.
     #[nid(0x1E490401)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerIsBatteryCharging() -> SceResult<bool>;
+    pub safe fn scePowerIsBatteryCharging() -> SceResult<bool>;
 
     /// Gets the remaining battery life in percent.
     ///
@@ -171,7 +171,7 @@ extern "C" {
     /// Returns the battery life percentage (`[0,100]`), error value otherwise.
     #[nid(0x2085D15D)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetBatteryLifePercent() -> SceResult<u8>;
+    pub safe fn scePowerGetBatteryLifePercent() -> SceResult<u8>;
 
     /// Gets the remaining battery life in minutes.
     ///
@@ -182,7 +182,7 @@ extern "C" {
     /// It always return zero if power is being supplied by a external power source.
     #[nid(0x8EFB3FA2)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetBatteryLifeTime() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryLifeTime() -> SceResult<u32>;
 
     /// Request the system to go into suspend mode.
     ///
@@ -191,7 +191,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xAC32C9CC)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerRequestSuspend() -> SceResult<()>;
+    pub safe fn scePowerRequestSuspend() -> SceResult<()>;
 
     /// Request the system to go into standby mode.
     ///
@@ -200,7 +200,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x2B7C7CF4)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerRequestStandby() -> SceResult<()>;
+    pub safe fn scePowerRequestStandby() -> SceResult<()>;
 
     /// Register Power callback function.
     ///
@@ -220,7 +220,7 @@ extern "C" {
     /// value otherwise.
     #[nid(0x04B7766E)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerRegisterCallback(
+    pub safe fn scePowerRegisterCallback(
         slot: PowerCallbackSlot, callback_id: CallbackId,
     ) -> SceResult<PowerCallbackSlot>;
 
@@ -235,7 +235,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xDFA8BAF8)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerUnregisterCallback(slot: PowerCallbackSlot) -> SceResult<()>;
+    pub safe fn scePowerUnregisterCallback(slot: PowerCallbackSlot) -> SceResult<()>;
 
     /// Gets what is the maximum frequency the PLL while WLAN is in use.
     ///
@@ -250,7 +250,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 6.30.
     #[nid(0xA85880D0)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerCheckWlanCoexistenceClock() -> SceResult<WlanCoexistenceClock>;
+    pub safe fn scePowerCheckWlanCoexistenceClock() -> SceResult<WlanCoexistenceClock>;
 
     /// Sets the clock frequencies.
     ///
@@ -267,7 +267,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x737486F2)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerSetClockFrequency(
+    pub safe fn scePowerSetClockFrequency(
         pll_clock: u32, cpu_clock: u32, bus_clock: u32,
     ) -> SceResult<()>;
 
@@ -281,7 +281,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.50.
     #[nid(0x34F9C463)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetPllClockFrequencyInt() -> u32;
+    pub safe fn scePowerGetPllClockFrequencyInt() -> u32;
 
     /// Gets the current PLL clock in MHz.
     ///
@@ -294,7 +294,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.50.
     #[nid(0xEA382A27)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetPllClockFrequencyFloat() -> u32;
+    pub safe fn scePowerGetPllClockFrequencyFloat() -> u32;
 
     /// Sets the CPU clock.
     ///
@@ -307,7 +307,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x843FBF43)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerSetCpuClockFrequency(clock: u32) -> SceResult<()>;
+    pub safe fn scePowerSetCpuClockFrequency(clock: u32) -> SceResult<()>;
 
     /// Gets the current CPU clock in MHz.
     ///
@@ -320,7 +320,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.03.
     #[nid(0xFDB5BFE9)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetCpuClockFrequencyInt() -> u32;
+    pub safe fn scePowerGetCpuClockFrequencyInt() -> u32;
 
     /// Gets the current CPU clock in MHz.
     ///
@@ -333,7 +333,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.03.
     #[nid(0xB1A52C83)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetCpuClockFrequencyFloat() -> f32;
+    pub safe fn scePowerGetCpuClockFrequencyFloat() -> f32;
 
     /// Sets the BUS clock.
     ///
@@ -346,7 +346,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xB8D7B3FB)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerSetBusClockFrequency(clock: u32) -> SceResult<()>;
+    pub safe fn scePowerSetBusClockFrequency(clock: u32) -> SceResult<()>;
 
     /// Gets the current BUS clock in MHz.
     ///
@@ -359,7 +359,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.03.
     #[nid(0xBD681969)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetBusClockFrequencyInt() -> u32;
+    pub safe fn scePowerGetBusClockFrequencyInt() -> u32;
 
     /// Gets the current BUS clock in MHz.
     ///
@@ -372,7 +372,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.03.
     #[nid(0x9BADB3EB)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetBusClockFrequencyFloat() -> f32;
+    pub safe fn scePowerGetBusClockFrequencyFloat() -> f32;
 
     /// Waits for the completion of the previous request.
     ///
@@ -384,7 +384,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x3951AF53)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerWaitRequestCompletion() -> SceResult<()>;
+    pub safe fn scePowerWaitRequestCompletion() -> SceResult<()>;
 
     /// Checks if a power request is uncompleted.
     ///
@@ -393,7 +393,7 @@ extern "C" {
     /// Returns `true` if there is a uncompleted power request, 'false' otherwise.
     #[nid(0x7FA406DD)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerIsRequest() -> bool;
+    pub safe fn scePowerIsRequest() -> bool;
 
     /// Gets the current maximum backlight level.
     ///
@@ -409,7 +409,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.03.
     #[nid(0x442BFBAC)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetBacklightMaximum() -> u8;
+    pub safe fn scePowerGetBacklightMaximum() -> u8;
 
     /// Checks if a suspend is required.
     ///
@@ -418,7 +418,7 @@ extern "C" {
     /// Returns `true` if suspend is required, `false` otherwise.
     #[nid(0x78A1A796)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerIsSuspendRequired() -> bool;
+    pub safe fn scePowerIsSuspendRequired() -> bool;
 
     /// Gets the status of the battery charging
     ///
@@ -431,7 +431,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.03.
     #[nid(0xB4432BC8)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetBatteryChargingStatus() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryChargingStatus() -> SceResult<u32>;
 
     /// Gets the battery remaining capacity in milliampere hour (mAh).
     ///
@@ -440,7 +440,7 @@ extern "C" {
     /// Returns the battery remaining capacity on success, error value otherwise.
     #[nid(0x94F5A53F)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetBatteryRemainCapacity() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryRemainCapacity() -> SceResult<u32>;
 
     /// Gets the battery full capacity in milliampere hour (mAh).
     ///
@@ -449,7 +449,7 @@ extern "C" {
     /// Returns the battery remaining capacity on success, error value otherwise.
     #[nid(0xFD18A0FF)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetBatteryFullCapacity() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryFullCapacity() -> SceResult<u32>;
 
     /// Gets a unknown battery information.
     ///
@@ -458,7 +458,7 @@ extern "C" {
     /// Returns a unknown battery info on success, error value otherwise.
     #[nid(0x862AE1A6)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetBatteryElec() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryElec() -> SceResult<u32>;
 
     /// Gets the battery voltage level.
     ///
@@ -467,7 +467,7 @@ extern "C" {
     /// Returns the battery voltage level on success, error value otherwise.
     #[nid(0x483CE86B)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetBatteryVolt() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryVolt() -> SceResult<u32>;
 
     /// Gets the idle timer.
     ///
@@ -476,7 +476,7 @@ extern "C" {
     /// Returns the idle timer on success, error value otherwise.
     #[nid(0xEDC13FE5)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerGetIdleTimer() -> SceResult<u32>;
+    pub safe fn scePowerGetIdleTimer() -> SceResult<u32>;
 
     /// Enables the idle timer.
     ///
@@ -489,7 +489,7 @@ extern "C" {
     /// Returns a unknown value on success, error value otherwise.
     #[nid(0x7F30B3B1)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerIdleTimerEnable(unk: u32) -> SceResult<u32>;
+    pub safe fn scePowerIdleTimerEnable(unk: u32) -> SceResult<u32>;
 
     /// Disables the idle timer.
     ///
@@ -502,7 +502,7 @@ extern "C" {
     /// Returns a unknown value on success, error value otherwise.
     #[nid(0x972CE941)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerIdleTimerDisable(unk: u32) -> SceResult<u32>;
+    pub safe fn scePowerIdleTimerDisable(unk: u32) -> SceResult<u32>;
 
     /// Locks power state of the device.
     ///
@@ -524,7 +524,7 @@ extern "C" {
     /// This functions is not marked `unsafe`, because it is not memory unsafe operation.
     #[nid(0xD6D016EF)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerLock(lock_kind: PowerLockKind) -> SceResult<()>;
+    pub safe fn scePowerLock(lock_kind: PowerLockKind) -> SceResult<()>;
 
     /// Unlocks power state of the device.
     ///
@@ -544,7 +544,7 @@ extern "C" {
     /// This functions is not marked `unsafe`, because it is not memory unsafe operation.
     #[nid(0xCA3D34C1)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerUnlock(lock_kind: PowerLockKind) -> SceResult<()>;
+    pub safe fn scePowerUnlock(lock_kind: PowerLockKind) -> SceResult<()>;
 
     /// Locks and grants access to the device volatile memory (blocking).
     ///
@@ -670,7 +670,7 @@ extern "C" {
     /// Always returns zero.
     #[nid(0xEFD3C963)]
     #[cfg(not(feature = "kernel"))]
-    pub fn scePowerTick(tick_kind: PowerTick) -> u32;
+    pub safe fn scePowerTick(tick_kind: PowerTick) -> u32;
 }
 
 // FIXME: Add missing known functions (most requires reversing)
@@ -716,7 +716,7 @@ extern "C" {
 // - `scePowerSetPowerSwMode`
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "scePower_driver", flags = 0x0001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Checks if power is supplied from external power source.
     ///
     /// # Return Value
@@ -734,7 +734,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x86795186 }
         else { 0x87440F5E }
     )]
-    pub fn scePowerIsPowerOnline() -> SceResult<bool>;
+    pub safe fn scePowerIsPowerOnline() -> SceResult<bool>;
 
     /// Checks if the battery charge level is low.
     ///
@@ -753,7 +753,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xE7A7ACE1 }
         else { 0xD3075926 }
     )]
-    pub fn scePowerIsLowBattery() -> SceResult<bool>;
+    pub safe fn scePowerIsLowBattery() -> SceResult<bool>;
 
     /// Checks if a battery is present.
     ///
@@ -772,7 +772,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x54A35829 }
         else { 0x0AFD0D8B }
     )]
-    pub fn scePowerIsBatteryExist() -> SceResult<bool>;
+    pub safe fn scePowerIsBatteryExist() -> SceResult<bool>;
 
     /// Checks if the battery is charging.
     ///
@@ -791,7 +791,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x3C5E45D8 }
         else { 0x1E490401 }
     )]
-    pub fn scePowerIsBatteryCharging() -> SceResult<bool>;
+    pub safe fn scePowerIsBatteryCharging() -> SceResult<bool>;
 
     /// Gets the remaining battery life in percent.
     ///
@@ -809,7 +809,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x9C98446E }
         else { 0x2085D15D }
     )]
-    pub fn scePowerGetBatteryLifePercent() -> SceResult<u8>;
+    pub safe fn scePowerGetBatteryLifePercent() -> SceResult<u8>;
 
     /// Gets the remaining battery life in minutes.
     ///
@@ -827,7 +827,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x39C5677E }
         else { 0x8EFB3FA2 }
     )]
-    pub fn scePowerGetBatteryLifeTime() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryLifeTime() -> SceResult<u32>;
 
     /// Request the system to go into suspend mode.
     ///
@@ -845,7 +845,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xA8D09A9A }
         else { 0xAC32C9CC }
     )]
-    pub fn scePowerRequestSuspend() -> SceResult<()>;
+    pub safe fn scePowerRequestSuspend() -> SceResult<()>;
 
     /// Request the system to go into standby mode.
     ///
@@ -863,7 +863,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x9B1A9C5F }
         else { 0x2B7C7CF4 }
     )]
-    pub fn scePowerRequestStandby() -> SceResult<()>;
+    pub safe fn scePowerRequestStandby() -> SceResult<()>;
 
     /// Register Power callback function.
     ///
@@ -892,7 +892,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xD6E50D7B }
         else { 0x04B7766E }
     )]
-    pub fn scePowerRegisterCallback(
+    pub safe fn scePowerRegisterCallback(
         slot: PowerCallbackSlot, callback_id: CallbackId,
     ) -> SceResult<PowerCallbackSlot>;
 
@@ -916,7 +916,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xDBBC8820 }
         else { 0xDFA8BAF8 }
     )]
-    pub fn scePowerUnregisterCallback(slot: PowerCallbackSlot) -> SceResult<()>;
+    pub safe fn scePowerUnregisterCallback(slot: PowerCallbackSlot) -> SceResult<()>;
 
     /// Gets what is the maximum frequency the PLL while WLAN is in use.
     ///
@@ -930,7 +930,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 6.30.
     #[nid(if cfg!(feature = "psp_660") { 0x693F6CF0 } else { 0x330AC84F })]
-    pub fn scePowerCheckWlanCoexistenceClock() -> SceResult<WlanCoexistenceClock>;
+    pub safe fn scePowerCheckWlanCoexistenceClock() -> SceResult<WlanCoexistenceClock>;
 
     /// Sets the clock frequencies.
     ///
@@ -956,7 +956,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xEBD177D6 }
         else { 0x737486F2 }
     )]
-    pub fn scePowerSetClockFrequency(
+    pub safe fn scePowerSetClockFrequency(
         pll_clock: u32, cpu_clock: u32, bus_clock: u32,
     ) -> SceResult<()>;
 
@@ -980,7 +980,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x93444D33 }
         else { 0x34F9C463 }
     )]
-    pub fn scePowerGetPllClockFrequencyInt() -> u32;
+    pub safe fn scePowerGetPllClockFrequencyInt() -> u32;
 
     /// Gets the current PLL clock in MHz.
     ///
@@ -1002,7 +1002,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xBF1DA143 }
         else { 0xEA382A27 }
     )]
-    pub fn scePowerGetPllClockFrequencyFloat() -> f32;
+    pub safe fn scePowerGetPllClockFrequencyFloat() -> f32;
 
     /// Sets the CPU clock.
     ///
@@ -1024,7 +1024,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x24085F5C }
         else { 0x843FBF43 }
     )]
-    pub fn scePowerSetCpuClockFrequency(clock: u32) -> SceResult<()>;
+    pub safe fn scePowerSetCpuClockFrequency(clock: u32) -> SceResult<()>;
 
     /// Gets the current CPU clock in MHz.
     ///
@@ -1036,7 +1036,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 1.03.
     #[nid(0xFDB5BFE9)]
-    pub fn scePowerGetCpuClockFrequencyInt() -> u32;
+    pub safe fn scePowerGetCpuClockFrequencyInt() -> u32;
 
     /// Gets the current CPU clock in MHz.
     ///
@@ -1058,7 +1058,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x17CB450B }
         else { 0xB1A52C83 }
     )]
-    pub fn scePowerGetCpuClockFrequencyFloat() -> f32;
+    pub safe fn scePowerGetCpuClockFrequencyFloat() -> f32;
 
     /// Sets the BUS clock.
     ///
@@ -1080,7 +1080,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xAF70529A }
         else { 0xB8D7B3FB }
     )]
-    pub fn scePowerSetBusClockFrequency(clock: u32) -> SceResult<()>;
+    pub safe fn scePowerSetBusClockFrequency(clock: u32) -> SceResult<()>;
 
     /// Gets the current BUS clock in MHz.
     ///
@@ -1102,7 +1102,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x1688935C }
         else { 0xBD681969 }
     )]
-    pub fn scePowerGetBusClockFrequencyInt() -> u32;
+    pub safe fn scePowerGetBusClockFrequencyInt() -> u32;
 
     /// Gets the current BUS clock in MHz.
     ///
@@ -1124,7 +1124,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x073462C1 }
         else { 0x9BADB3EB }
     )]
-    pub fn scePowerGetBusClockFrequencyFloat() -> f32;
+    pub safe fn scePowerGetBusClockFrequencyFloat() -> f32;
 
     /// Waits for the completion of the previous request.
     ///
@@ -1145,7 +1145,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x7F64910E }
         else { 0x3951AF53 }
     )]
-    pub fn scePowerWaitRequestCompletion() -> SceResult<()>;
+    pub safe fn scePowerWaitRequestCompletion() -> SceResult<()>;
 
     /// Checks if a power request is uncompleted.
     ///
@@ -1163,7 +1163,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x6B5FD1CE }
         else { 0x7FA406DD }
     )]
-    pub fn scePowerIsRequest() -> bool;
+    pub safe fn scePowerIsRequest() -> bool;
 
     /// Gets the current maximum backlight level.
     ///
@@ -1188,7 +1188,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xC87DEC73 }
         else { 0x442BFBAC }
     )]
-    pub fn scePowerGetBacklightMaximum() -> u8;
+    pub safe fn scePowerGetBacklightMaximum() -> u8;
 
     /// Checks if a suspend is required.
     ///
@@ -1206,7 +1206,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x78EC8DC9 }
         else { 0x78A1A796 }
     )]
-    pub fn scePowerIsSuspendRequired() -> bool;
+    pub safe fn scePowerIsSuspendRequired() -> bool;
 
     /// Gets the status of the battery charging
     ///
@@ -1228,7 +1228,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x6ECBC5FF }
         else { 0xB4432BC8 }
     )]
-    pub fn scePowerGetBatteryChargingStatus() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryChargingStatus() -> SceResult<u32>;
 
     /// Gets the battery remaining capacity in milliampere hour (mAh).
     ///
@@ -1246,7 +1246,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xF3B7966A }
         else { 0x94F5A53F }
     )]
-    pub fn scePowerGetBatteryRemainCapacity() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryRemainCapacity() -> SceResult<u32>;
 
     /// Gets the battery full capacity in milliampere hour (mAh).
     ///
@@ -1264,7 +1264,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xFF6450C3 }
         else { 0xFD18A0FF }
     )]
-    pub fn scePowerGetBatteryFullCapacity() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryFullCapacity() -> SceResult<u32>;
 
     /// Gets the current temperature of the battery in degree celsius (°C).
     ///
@@ -1282,7 +1282,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xFD607FCA }
         else { 0x28E12023 }
     )]
-    pub fn scePowerGetBatteryTemp() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryTemp() -> SceResult<u32>;
 
     /// Gets a unknown battery information.
     ///
@@ -1300,7 +1300,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x55D9ACC8 }
         else { 0x862AE1A6 }
     )]
-    pub fn scePowerGetBatteryElec() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryElec() -> SceResult<u32>;
 
     /// Gets the battery voltage level.
     ///
@@ -1318,7 +1318,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xF393BD85 }
         else { 0x483CE86B }
     )]
-    pub fn scePowerGetBatteryVolt() -> SceResult<u32>;
+    pub safe fn scePowerGetBatteryVolt() -> SceResult<u32>;
 
     /// Gets the idle timer.
     ///
@@ -1336,7 +1336,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x152C1C97 }
         else { 0xEDC13FE5 }
     )]
-    pub fn scePowerGetIdleTimer() -> SceResult<u32>;
+    pub safe fn scePowerGetIdleTimer() -> SceResult<u32>;
 
     /// Enables the idle timer.
     ///
@@ -1358,7 +1358,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xD58A119A }
         else { 0x7F30B3B1 }
     )]
-    pub fn scePowerIdleTimerEnable(unk: u32) -> SceResult<u32>;
+    pub safe fn scePowerIdleTimerEnable(unk: u32) -> SceResult<u32>;
 
     /// Disables the idle timer.
     ///
@@ -1380,7 +1380,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x30A2475B }
         else { 0x972CE941 }
     )]
-    pub fn scePowerIdleTimerDisable(unk: u32) -> SceResult<u32>;
+    pub safe fn scePowerIdleTimerDisable(unk: u32) -> SceResult<u32>;
 
     /// Sets the exclusive WLAN mode before activating WLAN.
     ///
@@ -1406,7 +1406,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x208DBFFA }
         else { 0xC71EE866 }
     )]
-    pub fn scePowerSetExclusiveWlan(mode: ExclusiveWlanMode) -> SceResult<()>;
+    pub safe fn scePowerSetExclusiveWlan(mode: ExclusiveWlanMode) -> SceResult<()>;
 
     /// Activates the WLAN device.
     ///
@@ -1424,7 +1424,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x54624251 }
         else { 0x6D2CA84B }
     )]
-    pub fn scePowerWlanActivate() -> SceResult<()>;
+    pub safe fn scePowerWlanActivate() -> SceResult<()>;
 
     /// Deactivates the WLAN device.
     ///
@@ -1442,7 +1442,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x722D5D34 }
         else { 0x23BB0A60 }
     )]
-    pub fn scePowerWlanDeactivate() -> SceResult<()>;
+    pub safe fn scePowerWlanDeactivate() -> SceResult<()>;
 
     /// Checks if the WLAN can be activated.
     ///
@@ -1464,7 +1464,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x4431FF21 }
         else { 0xD66EF08D }
     )]
-    pub fn scePowerCheckWlanCondition(pll_clock: u32) -> SceResult<()>;
+    pub safe fn scePowerCheckWlanCondition(pll_clock: u32) -> SceResult<()>;
 
     /// Locks power state of the device.
     ///
@@ -1495,7 +1495,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x715A56FB }
         else { 0xD6D016EF }
     )]
-    pub fn scePowerLock(lock_kind: PowerLockKind) -> SceResult<()>;
+    pub safe fn scePowerLock(lock_kind: PowerLockKind) -> SceResult<()>;
 
     /// Unlocks power state of the device.
     ///
@@ -1524,7 +1524,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x6A985D34 }
         else { 0xCA3D34C1 }
     )]
-    pub fn scePowerUnlock(lock_kind: PowerLockKind) -> SceResult<()>;
+    pub safe fn scePowerUnlock(lock_kind: PowerLockKind) -> SceResult<()>;
 
     /// Locks and grants access to the device volatile memory (blocking).
     ///
@@ -1686,7 +1686,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x9C40E184 }
         else { 0xEFD3C963 }
     )]
-    pub fn scePowerTick(tick_kind: PowerTick) -> u32;
+    pub safe fn scePowerTick(tick_kind: PowerTick) -> u32;
 }
 
 impl PowerCallbackSlot {

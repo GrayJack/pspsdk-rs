@@ -6,7 +6,7 @@ use crate::sys::{
 };
 
 #[psp_stub(libname = "sceSuspendForUser", flags = 0x4000, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Locks power state of the device.
     ///
     /// That means that device power off is delayed until the power lock is unlocked.
@@ -27,7 +27,7 @@ extern "C" {
     /// This functions is not marked `unsafe`, because it is not memory unsafe operation.
     #[nid(0xEADB1BD7)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelPowerLock(lock_kind: PowerLockKind) -> SceResult<()>;
+    pub safe fn sceKernelPowerLock(lock_kind: PowerLockKind) -> SceResult<()>;
 
     /// Unlocks power state of the device.
     ///
@@ -47,7 +47,7 @@ extern "C" {
     /// This functions is not marked `unsafe`, because it is not memory unsafe operation.
     #[nid(0x3AEE7261)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelPowerUnlock(lock_kind: PowerLockKind) -> SceResult<()>;
+    pub safe fn sceKernelPowerUnlock(lock_kind: PowerLockKind) -> SceResult<()>;
 
     /// Locks and grants access to the device volatile memory (blocking).
     ///
@@ -179,12 +179,12 @@ extern "C" {
     /// Always returns zero.
     #[nid(0x090CCB3F)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelPowerTick(tick_kind: PowerTick) -> u32;
+    pub safe fn sceKernelPowerTick(tick_kind: PowerTick) -> u32;
 }
 
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "sceSuspendForKernel", flags = 0x0001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Locks power state of the device.
     ///
     /// That means that device power off is delayed until the power lock is unlocked.
@@ -204,7 +204,7 @@ extern "C" {
     ///
     /// This functions is not marked `unsafe`, because it is not memory unsafe operation.
     #[nid(0xEADB1BD7)]
-    pub fn sceKernelPowerLock(lock_kind: PowerLockKind) -> SceResult<()>;
+    pub safe fn sceKernelPowerLock(lock_kind: PowerLockKind) -> SceResult<()>;
 
     /// Unlocks power state of the device.
     ///
@@ -223,7 +223,7 @@ extern "C" {
     ///
     /// This functions is not marked `unsafe`, because it is not memory unsafe operation.
     #[nid(0x3AEE7261)]
-    pub fn sceKernelPowerUnlock(lock_kind: PowerLockKind) -> SceResult<()>;
+    pub safe fn sceKernelPowerUnlock(lock_kind: PowerLockKind) -> SceResult<()>;
 
     /// Locks and grants access to the device volatile memory (blocking).
     ///
@@ -351,5 +351,5 @@ extern "C" {
     ///
     /// Always returns zero.
     #[nid(0x090CCB3F)]
-    pub fn sceKernelPowerTick(tick_kind: PowerTick) -> u32;
+    pub safe fn sceKernelPowerTick(tick_kind: PowerTick) -> u32;
 }

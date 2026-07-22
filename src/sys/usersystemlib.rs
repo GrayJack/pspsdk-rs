@@ -16,14 +16,14 @@ use crate::sys::{
 // - `sceKernelIsCpuIntrEnable`
 // - `sceKernelIsCpuIntrSuspended`
 #[psp_stub(libname = "Kernel_Library", flags = 0x0001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Gets the remaining free size of the calling thread stack (?)
     ///
     /// # Return Value
     ///
     /// The remaining free size of the calling thread stack (probably in bytes).
     #[nid(0xD13BDE95)]
-    pub fn sceKernelCheckThreadStack() -> SceSize;
+    pub safe fn sceKernelCheckThreadStack() -> SceSize;
 
     /// Gets the address of a user TLS memory pool.
     ///
@@ -39,7 +39,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 5.70.
     #[nid(0xFA835CDE)]
-    pub fn sceKernelGetTlsAddr(id: TlsPoolId) -> *mut c_void;
+    pub safe fn sceKernelGetTlsAddr(id: TlsPoolId) -> *mut c_void;
 
     /// Locks a lightweight mutex a number of times.
     ///
@@ -59,7 +59,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0xBEA46419)]
-    pub fn sceKernelLockLwMutex(
+    pub safe fn sceKernelLockLwMutex(
         work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
@@ -82,7 +82,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0x1FC64E09)]
-    pub fn sceKernelLockLwMutexCB(
+    pub safe fn sceKernelLockLwMutexCB(
         work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
@@ -102,7 +102,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0xDC692EE3)]
-    pub fn sceKernelTryLockLwMutex(
+    pub safe fn sceKernelTryLockLwMutex(
         work_area: &mut LwMutexWorkArea, lock_count: u32,
     ) -> SceResult<()>;
 
@@ -122,7 +122,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0x15B6446B)]
-    pub fn sceKernelUnlockLwMutex(
+    pub safe fn sceKernelUnlockLwMutex(
         work_area: &mut LwMutexWorkArea, unlock_count: u32,
     ) -> SceResult<()>;
 
@@ -142,7 +142,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0xC1734599)]
-    pub fn sceKernelReferLwMutexStatus(
+    pub safe fn sceKernelReferLwMutexStatus(
         work_area: &mut LwMutexWorkArea, info: &mut LwMutexInfo,
     ) -> SceResult<()>;
 
@@ -152,7 +152,7 @@ extern "C" {
     ///
     /// Returns the thread UID of the calling thread on success, error value otherwise.
     #[nid(0x293B45B8)]
-    pub fn sceKernelGetThreadId() -> SceResult<ThreadId>;
+    pub safe fn sceKernelGetThreadId() -> SceResult<ThreadId>;
 
     /// What can I say? It is `memcpy` with a weird prefix.
     #[nid(0x1839852A)]

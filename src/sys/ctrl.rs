@@ -363,7 +363,7 @@ pub type InputDataTransferFn =
     unsafe extern "C" fn(src: *mut c_void, dest: *mut CtrlDataExt) -> SceResult<u32>;
 
 #[psp_stub(libname = "sceCtrl", flags = 0x4001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Sets the controller input sampling mode.
     ///
     /// # Parameters
@@ -375,7 +375,7 @@ extern "C" {
     /// Returns the previous input sampling mode on success, error value otherwise
     #[nid(0x1F4011E6)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceCtrlSetSamplingMode(mode: InputMode) -> SceResult<InputMode>;
+    pub safe fn sceCtrlSetSamplingMode(mode: InputMode) -> SceResult<InputMode>;
 
 
     /// Gets the currently set input sampling mode.
@@ -389,7 +389,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xDA6B76A1)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceCtrlGetSamplingMode(mode: &mut InputMode) -> SceResult<InputMode>;
+    pub safe fn sceCtrlGetSamplingMode(mode: &mut InputMode) -> SceResult<InputMode>;
 
     /// Sets the update frequency of the internal controller buffer.
     ///
@@ -407,7 +407,7 @@ extern "C" {
     /// Returns the previous sampling cycle value set on success, error value otherwise.
     #[nid(0x6A2774F3)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceCtrlSetSamplingCycle(cycle: SamplingCycle) -> SceResult<SamplingCycle>;
+    pub safe fn sceCtrlSetSamplingCycle(cycle: SamplingCycle) -> SceResult<SamplingCycle>;
 
     /// Gets the currently set sampling cycle value.
     ///
@@ -420,7 +420,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x02BAAD91)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceCtrlGetSamplingCycle(cycle: &mut SamplingCycle) -> SceResult<()>;
+    pub safe fn sceCtrlGetSamplingCycle(cycle: &mut SamplingCycle) -> SceResult<()>;
 
     /// Sets analog stick movement threshold values for cancelling the idle timer.
     ///
@@ -451,7 +451,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.50.
     #[nid(0xA7144800)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceCtrlSetIdleCancelThreshold(
+    pub safe fn sceCtrlSetIdleCancelThreshold(
         unhold_threshold: IdleCancelThreshold, hold_threshold: IdleCancelThreshold,
     ) -> SceResult<()>;
 
@@ -473,7 +473,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.50.
     #[nid(0x687660FA)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceCtrlGetIdleCancelThreshold(
+    pub safe fn sceCtrlGetIdleCancelThreshold(
         unhold_threshold: &mut IdleCancelThreshold, hold_threshold: &mut IdleCancelThreshold,
     ) -> SceResult<()>;
 
@@ -624,7 +624,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xA68FD260)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceCtrlClearRapidFire(slot: RapidFireSlot) -> SceResult<()>;
+    pub safe fn sceCtrlClearRapidFire(slot: RapidFireSlot) -> SceResult<()>;
 
     /// Sets a rapid-fire event for one or more buttons.
     ///
@@ -656,7 +656,7 @@ extern "C" {
     #[eabi(i7)]
     #[nid(0x6841BE1A)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceCtrlSetRapidFire(
+    pub safe fn sceCtrlSetRapidFire(
         slot: RapidFireSlot, mask: PadButtons, trigger: PadButtons, target: PadButtons, delay: u32,
         make: u32, breakk: u32,
     ) -> SceResult<()>;
@@ -676,7 +676,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.03.
     #[nid(0x348D99D4)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceCtrlSetSuspendingExtraSamples(suspend_samples: u16) -> SceResult<()>;
+    pub safe fn sceCtrlSetSuspendingExtraSamples(suspend_samples: u16) -> SceResult<()>;
 
     /// Gets the number of VBlanks which will be waited for when the PSP device is being suspended.
     ///
@@ -689,7 +689,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.03.
     #[nid(0xAF5960F3)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceCtrlGetSuspendingExtraSamples() -> u16;
+    pub safe fn sceCtrlGetSuspendingExtraSamples() -> u16;
 
     /// Retrieves controller state data on a specified controller port by polling (positive logic,
     /// i.e. state data will be `1` when the button is pressed).
@@ -804,7 +804,7 @@ extern "C" {
 
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "sceCtrl_driver", flags = 0x0001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Sets the controller input sampling mode.
     ///
     /// # Parameters
@@ -825,7 +825,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x28E71A16 }
         else { 0x1F4011E6 }
     )]
-    pub fn sceCtrlSetSamplingMode(mode: InputMode) -> SceResult<InputMode>;
+    pub safe fn sceCtrlSetSamplingMode(mode: InputMode) -> SceResult<InputMode>;
 
 
     /// Gets the currently set input sampling mode.
@@ -848,7 +848,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xD7F23B0B }
         else { 0xDA6B76A1 }
     )]
-    pub fn sceCtrlGetSamplingMode(mode: &mut InputMode) -> SceResult<InputMode>;
+    pub safe fn sceCtrlGetSamplingMode(mode: &mut InputMode) -> SceResult<InputMode>;
 
     /// Sets the update frequency of the internal controller buffer.
     ///
@@ -875,7 +875,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x6D74BF08 }
         else { 0x6A2774F3 }
     )]
-    pub fn sceCtrlSetSamplingCycle(cycle: SamplingCycle) -> SceResult<SamplingCycle>;
+    pub safe fn sceCtrlSetSamplingCycle(cycle: SamplingCycle) -> SceResult<SamplingCycle>;
 
     /// Gets the currently set interval of the internal controller data buffers.
     ///
@@ -897,7 +897,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x8FE1D531 }
         else { 0x02BAAD91 }
     )]
-    pub fn sceCtrlGetSamplingCycle(cycle: &mut SamplingCycle) -> SceResult<()>;
+    pub safe fn sceCtrlGetSamplingCycle(cycle: &mut SamplingCycle) -> SceResult<()>;
 
     /// Sets analog stick movement threshold values for cancelling the idle timer.
     ///
@@ -937,7 +937,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x6F3B46FB }
         else { 0xA7144800 }
     )]
-    pub fn sceCtrlSetIdleCancelThreshold(
+    pub safe fn sceCtrlSetIdleCancelThreshold(
         unhold_threshold: IdleCancelThreshold, hold_threshold: IdleCancelThreshold,
     ) -> SceResult<()>;
 
@@ -968,7 +968,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xF3630971 }
         else { 0x687660FA }
     )]
-    pub fn sceCtrlGetIdleCancelThreshold(
+    pub safe fn sceCtrlGetIdleCancelThreshold(
         unhold_threshold: &mut IdleCancelThreshold, hold_threshold: &mut IdleCancelThreshold,
     ) -> SceResult<()>;
 
@@ -1182,7 +1182,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xEF06B8B2 }
         else { 0xA68FD260 }
     )]
-    pub fn sceCtrlClearRapidFire(slot: RapidFireSlot) -> SceResult<()>;
+    pub safe fn sceCtrlClearRapidFire(slot: RapidFireSlot) -> SceResult<()>;
 
     /// Sets a rapid-fire event for one or more buttons.
     ///
@@ -1223,7 +1223,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xCE223F52 }
         else { 0x6841BE1A }
     )]
-    pub fn sceCtrlSetRapidFire(
+    pub safe fn sceCtrlSetRapidFire(
         slot: RapidFireSlot, mask: PadButtons, trigger: PadButtons, target: PadButtons, delay: u32,
         make: u32, breakk: u32,
     ) -> SceResult<()>;
@@ -1252,7 +1252,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x37B6B9E9 }
         else { 0x348D99D4 }
     )]
-    pub fn sceCtrlSetSuspendingExtraSamples(suspend_samples: u16) -> SceResult<()>;
+    pub safe fn sceCtrlSetSuspendingExtraSamples(suspend_samples: u16) -> SceResult<()>;
 
     /// Gets the number of VBlanks which will be waited for when the PSP device is being suspended.
     ///
@@ -1274,7 +1274,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xBCE989DD }
         else { 0xAF5960F3 }
     )]
-    pub fn sceCtrlGetSuspendingExtraSamples() -> u16;
+    pub safe fn sceCtrlGetSuspendingExtraSamples() -> u16;
 
     /// Retrieves controller state data on a specified controller port by polling (positive logic,
     /// i.e. state data will be `1` when the button is pressed).
@@ -1434,7 +1434,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xDB6F93CB }
         else { 0x7CA723DC }
     )]
-    pub fn sceCtrlSetButtonIntercept(
+    pub safe fn sceCtrlSetButtonIntercept(
         buttons: PadButtons, mask_mode: ButtonMaskMode,
     ) -> ButtonMaskMode;
 
@@ -1458,7 +1458,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xDB3CD94C }
         else { 0x5E77BC8A }
     )]
-    pub fn sceCtrlGetButtonIntercept(buttons: PadButtons) -> ButtonMaskMode;
+    pub safe fn sceCtrlGetButtonIntercept(buttons: PadButtons) -> ButtonMaskMode;
 
     /// Registers a button callback.
     ///
@@ -1483,7 +1483,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x0B7AC633 }
         else { 0x5C56C779 }
     )]
-    pub fn sceCtrlSetSpecialButtonCallback(
+    pub safe fn sceCtrlSetSpecialButtonCallback(
         slot: SpecialButtonCallbackSlot, button_mask: PadButtons, callback: SpecialButtonCallback,
         common: *mut c_void,
     ) -> SceResult<()>;
@@ -1520,7 +1520,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x312646B8 }
         else { 0xA88E8D22 }
     )]
-    pub fn sceCtrlSetIdleCancelKey(
+    pub safe fn sceCtrlSetIdleCancelKey(
         make: PadButtons, press: PadButtons, hold_mode_make: PadButtons,
         hold_mode_press: PadButtons,
     ) -> SceResult<()>;
@@ -1554,7 +1554,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x312646B8 }
         else { 0xA88E8D22 }
     )]
-    pub fn sceCtrlGetIdleCancelKey(
+    pub safe fn sceCtrlGetIdleCancelKey(
         make: Option<&mut PadButtons>, press: Option<&mut PadButtons>,
         hold_mode_make: Option<&mut PadButtons>, hold_mode_press: Option<&mut PadButtons>,
     ) -> SceResult<()>;
@@ -1620,7 +1620,7 @@ extern "C" {
         else if cfg!(feature = "psp_600") { 0xA759DB6A }
         else { 0xD8329216 }
     )]
-    pub fn sceCtrlSetAnalogEmulation(
+    pub safe fn sceCtrlSetAnalogEmulation(
         slot: ButtonEmulationSlot, x: u8, y: u8, make: u32,
     ) -> SceResult<()>;
 
@@ -1648,7 +1648,7 @@ extern "C" {
         else if cfg!(feature = "psp_600") { 0xA7D5A6BA }
         else { 0x010C3A1A }
     )]
-    pub fn sceCtrlSetButtonEmulation(
+    pub safe fn sceCtrlSetButtonEmulation(
         slot: ButtonEmulationSlot, user_buttons: PadButtons, kernel_buttons: PadButtons, make: u32,
     ) -> SceResult<()>;
 }

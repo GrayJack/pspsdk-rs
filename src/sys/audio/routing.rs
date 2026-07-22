@@ -32,7 +32,7 @@ pub enum AudioRoutingVolumeMode {
 }
 
 #[psp_stub(libname = "sceAudioRouting", flags = 0x4001, version = (0x00, 0x11), use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Gets the current audio routing mode.
     ///
     /// # Return Values
@@ -40,7 +40,7 @@ extern "C" {
     /// Returns the current routing mode.
     #[nid(0x931ABEF5)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceAudioRoutingGetMode() -> AudioRoutingMode;
+    pub safe fn sceAudioRoutingGetMode() -> AudioRoutingMode;
 
     /// Sets the audio routing mode.
     ///
@@ -53,7 +53,7 @@ extern "C" {
     /// Returns the precious routing mode on success, an error value otherwise.
     #[nid(0x18B6F449)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceAudioRoutingSetMode(mode: AudioRoutingMode) -> SceResult<AudioRoutingMode>;
+    pub safe fn sceAudioRoutingSetMode(mode: AudioRoutingMode) -> SceResult<AudioRoutingMode>;
 
     /// Gets the current audio routing volume mode.
     ///
@@ -61,7 +61,7 @@ extern "C" {
     /// Returns the current routing volume mode.
     #[nid(0xD82D02FD)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceAudioRoutingGetVolumeMode() -> AudioRoutingVolumeMode;
+    pub safe fn sceAudioRoutingGetVolumeMode() -> AudioRoutingVolumeMode;
 
     /// Sets the audio routing volume mode.
     ///
@@ -73,12 +73,12 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x44B384EF)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceAudioRoutingSetVolumeMode(vol_mode: AudioRoutingVolumeMode) -> Result<(), SceError>;
+    pub safe fn sceAudioRoutingSetVolumeMode(vol_mode: AudioRoutingVolumeMode) -> Result<(), SceError>;
 }
 
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "sceAudioRouting_driver", flags = 0x0001, version = (0x00, 0x11), use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Gets the current audio routing mode.
     ///
     /// # Return Values
@@ -94,7 +94,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xF2EFEBB8 }
         else { 0x39240E7D }
     )]
-    pub fn sceAudioRoutingGetMode() -> AudioRoutingMode;
+    pub safe fn sceAudioRoutingGetMode() -> AudioRoutingMode;
 
     /// Sets the audio routing mode.
     ///
@@ -115,7 +115,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x414E7D7A }
         else { 0x36FD8AA9 }
     )]
-    pub fn sceAudioRoutingSetMode(mode: AudioRoutingMode) -> SceResult<AudioRoutingMode>;
+    pub safe fn sceAudioRoutingSetMode(mode: AudioRoutingMode) -> SceResult<AudioRoutingMode>;
 
     /// Gets the current audio routing volume mode.
     ///
@@ -131,7 +131,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x1B372F9D }
         else { 0x28235C56 }
     )]
-    pub fn sceAudioRoutingGetVolumeMode() -> AudioRoutingVolumeMode;
+    pub safe fn sceAudioRoutingGetVolumeMode() -> AudioRoutingVolumeMode;
 
     /// Sets the audio routing volume mode.
     ///
@@ -151,7 +151,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xBE9B6FF5 }
         else { 0xBB548475 }
     )]
-    pub fn sceAudioRoutingSetVolumeMode(vol_mode: AudioRoutingVolumeMode) -> Result<(), SceError>;
+    pub safe fn sceAudioRoutingSetVolumeMode(vol_mode: AudioRoutingVolumeMode) -> Result<(), SceError>;
 }
 
 impl crate::private::Sealed for AudioRoutingMode {}

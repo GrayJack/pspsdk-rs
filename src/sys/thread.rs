@@ -1062,7 +1062,7 @@ pub struct KtlsId(SceUid);
 pub type KtlsAllocFunc = unsafe extern "C" fn(size: SceSize, common: *mut c_void) -> SceResult<u32>;
 
 #[psp_stub(libname = "ThreadManForUser", flags = 0x4001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Create a thread.
     ///
     /// This function does not directly run a thread, it simply returns a thread UID which can be
@@ -1133,7 +1133,7 @@ extern "C" {
     /// Error value on error, no_returns on success;
     #[nid(0xAA73C935)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelExitThread(status: u32) -> SceResult<()>;
+    pub safe fn sceKernelExitThread(status: u32) -> SceResult<()>;
 
     /// Exits and deletes a thread.
     ///
@@ -1149,7 +1149,7 @@ extern "C" {
     /// Error value on error, no_returns on success;
     #[nid(0x809CE29B)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelExitDeleteThread(status: u32) -> SceResult<()>;
+    pub safe fn sceKernelExitDeleteThread(status: u32) -> SceResult<()>;
 
     /// Forcibly terminates a thread.
     ///
@@ -1193,7 +1193,7 @@ extern "C" {
     /// Returns the current state of the dispatch thread, error value on error.
     #[nid(0x3AD58B8C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelSuspendDispatchThread() -> SceResult<ThreadState>;
+    pub safe fn sceKernelSuspendDispatchThread() -> SceResult<ThreadState>;
 
     /// Resumes the dispatch thread.
     ///
@@ -1206,7 +1206,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x27E22EC2)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelResumeDispatchThread(state: ThreadState) -> SceResult<()>;
+    pub safe fn sceKernelResumeDispatchThread(state: ThreadState) -> SceResult<()>;
 
     /// Changes the thread attributes of the calling thread.
     ///
@@ -1220,7 +1220,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xEA748E31)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelChangeCurrentThreadAttr(
+    pub safe fn sceKernelChangeCurrentThreadAttr(
         clear_attr: ThreadAttributes, set_attr: ThreadAttributes,
     ) -> SceResult<()>;
 
@@ -1231,7 +1231,7 @@ extern "C" {
     /// Returns the current priority of the calling thread on success, error value otherwise.
     #[nid(0x94AA61EE)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetThreadCurrentPriority() -> SceResult<i32>;
+    pub safe fn sceKernelGetThreadCurrentPriority() -> SceResult<i32>;
 
     /// Gets the thread UID of the calling thread.
     ///
@@ -1240,7 +1240,7 @@ extern "C" {
     /// Returns the thread UID of the calling thread on success, error value otherwise.
     #[nid(0x293B45B8)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetThreadId() -> SceResult<ThreadId>;
+    pub safe fn sceKernelGetThreadId() -> SceResult<ThreadId>;
 
     /// Makes the calling thread to enter in a [`Wait`](ThreadState::Wait) state.
     ///
@@ -1249,7 +1249,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x9ACE131E)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelSleepThread() -> SceResult<()>;
+    pub safe fn sceKernelSleepThread() -> SceResult<()>;
 
     /// Makes the calling thread to enter in a [`Wait`](ThreadState::Wait) state but service any
     /// callbacks as necessary.
@@ -1263,7 +1263,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x82826F70)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelSleepThreadCB() -> SceResult<()>;
+    pub safe fn sceKernelSleepThreadCB() -> SceResult<()>;
 
     /// Wakes a thread that was previously put in the [`Wait`](ThreadState::Wait) state.
     ///
@@ -1280,7 +1280,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xD59EAD2F)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelWakeupThread(id: ThreadId) -> SceResult<()>;
+    pub safe fn sceKernelWakeupThread(id: ThreadId) -> SceResult<()>;
 
     /// Transfers the wake-up request count of the calling thread to another thread.
     ///
@@ -1300,7 +1300,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.80
     #[nid(0x1AF94D03)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDonateWakeupThread(donate_id: ThreadId) -> SceResult<()>;
+    pub safe fn sceKernelDonateWakeupThread(donate_id: ThreadId) -> SceResult<()>;
 
     /// Forces a thread to get out of a [`Wait`](ThreadState::Wait) state.
     ///
@@ -1316,7 +1316,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x2C34E053)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReleaseWaitThread(id: ThreadId) -> SceResult<()>;
+    pub safe fn sceKernelReleaseWaitThread(id: ThreadId) -> SceResult<()>;
 
     /// Cancels all the wake-up requests from a thread.
     ///
@@ -1330,7 +1330,7 @@ extern "C" {
     /// Returns the number of wake-up requests cancelled on success, error value otherwise.
     #[nid(0xFCCFAD26)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCancelWakeupThread(id: ThreadId) -> SceResult<u32>;
+    pub safe fn sceKernelCancelWakeupThread(id: ThreadId) -> SceResult<u32>;
 
     /// Puts a thread in a [`Suspend`](ThreadState::Suspend) state.
     ///
@@ -1346,7 +1346,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x9944F31F)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelSuspendThread(id: ThreadId) -> SceResult<()>;
+    pub safe fn sceKernelSuspendThread(id: ThreadId) -> SceResult<()>;
 
     /// Resumes a thread that is in a [`Suspend`](ThreadState::Suspend) state.
     ///
@@ -1362,7 +1362,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x75156E8F)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelResumeThread(id: ThreadId) -> SceResult<()>;
+    pub safe fn sceKernelResumeThread(id: ThreadId) -> SceResult<()>;
 
     /// Put the calling thread in a [`Wait`](ThreadState::Wait) state until a thread if finished or
     /// the timeout is reached.
@@ -1379,7 +1379,7 @@ extern "C" {
     /// otherwise.
     #[nid(0x278C0DF5)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelWaitThreadEnd(id: ThreadId, timeout: Option<&mut u32>) -> SceResult<u32>;
+    pub safe fn sceKernelWaitThreadEnd(id: ThreadId, timeout: Option<&mut u32>) -> SceResult<u32>;
 
     /// Put the calling thread in a [`Wait`](ThreadState::Wait) state until a thread if finished or
     /// the timeout is reached, but service any callbacks as necessary.
@@ -1400,7 +1400,8 @@ extern "C" {
     /// otherwise.
     #[nid(0x840E8133)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelWaitThreadEndCB(id: ThreadId, timeout: Option<&mut u32>) -> SceResult<u32>;
+    pub safe fn sceKernelWaitThreadEndCB(id: ThreadId, timeout: Option<&mut u32>)
+        -> SceResult<u32>;
 
     /// Delays the calling thread by a specified number of microseconds.
     ///
@@ -1416,7 +1417,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xCEADEB47)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDelayThread(delay: u32) -> SceResult<()>;
+    pub safe fn sceKernelDelayThread(delay: u32) -> SceResult<()>;
 
     /// Delays the calling thread by a specified number of microseconds, but service any callbacks
     /// as necessary.
@@ -1437,7 +1438,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x68DA9E36)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDelayThreadCB(delay: u32) -> SceResult<()>;
+    pub safe fn sceKernelDelayThreadCB(delay: u32) -> SceResult<()>;
 
     /// Delays the calling thread by a specified number of [`SystemClock`]s.
     ///
@@ -1454,7 +1455,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xBD123D9E)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDelaySysClockThread(delay: &SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelDelaySysClockThread(delay: &SystemClock) -> SceResult<()>;
 
     /// Delays the calling thread by a specified number of [`SystemClock`]s, but service any
     /// callbacks as necessary.
@@ -1476,7 +1477,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x1181E963)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDelaySysClockThreadCB(delay: &SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelDelaySysClockThreadCB(delay: &SystemClock) -> SceResult<()>;
 
     /// Rotate thread ready queue at a given priority.
     ///
@@ -1489,7 +1490,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x912354A7)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelRotateThreadReadyQueue(priority: u32) -> SceResult<()>;
+    pub safe fn sceKernelRotateThreadReadyQueue(priority: u32) -> SceResult<()>;
 
     /// Gets the exit status of a thread.
     ///
@@ -1502,7 +1503,7 @@ extern "C" {
     /// Returns the exit status on success, error value otherwise.
     #[nid(0x3B183E26)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetThreadExitStatus(id: ThreadId) -> SceResult<u32>;
+    pub safe fn sceKernelGetThreadExitStatus(id: ThreadId) -> SceResult<u32>;
 
     /// Gets the remaining free size of the calling thread stack (?)
     ///
@@ -1511,7 +1512,7 @@ extern "C" {
     /// The remaining free size of the calling thread stack (probably in bytes).
     #[nid(0xD13BDE95)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCheckThreadStack() -> SceSize;
+    pub safe fn sceKernelCheckThreadStack() -> SceSize;
 
     /// Gets the unused thread stack size of a thread.
     ///
@@ -1525,7 +1526,7 @@ extern "C" {
     /// otherwise.
     #[nid(0x52089CA1)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetThreadStackFreeSize(id: ThreadId) -> SceResult<SceSize>;
+    pub safe fn sceKernelGetThreadStackFreeSize(id: ThreadId) -> SceResult<SceSize>;
 
     /// Get the status information of a thread.
     ///
@@ -1540,7 +1541,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x17C1684E)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferThreadStatus(id: ThreadId, info: &mut ThreadInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferThreadStatus(id: ThreadId, info: &mut ThreadInfo) -> SceResult<()>;
 
     /// Gets the current runtime status of a thread.
     ///
@@ -1555,7 +1556,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xFFC36A14)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferThreadRunStatus(
+    pub safe fn sceKernelReferThreadRunStatus(
         id: ThreadId, run_status: &mut ThreadRunStatus,
     ) -> SceResult<()>;
 
@@ -1592,7 +1593,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x28B6489C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDeleteSema(id: SemaId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteSema(id: SemaId) -> SceResult<()>;
 
     /// Sends a signal to a semaphore.
     ///
@@ -1610,7 +1611,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x3F53E640)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelSignalSema(id: SemaId, signal: i32) -> SceResult<()>;
+    pub safe fn sceKernelSignalSema(id: SemaId, signal: i32) -> SceResult<()>;
 
     /// Locks a semaphore until a target value or a timeout is reached.
     ///
@@ -1626,7 +1627,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x4E3A1105)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelWaitSema(
+    pub safe fn sceKernelWaitSema(
         id: SemaId, target_value: i32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
@@ -1646,7 +1647,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x6D212BAC)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelWaitSemaCB(
+    pub safe fn sceKernelWaitSemaCB(
         id: SemaId, target_value: i32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
@@ -1662,7 +1663,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x58B1F937)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelPollSema(id: SemaId, target_value: i32) -> SceResult<()>;
+    pub safe fn sceKernelPollSema(id: SemaId, target_value: i32) -> SceResult<()>;
 
     /// Cancels the wait of a semaphore.
     ///
@@ -1679,7 +1680,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x8FFDF9A2)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCancelSema(
+    pub safe fn sceKernelCancelSema(
         id: SemaId, set_val: i32, num_wait_threads: &mut u32,
     ) -> SceResult<()>;
 
@@ -1696,7 +1697,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xBC6FEBC5)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferSemaStatus(id: SemaId, info: &mut SemaphoreInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferSemaStatus(id: SemaId, info: &mut SemaphoreInfo) -> SceResult<()>;
 
     /// Creates a event flag.
     ///
@@ -1729,7 +1730,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xEF9E4C70)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDeleteEventFlag(id: EventFlagId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteEventFlag(id: EventFlagId) -> SceResult<()>;
 
     /// Sets a bit pattern on a even flag.
     ///
@@ -1743,7 +1744,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x1FB15A32)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelSetEventFlag(id: EventFlagId, bit_pat: u32) -> SceResult<()>;
+    pub safe fn sceKernelSetEventFlag(id: EventFlagId, bit_pat: u32) -> SceResult<()>;
 
     /// Clears a bit pattern of a event flag.
     ///
@@ -1757,7 +1758,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x812346E4)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelClearEventFlag(id: EventFlagId, bit_pat: u32) -> SceResult<()>;
+    pub safe fn sceKernelClearEventFlag(id: EventFlagId, bit_pat: u32) -> SceResult<()>;
 
     /// Waits for a bit pattern of a event flag.
     ///
@@ -1776,7 +1777,7 @@ extern "C" {
     #[eabi(i5)]
     #[nid(0x402FCF22)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelWaitEventFlag(
+    pub safe fn sceKernelWaitEventFlag(
         id: EventFlagId, bit_pat: u32, wait_kind: EventFlagWaitKinds, out_bits: &mut u32,
         timeout: Option<&mut u32>,
     ) -> SceResult<()>;
@@ -1799,7 +1800,7 @@ extern "C" {
     #[eabi(i5)]
     #[nid(0x328C546A)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelWaitEventFlagCB(
+    pub safe fn sceKernelWaitEventFlagCB(
         id: EventFlagId, bit_pat: u32, wait_kind: EventFlagWaitKinds, out_bits: &mut u32,
         timeout: Option<&mut u32>,
     ) -> SceResult<()>;
@@ -1818,7 +1819,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x30FD48F0)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelPollEventFlag(
+    pub safe fn sceKernelPollEventFlag(
         id: EventFlagId, bit_pat: u32, wait_kind: EventFlagWaitKinds, out_bits: &mut u32,
     ) -> SceResult<()>;
 
@@ -1836,7 +1837,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xCD203292)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCancelEventFlag(id: EventFlagId, set_pat: u32, num_wait_threads: &mut u32);
+    pub safe fn sceKernelCancelEventFlag(id: EventFlagId, set_pat: u32, num_wait_threads: &mut u32);
 
     /// Gets the current state of a event flag.
     ///
@@ -1851,7 +1852,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xA66B0120)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferEventFlagStatus(
+    pub safe fn sceKernelReferEventFlagStatus(
         id: EventFlagId, info: &mut EventFlagInfo,
     ) -> SceResult<()>;
 
@@ -1893,7 +1894,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0xF8170FBE)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDeleteMutex(id: MutexId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteMutex(id: MutexId) -> SceResult<()>;
 
     /// Locks a mutex a number of times.
     ///
@@ -1914,7 +1915,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0xB011B11F)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelLockMutex(
+    pub safe fn sceKernelLockMutex(
         id: MutexId, lock_count: u32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
@@ -1938,7 +1939,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0x5BF4DD27)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelLockMutexCB(
+    pub safe fn sceKernelLockMutexCB(
         id: MutexId, lock_count: u32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
@@ -1959,7 +1960,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0x0DDCD2C9)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelTryLockMutex(id: MutexId, lock_count: u32) -> SceResult<()>;
+    pub safe fn sceKernelTryLockMutex(id: MutexId, lock_count: u32) -> SceResult<()>;
 
     /// Unlocks a mutex a number of times.
     ///
@@ -1978,7 +1979,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0x6B30100F)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelUnlockMutex(id: MutexId, unlock_count: u32) -> SceResult<()>;
+    pub safe fn sceKernelUnlockMutex(id: MutexId, unlock_count: u32) -> SceResult<()>;
 
     /// Cancels the wait state of threads waiting on a mutex.
     ///
@@ -1998,7 +1999,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0x87D9223C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCancelMutex(id: MutexId, new_lock_count: u32, numWaitThreads: &mut u32);
+    pub safe fn sceKernelCancelMutex(id: MutexId, new_lock_count: u32, numWaitThreads: &mut u32);
 
     /// Gets the current state of a mutex.
     ///
@@ -2017,7 +2018,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0xA9C2CB9A)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferMutexStatus(id: MutexId, info: &mut MutexInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferMutexStatus(id: MutexId, info: &mut MutexInfo) -> SceResult<()>;
 
     /// Creates a new lightweight mutex.
     ///
@@ -2060,7 +2061,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0x60107536)]
-    pub fn sceKernelDeleteLwMutex(work_area: &mut LwMutexWorkArea) -> SceResult<()>;
+    pub safe fn sceKernelDeleteLwMutex(work_area: &mut LwMutexWorkArea) -> SceResult<()>;
 
     /// Locks a lightweight mutex a number of times.
     ///
@@ -2080,7 +2081,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0x7CFF8CF3)]
-    pub fn _sceKernelLockLwMutex(
+    pub safe fn _sceKernelLockLwMutex(
         work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
@@ -2103,7 +2104,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0x31327F19)]
-    pub fn _sceKernelLockLwMutexCB(
+    pub safe fn _sceKernelLockLwMutexCB(
         work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
@@ -2123,7 +2124,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0x71040D5C)]
-    pub fn _sceKernelTryLockLwMutex(
+    pub safe fn _sceKernelTryLockLwMutex(
         work_area: &mut LwMutexWorkArea, lock_count: u32,
     ) -> SceResult<()>;
 
@@ -2143,7 +2144,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0xBEED3A47)]
-    pub fn _sceKernelUnlockLwMutex(
+    pub safe fn _sceKernelUnlockLwMutex(
         work_area: &mut LwMutexWorkArea, unlock_count: u32,
     ) -> SceResult<()>;
 
@@ -2164,7 +2165,9 @@ extern "C" {
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0x4C145944)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferLwMutexStatusByID(id: LwMutexId, info: &mut LwMutexInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferLwMutexStatusByID(
+        id: LwMutexId, info: &mut LwMutexInfo,
+    ) -> SceResult<()>;
 
     /// Creates a new message box.
     ///
@@ -2275,7 +2278,9 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x87D4DD36)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCancelReceiveMbx(id: MsgBoxId, num_wait_threads: &mut u32) -> SceResult<()>;
+    pub safe fn sceKernelCancelReceiveMbx(
+        id: MsgBoxId, num_wait_threads: &mut u32,
+    ) -> SceResult<()>;
 
     /// Gets the current state of a message box.
     ///
@@ -2290,7 +2295,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xA8E8C846)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferMbxStatus(id: MsgBoxId, info: &mut MsgBoxInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferMbxStatus(id: MsgBoxId, info: &mut MsgBoxInfo) -> SceResult<()>;
 
     /// Creates a new message pipe.
     ///
@@ -2326,7 +2331,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xF0B7DA1C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDeleteMsgPipe(id: MsgPipeId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteMsgPipe(id: MsgPipeId) -> SceResult<()>;
 
     /// Sends a message to a message pipe.
     ///
@@ -2479,7 +2484,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x349B864D)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCancelMsgPipe(
+    pub safe fn sceKernelCancelMsgPipe(
         id: MsgPipeId, num_send_wait_threads: &mut u32, num_recv_wait_threads: &mut u32,
     ) -> SceResult<()>;
 
@@ -2496,7 +2501,8 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x33BE4024)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferMsgPipeStatus(id: MsgPipeId, info: &mut MsgPipeInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferMsgPipeStatus(id: MsgPipeId, info: &mut MsgPipeInfo)
+        -> SceResult<()>;
 
     /// Creates a new variable-sized memory pool.
     ///
@@ -2530,7 +2536,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x89B3D48C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDeleteVpl(id: VplId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteVpl(id: VplId) -> SceResult<()>;
 
     /// Allocates a memory block from a variable-sized memory pool.
     ///
@@ -2614,7 +2620,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x1D371B8A)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCancelVpl(id: VplId, num_wait_threads: &mut u32) -> SceResult<()>;
+    pub safe fn sceKernelCancelVpl(id: VplId, num_wait_threads: &mut u32) -> SceResult<()>;
 
     /// Gets the current state of a variable-sized memory pool.
     ///
@@ -2629,7 +2635,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x39810265)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferVplStatus(id: VplId, info: &mut VplInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferVplStatus(id: VplId, info: &mut VplInfo) -> SceResult<()>;
 
     /// Creates a new fixed-sized memory pool.
     ///
@@ -2665,7 +2671,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xED1410E0)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDeleteFpl(id: FplId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteFpl(id: FplId) -> SceResult<()>;
 
     /// Allocates a memory block from a fixed-sized memory pool.
     ///
@@ -2745,7 +2751,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xA8AA591F)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCancelFpl(id: FplId, num_wait_threads: &mut u32) -> SceResult<()>;
+    pub safe fn sceKernelCancelFpl(id: FplId, num_wait_threads: &mut u32) -> SceResult<()>;
 
     /// Gets the current state of a fixed-sized memory pool.
     ///
@@ -2760,7 +2766,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xD8199E4C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferFplStatus(id: FplId, info: &mut FplInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferFplStatus(id: FplId, info: &mut FplInfo) -> SceResult<()>;
 
     /// Creates a new user TLS memory pool.
     ///
@@ -2802,7 +2808,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 5.70.
     #[nid(0x32BF938E)]
-    pub fn sceKernelDeleteTlspl(id: TlsPoolId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteTlspl(id: TlsPoolId) -> SceResult<()>;
 
     /// Allocates the TLS memory pool.
     ///
@@ -2842,7 +2848,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 5.70.
     #[nid(0x721067F3)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferTlsplStatus(id: TlsPoolId, info: &mut TlsPoolInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferTlsplStatus(id: TlsPoolId, info: &mut TlsPoolInfo) -> SceResult<()>;
 
     /// Gets the system time.
     ///
@@ -2855,7 +2861,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xDB738F35)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetSystemTime(clock: &mut SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelGetSystemTime(clock: &mut SystemClock) -> SceResult<()>;
 
     /// Gets the system time as raw wide integer.
     ///
@@ -2864,7 +2870,7 @@ extern "C" {
     /// Returns the system time.
     #[nid(0x82BC5777)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetSystemTimeWide() -> u64;
+    pub safe fn sceKernelGetSystemTimeWide() -> u64;
 
     /// Gets the low part of the system time.
     ///
@@ -2873,7 +2879,7 @@ extern "C" {
     /// Returns the system time low bits.
     #[nid(0x369ED59D)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetSystemTimeLow() -> u32;
+    pub safe fn sceKernelGetSystemTimeLow() -> u32;
 
     /// Creates an alarm.
     ///
@@ -2921,7 +2927,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x7E65B999)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCancelAlarm(id: AlarmId) -> SceResult<()>;
+    pub safe fn sceKernelCancelAlarm(id: AlarmId) -> SceResult<()>;
 
     /// Gets the current state of a alarm.
     ///
@@ -2936,7 +2942,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xDAA3F564)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferAlarmStatus(id: AlarmId, info: &mut AlarmInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferAlarmStatus(id: AlarmId, info: &mut AlarmInfo) -> SceResult<()>;
 
     /// Converts time in microseconds to [`SystemClock`].
     ///
@@ -2950,7 +2956,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x110DEC9A)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelUSec2SysClock(microsec: u32, clock: &mut SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelUSec2SysClock(microsec: u32, clock: &mut SystemClock) -> SceResult<()>;
 
     /// Converts time in [`SystemClock`] to seconds and microseconds.
     ///
@@ -2965,7 +2971,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xBA6B92E2)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelSysClock2USec(
+    pub safe fn sceKernelSysClock2USec(
         clock: &SystemClock, sec: &mut u32, microsec: &mut u32,
     ) -> SceResult<()>;
 
@@ -2980,7 +2986,7 @@ extern "C" {
     /// Returns the clock in raw format.
     #[nid(0xC8CD158C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelUSec2SysClockWide(microsec: u32) -> u64;
+    pub safe fn sceKernelUSec2SysClockWide(microsec: u32) -> u64;
 
     /// Converts raw system time to seconds and microseconds.
     ///
@@ -2995,7 +3001,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xE1619D7C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelSysClock2USecWide(
+    pub safe fn sceKernelSysClock2USecWide(
         raw_clock: u64, sec: &mut u32, microsec: &mut u32,
     ) -> SceResult<()>;
 
@@ -3028,7 +3034,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x328F9E52)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDeleteVTimer(id: VirtualTimerId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteVTimer(id: VirtualTimerId) -> SceResult<()>;
 
     /// Gets the base time of a virtual timer.
     ///
@@ -3042,7 +3048,8 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xB3A59970)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetVTimerBase(id: VirtualTimerId, base: &mut SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelGetVTimerBase(id: VirtualTimerId, base: &mut SystemClock)
+        -> SceResult<()>;
 
     /// Gets the base time of a virtual timer.
     ///
@@ -3055,7 +3062,7 @@ extern "C" {
     /// Returns base time in raw format on success, `0xFFFFFFFFFFFFFFFF` (`-1 as u64`) on error.
     #[nid(0xB7C18B77)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetVTimerBaseWide(id: VirtualTimerId) -> u64;
+    pub safe fn sceKernelGetVTimerBaseWide(id: VirtualTimerId) -> u64;
 
     /// Gets the current time of a virtual timer.
     ///
@@ -3069,7 +3076,8 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x034A921F)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetVTimerTime(id: VirtualTimerId, time: &mut SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelGetVTimerTime(id: VirtualTimerId, time: &mut SystemClock)
+        -> SceResult<()>;
 
     /// Gets the current time of a virtual timer.
     ///
@@ -3082,7 +3090,7 @@ extern "C" {
     /// Returns current time in raw format on success, `0xFFFFFFFFFFFFFFFF` (`-1 as u64`) on error.
     #[nid(0xC0B3FFD2)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetVTimerTimeWide(id: VirtualTimerId) -> u64;
+    pub safe fn sceKernelGetVTimerTimeWide(id: VirtualTimerId) -> u64;
 
     /// Sets the current time of a virtual timer.
     ///
@@ -3097,7 +3105,8 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x542AD630)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelSetVTimerTime(id: VirtualTimerId, time: &mut SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelSetVTimerTime(id: VirtualTimerId, time: &mut SystemClock)
+        -> SceResult<()>;
 
     /// Sets the current time of a virtual timer.
     ///
@@ -3112,7 +3121,7 @@ extern "C" {
     /// u64`) on error.
     #[nid(0xFB6425C3)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelSetVTimerTimeWide(id: VirtualTimerId, time: u64) -> u64;
+    pub safe fn sceKernelSetVTimerTimeWide(id: VirtualTimerId, time: u64) -> u64;
 
     /// Starts a virtual timer.
     ///
@@ -3125,7 +3134,7 @@ extern "C" {
     /// Returns the previous timer state on success, error value otherwise.
     #[nid(0xC68D9437)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelStartVTimer(id: VirtualTimerId) -> SceResult<VirtualTimerState>;
+    pub safe fn sceKernelStartVTimer(id: VirtualTimerId) -> SceResult<VirtualTimerState>;
 
     /// Stops a virtual timer.
     ///
@@ -3138,7 +3147,7 @@ extern "C" {
     /// Returns the previous timer state on success, error value otherwise.
     #[nid(0xD0AEEE87)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelStopVTimer(id: VirtualTimerId) -> SceResult<VirtualTimerState>;
+    pub safe fn sceKernelStopVTimer(id: VirtualTimerId) -> SceResult<VirtualTimerState>;
 
     /// Sets the virtual time handler and the schedule to execute it.
     ///
@@ -3189,7 +3198,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xD2D615EF)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCancelVTimerHandler(id: VirtualTimerId) -> SceResult<()>;
+    pub safe fn sceKernelCancelVTimerHandler(id: VirtualTimerId) -> SceResult<()>;
 
     /// Gets the current state of a virtual timer.
     ///
@@ -3204,7 +3213,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x5F32BEAA)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferVTimerStatus(
+    pub safe fn sceKernelReferVTimerStatus(
         id: VirtualTimerId, info: &mut VirtualTimerInfo,
     ) -> SceResult<()>;
 
@@ -3236,7 +3245,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xEDBA5844)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelDeleteCallback(id: CallbackId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteCallback(id: CallbackId) -> SceResult<()>;
 
     /// Notifies a callback.
     ///
@@ -3250,7 +3259,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xC11BA8C4)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelNotifyCallback(id: CallbackId, arg: i32) -> SceResult<()>;
+    pub safe fn sceKernelNotifyCallback(id: CallbackId, arg: i32) -> SceResult<()>;
 
     /// Cancels all notifications that were reported to a callback.
     ///
@@ -3263,7 +3272,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xBA4051D6)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCancelCallback(id: CallbackId) -> SceResult<()>;
+    pub safe fn sceKernelCancelCallback(id: CallbackId) -> SceResult<()>;
 
     /// Gets the notification count of a callback.
     ///
@@ -3276,7 +3285,7 @@ extern "C" {
     /// Returns the number of notification send to the callback on success, error value otherwise.
     #[nid(0x2A3D44FF)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetCallbackCount(id: CallbackId) -> SceResult<u32>;
+    pub safe fn sceKernelGetCallbackCount(id: CallbackId) -> SceResult<u32>;
 
     /// Checks if a callback by the calling thread has been notified.
     ///
@@ -3287,7 +3296,7 @@ extern "C" {
     /// Returns the check status on success, error value otherwise.
     #[nid(0x349D6D6C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelCheckCallback() -> SceResult<CallbackCheckStatus>;
+    pub safe fn sceKernelCheckCallback() -> SceResult<CallbackCheckStatus>;
 
     /// Gets the current state of a callback.
     ///
@@ -3300,7 +3309,9 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x730ED8BC)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferCallbackStatus(id: CallbackId, info: &mut CallbackInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferCallbackStatus(
+        id: CallbackId, info: &mut CallbackInfo,
+    ) -> SceResult<()>;
 
     /// Gets the current state of the system.
     ///
@@ -3314,7 +3325,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x627E6F3A)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferSystemStatus(info: &mut SystemInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferSystemStatus(info: &mut SystemInfo) -> SceResult<()>;
 
     /// Gets a list of UIDs from threadman module.
     ///
@@ -3347,7 +3358,7 @@ extern "C" {
     /// Returns the UID kind on success, error value otherwise.
     #[nid(0x57CF62DD)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelGetThreadmanIdType(id: SceUid) -> SceResult<ThreadIdKind>;
+    pub safe fn sceKernelGetThreadmanIdType(id: SceUid) -> SceResult<ThreadIdKind>;
 
     /// Registers a thread event handler.
     ///
@@ -3385,7 +3396,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x72F3C145)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReleaseThreadEventHandler(id: ThreadEventId) -> SceResult<()>;
+    pub safe fn sceKernelReleaseThreadEventHandler(id: ThreadEventId) -> SceResult<()>;
 
     /// Gets the current state of a thread event handler.
     ///
@@ -3400,7 +3411,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x369EEB6B)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelReferThreadEventHandlerStatus(
+    pub safe fn sceKernelReferThreadEventHandlerStatus(
         id: ThreadEventId, info: &mut ThreadEventInfo,
     ) -> SceResult<()>;
 
@@ -3420,14 +3431,14 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 5.70.
     #[nid(0xBC80EC7C)]
-    pub fn sceKernelExtendThreadStack(
+    pub safe fn sceKernelExtendThreadStack(
         stack_size: SceSize, func: ExtendStackFunc, common: *mut c_void,
     ) -> SceResult<u32>;
 }
 
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "ThreadManForKernel", flags = 0x0001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Create a thread.
     ///
     /// This function does not directly run a thread, it simply returns a thread UID which can be
@@ -3494,7 +3505,7 @@ extern "C" {
     ///
     /// Error value on error, no_returns on success;
     #[nid(0xAA73C935)]
-    pub fn sceKernelExitThread(status: u32) -> SceResult<!>;
+    pub safe fn sceKernelExitThread(status: u32) -> SceResult<!>;
 
     /// Exits and deletes a thread.
     ///
@@ -3509,7 +3520,7 @@ extern "C" {
     ///
     /// Error value on error, no_returns on success;
     #[nid(0x809CE29B)]
-    pub fn sceKernelExitDeleteThread(status: u32) -> SceResult<!>;
+    pub safe fn sceKernelExitDeleteThread(status: u32) -> SceResult<!>;
 
     /// Forcibly terminates a thread.
     ///
@@ -3550,7 +3561,7 @@ extern "C" {
     ///
     /// Returns the current state of the dispatch thread, error value on error.
     #[nid(0x3AD58B8C)]
-    pub fn sceKernelSuspendDispatchThread() -> SceResult<ThreadState>;
+    pub safe fn sceKernelSuspendDispatchThread() -> SceResult<ThreadState>;
 
     /// Resumes the dispatch thread.
     ///
@@ -3562,7 +3573,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x27E22EC2)]
-    pub fn sceKernelResumeDispatchThread(state: ThreadState) -> SceResult<()>;
+    pub safe fn sceKernelResumeDispatchThread(state: ThreadState) -> SceResult<()>;
 
     /// Changes the thread attributes of the calling thread.
     ///
@@ -3575,7 +3586,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xEA748E31)]
-    pub fn sceKernelChangeCurrentThreadAttr(
+    pub safe fn sceKernelChangeCurrentThreadAttr(
         clear_attr: ThreadAttributes, set_attr: ThreadAttributes,
     ) -> SceResult<()>;
 
@@ -3590,7 +3601,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x71BC9871)]
-    pub fn sceKernelChangeThreadPriority(id: ThreadId, priority: i32) -> SceResult<()>;
+    pub safe fn sceKernelChangeThreadPriority(id: ThreadId, priority: i32) -> SceResult<()>;
 
     /// Gets the current priority of the calling thread.
     ///
@@ -3598,7 +3609,7 @@ extern "C" {
     ///
     /// Returns the current priority of the calling thread on success, error value otherwise.
     #[nid(0x94AA61EE)]
-    pub fn sceKernelGetThreadCurrentPriority() -> SceResult<i32>;
+    pub safe fn sceKernelGetThreadCurrentPriority() -> SceResult<i32>;
 
     /// Gets the thread UID of the calling thread.
     ///
@@ -3606,7 +3617,7 @@ extern "C" {
     ///
     /// Returns the thread UID of the calling thread on success, error value otherwise.
     #[nid(0x293B45B8)]
-    pub fn sceKernelGetThreadId() -> SceResult<ThreadId>;
+    pub safe fn sceKernelGetThreadId() -> SceResult<ThreadId>;
 
     /// Makes the calling thread to enter in a [`Wait`](ThreadState::Wait) state.
     ///
@@ -3614,7 +3625,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x9ACE131E)]
-    pub fn sceKernelSleepThread() -> SceResult<()>;
+    pub safe fn sceKernelSleepThread() -> SceResult<()>;
 
     /// Makes the calling thread to enter in a [`Wait`](ThreadState::Wait) state but service any
     /// callbacks as necessary.
@@ -3627,7 +3638,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x82826F70)]
-    pub fn sceKernelSleepThreadCB() -> SceResult<()>;
+    pub safe fn sceKernelSleepThreadCB() -> SceResult<()>;
 
     /// Wakes a thread that was previously put in the [`Wait`](ThreadState::Wait) state.
     ///
@@ -3643,7 +3654,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xD59EAD2F)]
-    pub fn sceKernelWakeupThread(id: ThreadId) -> SceResult<()>;
+    pub safe fn sceKernelWakeupThread(id: ThreadId) -> SceResult<()>;
 
     /// Transfers the wake-up request count of the calling thread to another thread.
     ///
@@ -3662,7 +3673,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.80
     #[nid(0x1AF94D03)]
-    pub fn sceKernelDonateWakeupThread(donate_id: ThreadId) -> SceResult<()>;
+    pub safe fn sceKernelDonateWakeupThread(donate_id: ThreadId) -> SceResult<()>;
 
     /// Forces a thread to get out of a [`Wait`](ThreadState::Wait) state.
     ///
@@ -3677,7 +3688,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x2C34E053)]
-    pub fn sceKernelReleaseWaitThread(id: ThreadId) -> SceResult<()>;
+    pub safe fn sceKernelReleaseWaitThread(id: ThreadId) -> SceResult<()>;
 
     /// Cancels all the wake-up requests from a thread.
     ///
@@ -3690,7 +3701,7 @@ extern "C" {
     ///
     /// Returns the number of wake-up requests cancelled on success, error value otherwise.
     #[nid(0xFCCFAD26)]
-    pub fn sceKernelCancelWakeupThread(id: ThreadId) -> SceResult<u32>;
+    pub safe fn sceKernelCancelWakeupThread(id: ThreadId) -> SceResult<u32>;
 
     /// Puts a thread in a [`Suspend`](ThreadState::Suspend) state.
     ///
@@ -3705,7 +3716,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x9944F31F)]
-    pub fn sceKernelSuspendThread(id: ThreadId) -> SceResult<()>;
+    pub safe fn sceKernelSuspendThread(id: ThreadId) -> SceResult<()>;
 
     /// Resumes a thread that is in a [`Suspend`](ThreadState::Suspend) state.
     ///
@@ -3720,7 +3731,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x75156E8F)]
-    pub fn sceKernelResumeThread(id: ThreadId) -> SceResult<()>;
+    pub safe fn sceKernelResumeThread(id: ThreadId) -> SceResult<()>;
 
     /// Put the calling thread in a [`Wait`](ThreadState::Wait) state until a thread if finished or
     /// the timeout is reached.
@@ -3736,7 +3747,7 @@ extern "C" {
     /// Returns the result of the specified thread entry function on success, or error value
     /// otherwise.
     #[nid(0x278C0DF5)]
-    pub fn sceKernelWaitThreadEnd(id: ThreadId, timeout: Option<&mut u32>) -> SceResult<u32>;
+    pub safe fn sceKernelWaitThreadEnd(id: ThreadId, timeout: Option<&mut u32>) -> SceResult<u32>;
 
     /// Put the calling thread in a [`Wait`](ThreadState::Wait) state until a thread if finished or
     /// the timeout is reached, but service any callbacks as necessary.
@@ -3756,7 +3767,8 @@ extern "C" {
     /// Returns the result of the specified thread entry function on success, or error value
     /// otherwise.
     #[nid(0x840E8133)]
-    pub fn sceKernelWaitThreadEndCB(id: ThreadId, timeout: Option<&mut u32>) -> SceResult<u32>;
+    pub safe fn sceKernelWaitThreadEndCB(id: ThreadId, timeout: Option<&mut u32>)
+        -> SceResult<u32>;
 
     /// Delays the calling thread by a specified number of microseconds.
     ///
@@ -3771,7 +3783,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xCEADEB47)]
-    pub fn sceKernelDelayThread(delay: u32) -> SceResult<()>;
+    pub safe fn sceKernelDelayThread(delay: u32) -> SceResult<()>;
 
     /// Delays the calling thread by a specified number of microseconds, but service any callbacks
     /// as necessary.
@@ -3791,7 +3803,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x68DA9E36)]
-    pub fn sceKernelDelayThreadCB(delay: u32) -> SceResult<()>;
+    pub safe fn sceKernelDelayThreadCB(delay: u32) -> SceResult<()>;
 
     /// Delays the calling thread by a specified number of [`SystemClock`]s.
     ///
@@ -3807,7 +3819,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xBD123D9E)]
-    pub fn sceKernelDelaySysClockThread(delay: &SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelDelaySysClockThread(delay: &SystemClock) -> SceResult<()>;
 
     /// Delays the calling thread by a specified number of [`SystemClock`]s, but service any
     /// callbacks as necessary.
@@ -3828,7 +3840,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x1181E963)]
-    pub fn sceKernelDelaySysClockThreadCB(delay: &SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelDelaySysClockThreadCB(delay: &SystemClock) -> SceResult<()>;
 
     /// Rotate thread ready queue at a given priority.
     ///
@@ -3840,7 +3852,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x912354A7)]
-    pub fn sceKernelRotateThreadReadyQueue(priority: u32) -> SceResult<()>;
+    pub safe fn sceKernelRotateThreadReadyQueue(priority: u32) -> SceResult<()>;
 
     /// Gets the exit status of a thread.
     ///
@@ -3852,7 +3864,7 @@ extern "C" {
     ///
     /// Returns the exit status on success, error value otherwise.
     #[nid(0x3B183E26)]
-    pub fn sceKernelGetThreadExitStatus(id: ThreadId) -> SceResult<u32>;
+    pub safe fn sceKernelGetThreadExitStatus(id: ThreadId) -> SceResult<u32>;
 
     /// Gets the remaining free size of the calling thread stack (?)
     ///
@@ -3860,7 +3872,7 @@ extern "C" {
     ///
     /// The remaining free size of the calling thread stack (probably in bytes).
     #[nid(0xD13BDE95)]
-    pub fn sceKernelCheckThreadStack() -> SceSize;
+    pub safe fn sceKernelCheckThreadStack() -> SceSize;
 
     /// Gets the unused thread stack size of a thread.
     ///
@@ -3873,7 +3885,7 @@ extern "C" {
     /// Returns the unused thread stack size in bytes of a given thread on success, error value
     /// otherwise.
     #[nid(0x52089CA1)]
-    pub fn sceKernelGetThreadStackFreeSize(id: ThreadId) -> SceResult<SceSize>;
+    pub safe fn sceKernelGetThreadStackFreeSize(id: ThreadId) -> SceResult<SceSize>;
 
     /// Gets the status information of a thread.
     ///
@@ -3887,7 +3899,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x17C1684E)]
-    pub fn sceKernelReferThreadStatus(id: ThreadId, info: &mut ThreadInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferThreadStatus(id: ThreadId, info: &mut ThreadInfo) -> SceResult<()>;
 
     /// Gets the current runtime status of a thread.
     ///
@@ -3901,7 +3913,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xFFC36A14)]
-    pub fn sceKernelReferThreadRunStatus(
+    pub safe fn sceKernelReferThreadRunStatus(
         id: ThreadId, run_status: &mut ThreadRunStatus,
     ) -> SceResult<()>;
 
@@ -3911,7 +3923,7 @@ extern "C" {
     ///
     /// Returns if the thread is user mode on success, error value otherwise.
     #[nid(0x85A2A5BF)]
-    pub fn sceKernelIsUserModeThread() -> SceResult<bool>;
+    pub safe fn sceKernelIsUserModeThread() -> SceResult<bool>;
 
     /// Puts all user mode threads in the system in a [`Suspend`](ThreadState::Suspend) state.
     ///
@@ -3919,7 +3931,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x8FD9F70C)]
-    pub fn sceKernelSuspendAllUserThreads() -> SceResult<()>;
+    pub safe fn sceKernelSuspendAllUserThreads() -> SceResult<()>;
 
     /// Gets the user level of the calling thread.
     ///
@@ -3927,7 +3939,7 @@ extern "C" {
     ///
     /// Returns the user level of the calling thread on success, error value otherwise.
     #[nid(0xF6427665)]
-    pub fn sceKernelGetUserLevel() -> SceResult<u32>;
+    pub safe fn sceKernelGetUserLevel() -> SceResult<u32>;
 
     /// Creates a new semaphore
     ///
@@ -3960,7 +3972,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x28B6489C)]
-    pub fn sceKernelDeleteSema(id: SemaId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteSema(id: SemaId) -> SceResult<()>;
 
     /// Sends a signal to a semaphore.
     ///
@@ -3977,7 +3989,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x3F53E640)]
-    pub fn sceKernelSignalSema(id: SemaId, signal: i32) -> SceResult<()>;
+    pub safe fn sceKernelSignalSema(id: SemaId, signal: i32) -> SceResult<()>;
 
     /// Locks a semaphore until a target value or a timeout is reached.
     ///
@@ -3992,7 +4004,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x4E3A1105)]
-    pub fn sceKernelWaitSema(
+    pub safe fn sceKernelWaitSema(
         id: SemaId, target_value: i32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
@@ -4011,7 +4023,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x6D212BAC)]
-    pub fn sceKernelWaitSemaCB(
+    pub safe fn sceKernelWaitSemaCB(
         id: SemaId, target_value: i32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
@@ -4026,7 +4038,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x58B1F937)]
-    pub fn sceKernelPollSema(id: SemaId, target_value: i32) -> SceResult<()>;
+    pub safe fn sceKernelPollSema(id: SemaId, target_value: i32) -> SceResult<()>;
 
     /// Cancels the wait of a semaphore.
     ///
@@ -4042,7 +4054,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x8FFDF9A2)]
-    pub fn sceKernelCancelSema(
+    pub safe fn sceKernelCancelSema(
         id: SemaId, set_val: i32, num_wait_threads: &mut u32,
     ) -> SceResult<()>;
 
@@ -4058,7 +4070,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xBC6FEBC5)]
-    pub fn sceKernelReferSemaStatus(id: SemaId, info: &mut SemaphoreInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferSemaStatus(id: SemaId, info: &mut SemaphoreInfo) -> SceResult<()>;
 
     /// Creates a event flag.
     ///
@@ -4089,7 +4101,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xEF9E4C70)]
-    pub fn sceKernelDeleteEventFlag(id: EventFlagId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteEventFlag(id: EventFlagId) -> SceResult<()>;
 
     /// Sets a bit pattern on a even flag.
     ///
@@ -4102,7 +4114,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x1FB15A32)]
-    pub fn sceKernelSetEventFlag(id: EventFlagId, bit_pat: u32) -> SceResult<()>;
+    pub safe fn sceKernelSetEventFlag(id: EventFlagId, bit_pat: u32) -> SceResult<()>;
 
     /// Clears a bit pattern of a event flag.
     ///
@@ -4115,7 +4127,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x812346E4)]
-    pub fn sceKernelClearEventFlag(id: EventFlagId, bit_pat: u32) -> SceResult<()>;
+    pub safe fn sceKernelClearEventFlag(id: EventFlagId, bit_pat: u32) -> SceResult<()>;
 
     /// Waits for a bit pattern of a event flag.
     ///
@@ -4133,7 +4145,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[eabi(i5)]
     #[nid(0x402FCF22)]
-    pub fn sceKernelWaitEventFlag(
+    pub safe fn sceKernelWaitEventFlag(
         id: EventFlagId, bit_pat: u32, wait_kind: EventFlagWaitKinds, out_bits: &mut u32,
         timeout: Option<&mut u32>,
     ) -> SceResult<()>;
@@ -4155,7 +4167,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[eabi(i5)]
     #[nid(0x328C546A)]
-    pub fn sceKernelWaitEventFlagCB(
+    pub safe fn sceKernelWaitEventFlagCB(
         id: EventFlagId, bit_pat: u32, wait_kind: EventFlagWaitKinds, out_bits: &mut u32,
         timeout: Option<&mut u32>,
     ) -> SceResult<()>;
@@ -4173,7 +4185,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x30FD48F0)]
-    pub fn sceKernelPollEventFlag(
+    pub safe fn sceKernelPollEventFlag(
         id: EventFlagId, bit_pat: u32, wait_kind: EventFlagWaitKinds, out_bits: &mut u32,
     ) -> SceResult<()>;
 
@@ -4190,7 +4202,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xCD203292)]
-    pub fn sceKernelCancelEventFlag(id: EventFlagId, set_pat: u32, num_wait_threads: &mut u32);
+    pub safe fn sceKernelCancelEventFlag(id: EventFlagId, set_pat: u32, num_wait_threads: &mut u32);
 
     /// Gets the current state of a event flag.
     ///
@@ -4204,7 +4216,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xA66B0120)]
-    pub fn sceKernelReferEventFlagStatus(
+    pub safe fn sceKernelReferEventFlagStatus(
         id: EventFlagId, info: &mut EventFlagInfo,
     ) -> SceResult<()>;
 
@@ -4244,7 +4256,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0xF8170FBE)]
-    pub fn sceKernelDeleteMutex(id: MutexId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteMutex(id: MutexId) -> SceResult<()>;
 
     /// Locks a mutex a number of times.
     ///
@@ -4264,7 +4276,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0xB011B11F)]
-    pub fn sceKernelLockMutex(
+    pub safe fn sceKernelLockMutex(
         id: MutexId, lock_count: u32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
@@ -4287,7 +4299,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0x5BF4DD27)]
-    pub fn sceKernelLockMutexCB(
+    pub safe fn sceKernelLockMutexCB(
         id: MutexId, lock_count: u32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
@@ -4307,7 +4319,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0x0DDCD2C9)]
-    pub fn sceKernelTryLockMutex(id: MutexId, lock_count: u32) -> SceResult<()>;
+    pub safe fn sceKernelTryLockMutex(id: MutexId, lock_count: u32) -> SceResult<()>;
 
     /// Unlocks a mutex a number of times.
     ///
@@ -4325,7 +4337,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0x6B30100F)]
-    pub fn sceKernelUnlockMutex(id: MutexId, unlock_count: u32) -> SceResult<()>;
+    pub safe fn sceKernelUnlockMutex(id: MutexId, unlock_count: u32) -> SceResult<()>;
 
     /// Cancels the wait state of threads waiting on a mutex.
     ///
@@ -4344,7 +4356,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0x87D9223C)]
-    pub fn sceKernelCancelMutex(id: MutexId, new_lock_count: u32, numWaitThreads: &mut u32);
+    pub safe fn sceKernelCancelMutex(id: MutexId, new_lock_count: u32, numWaitThreads: &mut u32);
 
     /// Gets the current state of a mutex.
     ///
@@ -4362,7 +4374,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0xA9C2CB9A)]
-    pub fn sceKernelReferMutexStatus(id: MutexId, info: &mut MutexInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferMutexStatus(id: MutexId, info: &mut MutexInfo) -> SceResult<()>;
 
     /// Gets the current state of a lightweight mutex by its UID.
     ///
@@ -4380,7 +4392,9 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 3.95.
     #[nid(0x4C145944)]
-    pub fn sceKernelReferLwMutexStatusByID(id: LwMutexId, info: &mut LwMutexInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferLwMutexStatusByID(
+        id: LwMutexId, info: &mut LwMutexInfo,
+    ) -> SceResult<()>;
 
     /// Creates a new message box.
     ///
@@ -4484,7 +4498,9 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x87D4DD36)]
-    pub fn sceKernelCancelReceiveMbx(id: MsgBoxId, num_wait_threads: &mut u32) -> SceResult<()>;
+    pub safe fn sceKernelCancelReceiveMbx(
+        id: MsgBoxId, num_wait_threads: &mut u32,
+    ) -> SceResult<()>;
 
     /// Gets the current state of a message box.
     ///
@@ -4498,7 +4514,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xA8E8C846)]
-    pub fn sceKernelReferMbxStatus(id: MsgBoxId, info: &mut MsgBoxInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferMbxStatus(id: MsgBoxId, info: &mut MsgBoxInfo) -> SceResult<()>;
 
     /// Creates a new message pipe.
     ///
@@ -4532,7 +4548,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xF0B7DA1C)]
-    pub fn sceKernelDeleteMsgPipe(id: MsgPipeId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteMsgPipe(id: MsgPipeId) -> SceResult<()>;
 
     /// Sends a message to a message pipe.
     ///
@@ -4678,7 +4694,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x349B864D)]
-    pub fn sceKernelCancelMsgPipe(
+    pub safe fn sceKernelCancelMsgPipe(
         id: MsgPipeId, num_send_wait_threads: &mut u32, num_recv_wait_threads: &mut u32,
     ) -> SceResult<()>;
 
@@ -4694,7 +4710,8 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x33BE4024)]
-    pub fn sceKernelReferMsgPipeStatus(id: MsgPipeId, info: &mut MsgPipeInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferMsgPipeStatus(id: MsgPipeId, info: &mut MsgPipeInfo)
+        -> SceResult<()>;
 
     /// Creates a new variable-sized memory pool.
     ///
@@ -4726,7 +4743,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x89B3D48C)]
-    pub fn sceKernelDeleteVpl(id: VplId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteVpl(id: VplId) -> SceResult<()>;
 
     /// Allocates a memory block from a variable-sized memory pool.
     ///
@@ -4805,7 +4822,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x1D371B8A)]
-    pub fn sceKernelCancelVpl(id: VplId, num_wait_threads: &mut u32) -> SceResult<()>;
+    pub safe fn sceKernelCancelVpl(id: VplId, num_wait_threads: &mut u32) -> SceResult<()>;
 
     /// Gets the current state of a variable-sized memory pool.
     ///
@@ -4819,7 +4836,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x39810265)]
-    pub fn sceKernelReferVplStatus(id: VplId, info: &mut VplInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferVplStatus(id: VplId, info: &mut VplInfo) -> SceResult<()>;
 
     /// Creates a new fixed-sized memory pool.
     ///
@@ -4853,7 +4870,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xED1410E0)]
-    pub fn sceKernelDeleteFpl(id: FplId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteFpl(id: FplId) -> SceResult<()>;
 
     /// Allocates a memory block from a fixed-sized memory pool.
     ///
@@ -4928,7 +4945,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xA8AA591F)]
-    pub fn sceKernelCancelFpl(id: FplId, num_wait_threads: &mut u32) -> SceResult<()>;
+    pub safe fn sceKernelCancelFpl(id: FplId, num_wait_threads: &mut u32) -> SceResult<()>;
 
     /// Gets the current state of a fixed-sized memory pool.
     ///
@@ -4942,7 +4959,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xD8199E4C)]
-    pub fn sceKernelReferFplStatus(id: FplId, info: &mut FplInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferFplStatus(id: FplId, info: &mut FplInfo) -> SceResult<()>;
 
     /// Gets the current state of a user TLS memory pool.
     ///
@@ -4960,7 +4977,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 5.70.
     #[nid(0x721067F3)]
-    pub fn sceKernelReferTlsplStatus(id: TlsPoolId, info: &mut TlsPoolInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferTlsplStatus(id: TlsPoolId, info: &mut TlsPoolInfo) -> SceResult<()>;
 
     /// Gets the system time.
     ///
@@ -4972,7 +4989,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xDB738F35)]
-    pub fn sceKernelGetSystemTime(clock: &mut SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelGetSystemTime(clock: &mut SystemClock) -> SceResult<()>;
 
     /// Gets the system time as raw wide integer.
     ///
@@ -4980,7 +4997,7 @@ extern "C" {
     ///
     /// Returns the system time.
     #[nid(0x82BC5777)]
-    pub fn sceKernelGetSystemTimeWide() -> u64;
+    pub safe fn sceKernelGetSystemTimeWide() -> u64;
 
     /// Gets the low part of the system time.
     ///
@@ -4988,7 +5005,7 @@ extern "C" {
     ///
     /// Returns the system time low bits.
     #[nid(0x369ED59D)]
-    pub fn sceKernelGetSystemTimeLow() -> u32;
+    pub safe fn sceKernelGetSystemTimeLow() -> u32;
 
     /// Creates an alarm.
     ///
@@ -5033,7 +5050,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x7E65B999)]
-    pub fn sceKernelCancelAlarm(id: AlarmId) -> SceResult<()>;
+    pub safe fn sceKernelCancelAlarm(id: AlarmId) -> SceResult<()>;
 
     /// Gets the current state of a alarm.
     ///
@@ -5047,7 +5064,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xDAA3F564)]
-    pub fn sceKernelReferAlarmStatus(id: AlarmId, info: &mut AlarmInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferAlarmStatus(id: AlarmId, info: &mut AlarmInfo) -> SceResult<()>;
 
     /// Converts time in microseconds to [`SystemClock`].
     ///
@@ -5060,7 +5077,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x110DEC9A)]
-    pub fn sceKernelUSec2SysClock(microsec: u32, clock: &mut SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelUSec2SysClock(microsec: u32, clock: &mut SystemClock) -> SceResult<()>;
 
     /// Converts time in [`SystemClock`] to seconds and microseconds.
     ///
@@ -5074,7 +5091,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xBA6B92E2)]
-    pub fn sceKernelSysClock2USec(
+    pub safe fn sceKernelSysClock2USec(
         clock: &SystemClock, sec: &mut u32, microsec: &mut u32,
     ) -> SceResult<()>;
 
@@ -5088,7 +5105,7 @@ extern "C" {
     ///
     /// Returns the clock in raw format.
     #[nid(0xC8CD158C)]
-    pub fn sceKernelUSec2SysClockWide(microsec: u32) -> u64;
+    pub safe fn sceKernelUSec2SysClockWide(microsec: u32) -> u64;
 
     /// Converts raw system time to seconds and microseconds.
     ///
@@ -5102,7 +5119,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xE1619D7C)]
-    pub fn sceKernelSysClock2USecWide(
+    pub safe fn sceKernelSysClock2USecWide(
         raw_clock: u64, sec: &mut u32, microsec: &mut u32,
     ) -> SceResult<()>;
 
@@ -5133,7 +5150,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x328F9E52)]
-    pub fn sceKernelDeleteVTimer(id: VirtualTimerId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteVTimer(id: VirtualTimerId) -> SceResult<()>;
 
     /// Gets the base time of a virtual timer.
     ///
@@ -5146,7 +5163,8 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xB3A59970)]
-    pub fn sceKernelGetVTimerBase(id: VirtualTimerId, base: &mut SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelGetVTimerBase(id: VirtualTimerId, base: &mut SystemClock)
+        -> SceResult<()>;
 
     /// Gets the base time of a virtual timer.
     ///
@@ -5158,7 +5176,7 @@ extern "C" {
     ///
     /// Returns base time in raw format on success, `0xFFFFFFFFFFFFFFFF` (`-1 as u64`) on error.
     #[nid(0xB7C18B77)]
-    pub fn sceKernelGetVTimerBaseWide(id: VirtualTimerId) -> u64;
+    pub safe fn sceKernelGetVTimerBaseWide(id: VirtualTimerId) -> u64;
 
     /// Gets the current time of a virtual timer.
     ///
@@ -5171,7 +5189,8 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x034A921F)]
-    pub fn sceKernelGetVTimerTime(id: VirtualTimerId, time: &mut SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelGetVTimerTime(id: VirtualTimerId, time: &mut SystemClock)
+        -> SceResult<()>;
 
     /// Gets the current time of a virtual timer.
     ///
@@ -5183,7 +5202,7 @@ extern "C" {
     ///
     /// Returns current time in raw format on success, `0xFFFFFFFFFFFFFFFF` (`-1 as u64`) on error.
     #[nid(0xC0B3FFD2)]
-    pub fn sceKernelGetVTimerTimeWide(id: VirtualTimerId) -> u64;
+    pub safe fn sceKernelGetVTimerTimeWide(id: VirtualTimerId) -> u64;
 
     /// Sets the current time of a virtual timer.
     ///
@@ -5197,7 +5216,8 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x542AD630)]
-    pub fn sceKernelSetVTimerTime(id: VirtualTimerId, time: &mut SystemClock) -> SceResult<()>;
+    pub safe fn sceKernelSetVTimerTime(id: VirtualTimerId, time: &mut SystemClock)
+        -> SceResult<()>;
 
     /// Sets the current time of a virtual timer.
     ///
@@ -5211,7 +5231,7 @@ extern "C" {
     /// Returns the previous current time in raw format on success, `0xFFFFFFFFFFFFFFFF` (`-1 as
     /// u64`) on error.
     #[nid(0xFB6425C3)]
-    pub fn sceKernelSetVTimerTimeWide(id: VirtualTimerId, time: u64) -> u64;
+    pub safe fn sceKernelSetVTimerTimeWide(id: VirtualTimerId, time: u64) -> u64;
 
     /// Starts a virtual timer.
     ///
@@ -5223,7 +5243,7 @@ extern "C" {
     ///
     /// Returns the previous timer state on success, error value otherwise.
     #[nid(0xC68D9437)]
-    pub fn sceKernelStartVTimer(id: VirtualTimerId) -> SceResult<VirtualTimerState>;
+    pub safe fn sceKernelStartVTimer(id: VirtualTimerId) -> SceResult<VirtualTimerState>;
 
     /// Stops a virtual timer.
     ///
@@ -5235,7 +5255,7 @@ extern "C" {
     ///
     /// Returns the previous timer state on success, error value otherwise.
     #[nid(0xD0AEEE87)]
-    pub fn sceKernelStopVTimer(id: VirtualTimerId) -> SceResult<VirtualTimerState>;
+    pub safe fn sceKernelStopVTimer(id: VirtualTimerId) -> SceResult<VirtualTimerState>;
 
     /// Sets the virtual time handler and the schedule to execute it.
     ///
@@ -5283,7 +5303,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xD2D615EF)]
-    pub fn sceKernelCancelVTimerHandler(id: VirtualTimerId) -> SceResult<()>;
+    pub safe fn sceKernelCancelVTimerHandler(id: VirtualTimerId) -> SceResult<()>;
 
     /// Gets the current state of a virtual timer.
     ///
@@ -5297,7 +5317,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x5F32BEAA)]
-    pub fn sceKernelReferVTimerStatus(
+    pub safe fn sceKernelReferVTimerStatus(
         id: VirtualTimerId, info: &mut VirtualTimerInfo,
     ) -> SceResult<()>;
 
@@ -5327,7 +5347,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xEDBA5844)]
-    pub fn sceKernelDeleteCallback(id: CallbackId) -> SceResult<()>;
+    pub safe fn sceKernelDeleteCallback(id: CallbackId) -> SceResult<()>;
 
     /// Notifies a callback.
     ///
@@ -5340,7 +5360,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xC11BA8C4)]
-    pub fn sceKernelNotifyCallback(id: CallbackId, arg: i32) -> SceResult<()>;
+    pub safe fn sceKernelNotifyCallback(id: CallbackId, arg: i32) -> SceResult<()>;
 
     /// Cancels all notifications that were reported to a callback.
     ///
@@ -5352,7 +5372,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xBA4051D6)]
-    pub fn sceKernelCancelCallback(id: CallbackId) -> SceResult<()>;
+    pub safe fn sceKernelCancelCallback(id: CallbackId) -> SceResult<()>;
 
     /// Gets the notification count of a callback.
     ///
@@ -5364,7 +5384,7 @@ extern "C" {
     ///
     /// Returns the number of notification send to the callback on success, error value otherwise.
     #[nid(0x2A3D44FF)]
-    pub fn sceKernelGetCallbackCount(id: CallbackId) -> SceResult<u32>;
+    pub safe fn sceKernelGetCallbackCount(id: CallbackId) -> SceResult<u32>;
 
     /// Checks if a callback by the calling thread has been notified.
     ///
@@ -5374,7 +5394,7 @@ extern "C" {
     ///
     /// Returns the check status on success, error value otherwise.
     #[nid(0x349D6D6C)]
-    pub fn sceKernelCheckCallback() -> SceResult<CallbackCheckStatus>;
+    pub safe fn sceKernelCheckCallback() -> SceResult<CallbackCheckStatus>;
 
     /// Gets the current state of a callback.
     ///
@@ -5388,7 +5408,9 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x730ED8BC)]
-    pub fn sceKernelReferCallbackStatus(id: CallbackId, info: &mut CallbackInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferCallbackStatus(
+        id: CallbackId, info: &mut CallbackInfo,
+    ) -> SceResult<()>;
 
     /// Gets the current state of the system.
     ///
@@ -5401,7 +5423,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x627E6F3A)]
-    pub fn sceKernelReferSystemStatus(info: &mut SystemInfo) -> SceResult<()>;
+    pub safe fn sceKernelReferSystemStatus(info: &mut SystemInfo) -> SceResult<()>;
 
     /// Gets a list of UIDs from threadman module.
     ///
@@ -5432,7 +5454,7 @@ extern "C" {
     ///
     /// Returns the UID kind on success, error value otherwise.
     #[nid(0x57CF62DD)]
-    pub fn sceKernelGetThreadmanIdType(id: SceUid) -> SceResult<ThreadIdKind>;
+    pub safe fn sceKernelGetThreadmanIdType(id: SceUid) -> SceResult<ThreadIdKind>;
 
     /// Registers a thread event handler.
     ///
@@ -5468,7 +5490,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x72F3C145)]
-    pub fn sceKernelReleaseThreadEventHandler(id: ThreadEventId) -> SceResult<()>;
+    pub safe fn sceKernelReleaseThreadEventHandler(id: ThreadEventId) -> SceResult<()>;
 
     /// Gets the current state of a thread event handler.
     ///
@@ -5482,7 +5504,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x369EEB6B)]
-    pub fn sceKernelReferThreadEventHandlerStatus(
+    pub safe fn sceKernelReferThreadEventHandlerStatus(
         id: ThreadEventId, info: &mut ThreadEventInfo,
     ) -> SceResult<()>;
 
@@ -5496,7 +5518,7 @@ extern "C" {
     ///
     /// Returns the available stack size in bytes on success, error value otherwise.
     #[nid(0xD890B370)]
-    pub fn sceKernelGetThreadKernelStackFreeSize(id: ThreadId) -> SceResult<u32>;
+    pub safe fn sceKernelGetThreadKernelStackFreeSize(id: ThreadId) -> SceResult<u32>;
 
     /// Checks the calling kernel thread stack.
     ///
@@ -5505,7 +5527,7 @@ extern "C" {
     /// Returns the check status of the calling kernel thread stack on success, error value
     /// otherwise.
     #[nid(0x4FE44D5E)]
-    pub fn sceKernelCheckThreadKernelStack() -> SceResult<i32>;
+    pub safe fn sceKernelCheckThreadKernelStack() -> SceResult<i32>;
 
     /// Temporarily extends the kernel thread stack an executes a function with extended stack size.
     ///
@@ -5519,7 +5541,7 @@ extern "C" {
     ///
     /// Returns the result of the `func` on success, error value otherwise.
     #[nid(0xBC31C1B9)]
-    pub fn sceKernelExtendKernelStack(
+    pub safe fn sceKernelExtendKernelStack(
         stack_size: SceSize, func: ExtendStackFunc, common: *mut c_void,
     ) -> SceResult<u32>;
 
@@ -5529,7 +5551,7 @@ extern "C" {
     ///
     /// Returns the system status flag.
     #[nid(0xFCB5EB49)]
-    pub fn sceKernelGetSystemStatusFlag() -> u32;
+    pub safe fn sceKernelGetSystemStatusFlag() -> u32;
 
     /// Setup the KTLS allocator.
     ///
@@ -5557,7 +5579,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xD198B811)]
-    pub fn sceKernelFreeKTLS(id: KtlsId) -> SceResult<()>;
+    pub safe fn sceKernelFreeKTLS(id: KtlsId) -> SceResult<()>;
 
     /// Gets the KTLS of the calling thread.
     ///
@@ -5569,7 +5591,7 @@ extern "C" {
     ///
     /// Returns a pointer to the KTLS on success, null pointer on error.
     #[nid(0xA249EAAE)]
-    pub fn sceKernelGetKTLS(id: KtlsId) -> *mut c_void;
+    pub safe fn sceKernelGetKTLS(id: KtlsId) -> *mut c_void;
 
     /// Gets the KTLS of a thread.
     ///
@@ -5584,7 +5606,7 @@ extern "C" {
     ///
     /// Returns a pointer to the KTLS on success, null pointer on error.
     #[nid(0x3AD875C3)]
-    pub fn sceKernelGetThreadKTLS(id: KtlsId, thread_id: ThreadId, mode: u32) -> *mut c_void;
+    pub safe fn sceKernelGetThreadKTLS(id: KtlsId, thread_id: ThreadId, mode: u32) -> *mut c_void;
 }
 
 

@@ -678,7 +678,7 @@ pub struct GeBreakpoint {
 }
 
 #[psp_stub(libname = "sceGe_user", flags = 0x4001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Gets the size of eDRAM.
     ///
     /// # Return Value
@@ -686,7 +686,7 @@ extern "C" {
     /// Returns the size of the eDRAM in bytes.
     #[nid(0x1F6752AD)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeEdramGetSize() -> SceSize;
+    pub safe fn sceGeEdramGetSize() -> SceSize;
 
     /// Gets the physical eDRAM address.
     ///
@@ -695,7 +695,7 @@ extern "C" {
     /// Returns a pointer to the start of the eDRAM.
     #[nid(0xE47E40E4)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeEdramGetAddr() -> *mut u8;
+    pub safe fn sceGeEdramGetAddr() -> *mut u8;
 
     /// Sets the EDRAM address translation.
     ///
@@ -708,7 +708,7 @@ extern "C" {
     /// Returns the previous memory width on success, error value otherwise.
     #[nid(0xB77905EA)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeEdramSetAddrTranslation(
+    pub safe fn sceGeEdramSetAddrTranslation(
         width: TranslationMemWidth,
     ) -> SceResult<TranslationMemWidth>;
 
@@ -726,7 +726,7 @@ extern "C" {
     /// value otherwise.
     #[nid(0xDC93CFEF)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeGetCmd(cmd: GeCmd) -> SceResult<u32>;
+    pub safe fn sceGeGetCmd(cmd: GeCmd) -> SceResult<u32>;
 
     /// Get a matrix from a matrix register.
     ///
@@ -757,7 +757,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x438A385A)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeSaveContext(ctx: &mut GeContext) -> SceResult<()>;
+    pub safe fn sceGeSaveContext(ctx: &mut GeContext) -> SceResult<()>;
 
     /// Restores the Graphics Engine internal state context.
     ///
@@ -770,7 +770,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x0BF608FB)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeRestoreContext(ctx: &GeContext) -> SceResult<()>;
+    pub safe fn sceGeRestoreContext(ctx: &GeContext) -> SceResult<()>;
 
     /// Enqueues a display list at the end of the queue.
     ///
@@ -787,7 +787,7 @@ extern "C" {
     /// Returns the display list ID on success, error value otherwise.
     #[nid(0xAB49E76A)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeListEnQueue(
+    pub safe fn sceGeListEnQueue(
         list: *mut c_void, stall: *mut c_void, callback_id: GeCallbackId, args: Option<&GeListArgs>,
     ) -> SceResult<DisplayListId>;
 
@@ -808,7 +808,7 @@ extern "C" {
     /// Returns the display list ID on success, error value otherwise.
     #[nid(0x1C0D95A6)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeListEnQueueHead(
+    pub safe fn sceGeListEnQueueHead(
         list: *mut c_void, stall: *mut c_void, callback_id: GeCallbackId, args: Option<&GeListArgs>,
     ) -> SceResult<DisplayListId>;
 
@@ -823,7 +823,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x5FB86AB0)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeListDeQueue(id: DisplayListId) -> SceResult<()>;
+    pub safe fn sceGeListDeQueue(id: DisplayListId) -> SceResult<()>;
 
 
     /// Updates the stall address of a display list.
@@ -838,7 +838,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xE0D68148)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeListUpdateStallAddr(id: DisplayListId, stall: *mut c_void) -> SceResult<()>;
+    pub safe fn sceGeListUpdateStallAddr(id: DisplayListId, stall: *mut c_void) -> SceResult<()>;
 
     /// Synchronizes a display list.
     ///
@@ -855,7 +855,7 @@ extern "C" {
     /// [`DisplayListState::Completed`] on success.
     #[nid(0x03444EB4)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeListSync(
+    pub safe fn sceGeListSync(
         id: DisplayListId, mode: DisplayListSyncMode,
     ) -> SceResult<DisplayListState>;
 
@@ -873,7 +873,7 @@ extern "C" {
     /// [`DisplayListState::Completed`] on success.
     #[nid(0xB287BD61)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeDrawSync(mode: DisplayListSyncMode) -> SceResult<DisplayListState>;
+    pub safe fn sceGeDrawSync(mode: DisplayListSyncMode) -> SceResult<DisplayListState>;
 
     /// Interrupts the Graphic Engine drawing.
     ///
@@ -896,7 +896,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x4C06E472)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeContinue() -> SceResult<()>;
+    pub safe fn sceGeContinue() -> SceResult<()>;
 
     /// Sets Graphics Engine finish/signal callbacks.
     ///
@@ -909,7 +909,7 @@ extern "C" {
     /// Returns the GE callback ID on success, error value otherwise.
     #[nid(0xA4FC06A4)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeSetCallback(options: &GeCallbackOptions) -> SceResult<GeCallbackId>;
+    pub safe fn sceGeSetCallback(options: &GeCallbackOptions) -> SceResult<GeCallbackId>;
 
     /// Unset a Graphics Engine finish/signal callbacks.
     ///
@@ -922,7 +922,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x05DB22CE)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceGeUnsetCallback(id: GeCallbackId) -> SceResult<()>;
+    pub safe fn sceGeUnsetCallback(id: GeCallbackId) -> SceResult<()>;
 }
 
 // FIXME: Add missing functions:
@@ -938,7 +938,7 @@ extern "C" {
 // - `sceGeSetReg`
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "sceGe_driver", flags = 0x0001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Gets the size of eDRAM.
     ///
     /// # Return Value
@@ -955,7 +955,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xBA035FC8 }
         else { 0x1F6752AD }
     )]
-    pub fn sceGeEdramGetSize() -> SceSize;
+    pub safe fn sceGeEdramGetSize() -> SceSize;
 
     /// Gets the physical eDRAM address.
     ///
@@ -973,7 +973,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xC812D69E }
         else { 0xE47E40E4 }
     )]
-    pub fn sceGeEdramGetAddr() -> *mut u8;
+    pub safe fn sceGeEdramGetAddr() -> *mut u8;
 
     /// Sets the EDRAM address translation.
     ///
@@ -995,7 +995,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x60D5FA09 }
         else { 0xB77905EA }
     )]
-    pub fn sceGeEdramSetAddrTranslation(
+    pub safe fn sceGeEdramSetAddrTranslation(
         width: TranslationMemWidth,
     ) -> SceResult<TranslationMemWidth>;
 
@@ -1022,7 +1022,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xAF86B4AE }
         else { 0xDC93CFEF }
     )]
-    pub fn sceGeGetCmd(cmd: GeCmd) -> SceResult<u32>;
+    pub safe fn sceGeGetCmd(cmd: GeCmd) -> SceResult<u32>;
 
     /// Get a matrix from a matrix register.
     ///
@@ -1102,7 +1102,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x19D5EC6E }
         else { 0x438A385A }
     )]
-    pub fn sceGeSaveContext(ctx: &mut GeContext) -> SceResult<()>;
+    pub safe fn sceGeSaveContext(ctx: &mut GeContext) -> SceResult<()>;
 
     /// Restores the Graphics Engine internal state context.
     ///
@@ -1124,7 +1124,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xA946F63B }
         else { 0x0BF608FB }
     )]
-    pub fn sceGeRestoreContext(ctx: &GeContext) -> SceResult<()>;
+    pub safe fn sceGeRestoreContext(ctx: &GeContext) -> SceResult<()>;
 
     /// Enqueues a display list at the end of the queue.
     ///
@@ -1150,7 +1150,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x1F9C7FE1 }
         else { 0xAB49E76A }
     )]
-    pub fn sceGeListEnQueue(
+    pub safe fn sceGeListEnQueue(
         list: *mut c_void, stall: *mut c_void, callback_id: GeCallbackId, args: Option<&GeListArgs>,
     ) -> SceResult<DisplayListId>;
 
@@ -1180,7 +1180,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x9CBD5F11 }
         else { 0x1C0D95A6 }
     )]
-    pub fn sceGeListEnQueueHead(
+    pub safe fn sceGeListEnQueueHead(
         list: *mut c_void, stall: *mut c_void, callback_id: GeCallbackId, args: Option<&GeListArgs>,
     ) -> SceResult<DisplayListId>;
 
@@ -1204,7 +1204,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xCA1CAC6F }
         else { 0x5FB86AB0 }
     )]
-    pub fn sceGeListDeQueue(id: DisplayListId) -> SceResult<()>;
+    pub safe fn sceGeListDeQueue(id: DisplayListId) -> SceResult<()>;
 
     /// Updates the stall address of a display list.
     ///
@@ -1253,7 +1253,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x264E8BED }
         else { 0x03444EB4 }
     )]
-    pub fn sceGeListSync(
+    pub safe fn sceGeListSync(
         id: DisplayListId, mode: DisplayListSyncMode,
     ) -> SceResult<DisplayListState>;
 
@@ -1280,7 +1280,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xDDB5D956 }
         else { 0xB287BD61 }
     )]
-    pub fn sceGeDrawSync(mode: DisplayListSyncMode) -> SceResult<DisplayListState>;
+    pub safe fn sceGeDrawSync(mode: DisplayListSyncMode) -> SceResult<DisplayListState>;
 
     /// Interrupts the Graphic Engine drawing.
     ///
@@ -1321,7 +1321,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x45A5CA45 }
         else { 0x4C06E472 }
     )]
-    pub fn sceGeContinue() -> SceResult<()>;
+    pub safe fn sceGeContinue() -> SceResult<()>;
 
     /// Sets Graphics Engine finish/signal callbacks.
     ///
@@ -1343,7 +1343,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x983F796E }
         else { 0xA4FC06A4 }
     )]
-    pub fn sceGeSetCallback(options: &GeCallbackOptions) -> SceResult<GeCallbackId>;
+    pub safe fn sceGeSetCallback(options: &GeCallbackOptions) -> SceResult<GeCallbackId>;
 
     /// Unset a Graphics Engine finish/signal callbacks.
     ///
@@ -1365,7 +1365,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x1F992647 }
         else { 0x05DB22CE }
     )]
-    pub fn sceGeUnsetCallback(id: GeCallbackId) -> SceResult<()>;
+    pub safe fn sceGeUnsetCallback(id: GeCallbackId) -> SceResult<()>;
 
     /// Sets the EDRAM size to be enabled.
     ///
@@ -1394,7 +1394,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x58C59880 }
         else { 0x5BAA5439 }
     )]
-    pub fn sceGeEdramSetSize(size_mode: EdramSizeMode) -> SceResult<()>;
+    pub safe fn sceGeEdramSetSize(size_mode: EdramSizeMode) -> SceResult<()>;
 
     /// Gets the EDRAM physical size.
     ///
@@ -1416,7 +1416,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x847675FB }
         else { 0xC576E897 }
     )]
-    pub fn sceGeEdramGetHwSize() -> SceSize;
+    pub safe fn sceGeEdramGetHwSize() -> SceSize;
 
     /// Gets a list of the IDs of the display lists currently being in the queue.
     ///

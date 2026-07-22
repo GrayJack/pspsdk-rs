@@ -8,7 +8,7 @@ use crate::sys::{SceResult, SceSize};
 
 
 #[psp_stub(libname = "sceDmac", flags = 0x4001, version = (0x00, 0x11), use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Perform a DMA memory copy (blocking).
     ///
     /// Copies `size` bytes from `src` to `dst` using the DMA controller.

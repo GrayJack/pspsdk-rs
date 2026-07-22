@@ -63,7 +63,7 @@ pub enum DayOfWeek {
 }
 
 #[psp_stub(libname = "sceRtc", flags = 0x4001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Gets the resolution of the real-time clock tick.
     ///
     /// # Return Value
@@ -71,7 +71,7 @@ extern "C" {
     /// Returns the number of ticks per second.
     #[nid(0xC41C2853)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetTickResolution() -> u32;
+    pub safe fn sceRtcGetTickResolution() -> u32;
 
     /// Gets the current tick count.
     ///
@@ -84,7 +84,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x3F7AD767)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetCurrentTick(tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetCurrentTick(tick: &mut u64) -> SceResult<()>;
 
     /// Gets the current clock, adjusted for specified timezone.
     ///
@@ -131,7 +131,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 5.00.
     #[nid(0xF5FCC995)]
-    pub fn sceRtcGetCurrentNetworkTick(tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetCurrentNetworkTick(tick: &mut u64) -> SceResult<()>;
 
     /// Gets the current alarm tick count.
     ///
@@ -149,7 +149,7 @@ extern "C" {
     /// userland-level.
     #[nid(0xC2DDBEB5)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetAlarmTick(tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetAlarmTick(tick: &mut u64) -> SceResult<()>;
 
     /// Sets the RTC alarm tick count.
     ///
@@ -172,7 +172,7 @@ extern "C" {
     /// userland-level.
     #[nid(0x7D1FBED3)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcSetAlarmTick(tick: &u64) -> SceResult<()>;
+    pub safe fn sceRtcSetAlarmTick(tick: &u64) -> SceResult<()>;
 
     /// Checks if the RTC alarm is alarmed.
     ///
@@ -185,7 +185,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0x81FCDA34)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcIsAlarmed() -> SceResult<bool>;
+    pub safe fn sceRtcIsAlarmed() -> SceResult<bool>;
 
     /// Registers a callback to be executed when RTC alarm changes state.
     ///
@@ -207,7 +207,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0xFB3B18CD)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcRegisterCallback(id: CallbackId) -> SceResult<()>;
+    pub safe fn sceRtcRegisterCallback(id: CallbackId) -> SceResult<()>;
 
     /// Unregisters a RTC alarm callback previously registered.
     ///
@@ -229,7 +229,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0x6A676D2D)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcUnregisterCallback(id: CallbackId) -> SceResult<()>;
+    pub safe fn sceRtcUnregisterCallback(id: CallbackId) -> SceResult<()>;
 
     /// Gets the ticks from the last time reset has occurred by drained battery.
     ///
@@ -242,7 +242,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.50.
     #[nid(0x011F03C1)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetAccumulativeTime() -> u64;
+    pub safe fn sceRtcGetAccumulativeTime() -> u64;
 
     /// Gets the ticks from the last time a battery drained system reset has occurred based on the
     /// system time.
@@ -260,7 +260,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.00.
     #[nid(0x203CEB0D)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetLastReincarnatedTime(tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetLastReincarnatedTime(tick: &mut u64) -> SceResult<()>;
 
     /// Gets the tick of the last time the system time was adjusted.
     ///
@@ -277,7 +277,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.00.
     #[nid(0x62685E98)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetLastAdjustedTime(tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetLastAdjustedTime(tick: &mut u64) -> SceResult<()>;
 
     /// Formats the tick time in the RFC2822 format, adjusted for specified timezone.
     ///
@@ -385,7 +385,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x6FF40ACC)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetTick(date_time: &DateTime, tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetTick(date_time: &DateTime, tick: &mut u64) -> SceResult<()>;
 
     /// Converts a time in ticks to [`DateTime`].
     ///
@@ -576,7 +576,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x34885E0D)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcConvertUtcToLocalTime(utc_tick: &u64, local_time: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcConvertUtcToLocalTime(utc_tick: &u64, local_time: &mut u64) -> SceResult<()>;
 
     /// Converts a UTC time tick to local-time time tick.
     ///
@@ -590,7 +590,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x779242A2)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcConvertLocalTimeToUtc(local_time: &u64, utc_tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcConvertLocalTimeToUtc(local_time: &u64, utc_tick: &mut u64) -> SceResult<()>;
 
     /// Converts a date-time to DOS time.
     ///
@@ -604,7 +604,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x36075567)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetDosTime(date_time: &DateTime, dos_time: &mut u32) -> SceResult<()>;
+    pub safe fn sceRtcGetDosTime(date_time: &DateTime, dos_time: &mut u32) -> SceResult<()>;
 
     /// Converts a MS DOS time to date-time.
     ///
@@ -632,7 +632,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x27C4594C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetTime_t(date_time: &DateTime, posix_time: &mut u32) -> SceResult<()>;
+    pub safe fn sceRtcGetTime_t(date_time: &DateTime, posix_time: &mut u32) -> SceResult<()>;
 
     /// Converts a POSIX `time_t` time to a PSP date-time.
     ///
@@ -664,7 +664,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.00.
     #[nid(0xE1C93E47)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetTime64_t(date_time: &DateTime, posix_time: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetTime64_t(date_time: &DateTime, posix_time: &mut u64) -> SceResult<()>;
 
     /// Converts a POSIX `time64_t` time to a PSP date-time.
     ///
@@ -696,7 +696,8 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xCF561893)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetWin32FileTime(date_time: &DateTime, win32_time: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetWin32FileTime(date_time: &DateTime, win32_time: &mut u64)
+        -> SceResult<()>;
 
     /// Converts a WIN32 `FILETIME` time to a PSP date-time.
     ///
@@ -725,7 +726,7 @@ extern "C" {
     /// Returns if it is a leap year, error value if the value is not valid.
     #[nid(0x42307A17)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcIsLeapYear(year: u32) -> SceResult<bool>;
+    pub safe fn sceRtcIsLeapYear(year: u32) -> SceResult<bool>;
 
     /// Gets the number of days of a month in a year.
     ///
@@ -739,7 +740,7 @@ extern "C" {
     /// Returns the number of days of a month in a year on success, error value otherwise.
     #[nid(0x05EF322C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetDaysInMonth(year: u32, month: Month) -> SceResult<u32>;
+    pub safe fn sceRtcGetDaysInMonth(year: u32, month: Month) -> SceResult<u32>;
 
     /// Gets the day of the week of a date.
     ///
@@ -754,7 +755,7 @@ extern "C" {
     /// Returns the day of the week on success, error value otherwise.
     #[nid(0x57726BC1)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcGetDayOfWeek(year: u32, month: Month, day: u32) -> SceResult<DayOfWeek>;
+    pub safe fn sceRtcGetDayOfWeek(year: u32, month: Month, day: u32) -> SceResult<DayOfWeek>;
 
     /// Checks if a PSP date-time is valid.
     ///
@@ -767,7 +768,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x4B1B5E82)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceRtcCheckValid(date_time: &DateTime) -> SceResult<()>;
+    pub safe fn sceRtcCheckValid(date_time: &DateTime) -> SceResult<()>;
 }
 
 // FIXME: Add missing
@@ -779,7 +780,7 @@ extern "C" {
 // - `sceRtcEnd`
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "sceRtc_driver", flags = 0x0001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Gets the resolution of the real-time clock tick.
     ///
     /// # Return Value
@@ -796,7 +797,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x52AF26AA }
         else { 0xC41C2853 }
     )]
-    pub fn sceRtcGetTickResolution() -> u32;
+    pub safe fn sceRtcGetTickResolution() -> u32;
 
     /// Gets the current tick count.
     ///
@@ -808,7 +809,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x3F7AD767)]
-    pub fn sceRtcGetCurrentTick(tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetCurrentTick(tick: &mut u64) -> SceResult<()>;
 
     /// Gets the current clock, adjusted for specified timezone.
     ///
@@ -878,7 +879,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x63B7E163 }
         else { 0xC2DDBEB5 }
     )]
-    pub fn sceRtcGetAlarmTick(tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetAlarmTick(tick: &mut u64) -> SceResult<()>;
 
     /// Sets the RTC alarm tick count.
     ///
@@ -910,7 +911,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x329E8E3A }
         else { 0x7D1FBED3 }
     )]
-    pub fn sceRtcSetAlarmTick(tick: &u64) -> SceResult<()>;
+    pub safe fn sceRtcSetAlarmTick(tick: &u64) -> SceResult<()>;
 
     /// Checks if the RTC alarm is alarmed.
     ///
@@ -932,7 +933,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xED6F0B57 }
         else { 0x81FCDA34 }
     )]
-    pub fn sceRtcIsAlarmed() -> SceResult<bool>;
+    pub safe fn sceRtcIsAlarmed() -> SceResult<bool>;
 
     /// Registers a callback to be executed when RTC alarm changes state.
     ///
@@ -963,7 +964,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x5EF2152F }
         else { 0xFB3B18CD }
     )]
-    pub fn sceRtcRegisterCallback(id: CallbackId) -> SceResult<()>;
+    pub safe fn sceRtcRegisterCallback(id: CallbackId) -> SceResult<()>;
 
     /// Unregisters a RTC alarm callback previously registered.
     ///
@@ -994,7 +995,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x6ED49D14 }
         else { 0x6A676D2D }
     )]
-    pub fn sceRtcUnregisterCallback(id: CallbackId) -> SceResult<()>;
+    pub safe fn sceRtcUnregisterCallback(id: CallbackId) -> SceResult<()>;
 
     /// Gets the ticks from the last time a battery drained system reset has occurred.
     ///
@@ -1008,7 +1009,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 1.50.
     #[nid(0x011F03C1)]
-    pub fn sceRtcGetAccumulativeTime() -> u64;
+    pub safe fn sceRtcGetAccumulativeTime() -> u64;
 
     /// Gets the ticks from the last time a battery drained system reset has occurred based on the
     /// system time.
@@ -1035,7 +1036,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x5A67B6CD }
         else { 0x203CEB0D }
     )]
-    pub fn sceRtcGetLastReincarnatedTime(tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetLastReincarnatedTime(tick: &mut u64) -> SceResult<()>;
 
     /// Gets the tick of the last time the system time was adjusted.
     ///
@@ -1061,7 +1062,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x9F913B6C }
         else { 0x62685E98 }
     )]
-    pub fn sceRtcGetLastAdjustedTime(tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetLastAdjustedTime(tick: &mut u64) -> SceResult<()>;
 
     /// Formats the tick time in the RFC2822 format, adjusted for specified timezone.
     ///
@@ -1222,7 +1223,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x6FF40ACC)]
-    pub fn sceRtcGetTick(date_time: &DateTime, tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetTick(date_time: &DateTime, tick: &mut u64) -> SceResult<()>;
 
     /// Converts a time in ticks to [`DateTime`].
     ///
@@ -1502,7 +1503,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xB55B2E56 }
         else { 0x34885E0D }
     )]
-    pub fn sceRtcConvertUtcToLocalTime(utc_tick: &u64, local_time: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcConvertUtcToLocalTime(utc_tick: &u64, local_time: &mut u64) -> SceResult<()>;
 
     /// Converts a UTC time tick to local-time time tick.
     ///
@@ -1525,7 +1526,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x4BCD44C6 }
         else { 0x779242A2 }
     )]
-    pub fn sceRtcConvertLocalTimeToUtc(local_time: &u64, utc_tick: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcConvertLocalTimeToUtc(local_time: &u64, utc_tick: &mut u64) -> SceResult<()>;
 
     /// Converts a date-time to DOS time.
     ///
@@ -1548,7 +1549,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xF66CAAF1 }
         else { 0x36075567 }
     )]
-    pub fn sceRtcGetDosTime(date_time: &DateTime, dos_time: &mut u32) -> SceResult<()>;
+    pub safe fn sceRtcGetDosTime(date_time: &DateTime, dos_time: &mut u32) -> SceResult<()>;
 
     /// Converts a MS DOS time to date-time.
     ///
@@ -1594,7 +1595,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x196F58A5 }
         else { 0x27C4594C }
     )]
-    pub fn sceRtcGetTime_t(date_time: &DateTime, posix_time: &mut u32) -> SceResult<()>;
+    pub safe fn sceRtcGetTime_t(date_time: &DateTime, posix_time: &mut u32) -> SceResult<()>;
 
     /// Converts a POSIX `time_t` time to a PSP date-time.
     ///
@@ -1644,7 +1645,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xCC4BBE7E }
         else { 0xE1C93E47 }
     )]
-    pub fn sceRtcGetTime64_t(date_time: &DateTime, posix_time: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetTime64_t(date_time: &DateTime, posix_time: &mut u64) -> SceResult<()>;
 
     /// Converts a POSIX `time64_t` time to a PSP date-time.
     ///
@@ -1694,7 +1695,8 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x9D2687CA }
         else { 0xCF561893 }
     )]
-    pub fn sceRtcGetWin32FileTime(date_time: &DateTime, win32_time: &mut u64) -> SceResult<()>;
+    pub safe fn sceRtcGetWin32FileTime(date_time: &DateTime, win32_time: &mut u64)
+        -> SceResult<()>;
 
     /// Converts a WIN32 `FILETIME` time to a PSP date-time.
     ///
@@ -1741,7 +1743,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xF9AA5B68 }
         else { 0x42307A17 }
     )]
-    pub fn sceRtcIsLeapYear(year: u32) -> SceResult<bool>;
+    pub safe fn sceRtcIsLeapYear(year: u32) -> SceResult<bool>;
 
     /// Gets the number of days of a month in a year.
     ///
@@ -1764,7 +1766,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xBA49B6F7 }
         else { 0x05EF322C }
     )]
-    pub fn sceRtcGetDaysInMonth(year: u32, month: Month) -> SceResult<u32>;
+    pub safe fn sceRtcGetDaysInMonth(year: u32, month: Month) -> SceResult<u32>;
 
     /// Gets the day of the week of a date.
     ///
@@ -1788,7 +1790,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x5B318E25 }
         else { 0x57726BC1 }
     )]
-    pub fn sceRtcGetDayOfWeek(year: u32, month: Month, day: u32) -> SceResult<DayOfWeek>;
+    pub safe fn sceRtcGetDayOfWeek(year: u32, month: Month, day: u32) -> SceResult<DayOfWeek>;
 
     /// Checks if a PSP date-time is valid.
     ///
@@ -1800,7 +1802,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x4B1B5E82)]
-    pub fn sceRtcCheckValid(date_time: &DateTime) -> SceResult<()>;
+    pub safe fn sceRtcCheckValid(date_time: &DateTime) -> SceResult<()>;
 }
 
 impl crate::private::Sealed for DayOfWeek {}

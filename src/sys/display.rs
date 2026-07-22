@@ -73,7 +73,7 @@ pub enum DisplayState {
 
 
 #[psp_stub(libname = "sceDisplay", flags = 0x4001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Sets the display mode.
     ///
     /// # Parameters
@@ -87,7 +87,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x0E20F177)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplaySetMode(mode: DisplayMode, width: SceSize, height: SceSize) -> SceResult<()>;
+    pub safe fn sceDisplaySetMode(mode: DisplayMode, width: SceSize, height: SceSize) -> SceResult<()>;
 
     /// Gets the current display mode and display proportions.
     ///
@@ -102,7 +102,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xDEA197D4)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayGetMode(
+    pub safe fn sceDisplayGetMode(
         mode: &mut DisplayMode, width: &mut SceSize, height: &mut SceSize,
     ) -> SceResult<()>;
 
@@ -113,7 +113,7 @@ extern "C" {
     /// Returns the current number of frames per second.
     #[nid(0xDBA6C4C4)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayGetFramePerSec() -> f32;
+    pub safe fn sceDisplayGetFramePerSec() -> f32;
 
 
     /// Sets the display framebuffer.
@@ -169,7 +169,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 1.03.
     #[nid(0xB4F378FA)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayIsForeground() -> bool;
+    pub safe fn sceDisplayIsForeground() -> bool;
 
     /// Sets the hold mode.
     ///
@@ -184,7 +184,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x7ED59BC4)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplaySetHoldMode(mode: DisplayHoldMode) -> SceResult<()>;
+    pub safe fn sceDisplaySetHoldMode(mode: DisplayHoldMode) -> SceResult<()>;
 
     /// Gets the number of vertical blank pulses up to now
     ///
@@ -193,7 +193,7 @@ extern "C" {
     /// Returns the number of vertical blank pulses on success, error value otherwise.
     #[nid(0x9C6EAAD7)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayGetVcount() -> SceResult<u32>;
+    pub safe fn sceDisplayGetVcount() -> SceResult<u32>;
 
     /// Checks whether VBLANK is active in process.
     ///
@@ -202,7 +202,7 @@ extern "C" {
     /// Returns `true` if VBLANK is in process, `false` if it is not, error value otherwise.
     #[nid(0x4D4E10EC)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayIsVblank() -> SceResult<bool>;
+    pub safe fn sceDisplayIsVblank() -> SceResult<bool>;
 
     /// Makes the calling thread to enter in a [`Wait`] state until VBLANK is in process.
     ///
@@ -213,7 +213,7 @@ extern "C" {
     /// [`Wait`]: crate::sys::thread::ThreadState::Wait
     #[nid(0x36CDFADE)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayWaitVblank() -> SceResult<()>;
+    pub safe fn sceDisplayWaitVblank() -> SceResult<()>;
 
     /// Makes the calling thread to enter in a [`Wait`] state until VBLANK is in process, but
     /// service any callbacks as necessary.
@@ -225,7 +225,7 @@ extern "C" {
     /// [`Wait`]: crate::sys::thread::ThreadState::Wait
     #[nid(0x8EB9EC49)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayWaitVblankCB() -> SceResult<()>;
+    pub safe fn sceDisplayWaitVblankCB() -> SceResult<()>;
 
     /// Makes the calling thread to enter in a [`Wait`] state until the the start of the **next**
     /// VBLANK.
@@ -237,7 +237,7 @@ extern "C" {
     /// [`Wait`]: crate::sys::thread::ThreadState::Wait
     #[nid(0x984C27E7)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayWaitVblankStart() -> SceResult<()>;
+    pub safe fn sceDisplayWaitVblankStart() -> SceResult<()>;
 
     /// Makes the calling thread to enter in a [`Wait`] state until the the start of the **next**
     /// VBLANK, but service any callbacks as necessary.
@@ -249,7 +249,7 @@ extern "C" {
     /// [`Wait`]: crate::sys::thread::ThreadState::Wait
     #[nid(0x46F186C3)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayWaitVblankStartCB() -> SceResult<()>;
+    pub safe fn sceDisplayWaitVblankStartCB() -> SceResult<()>;
 
     /// Makes the calling thread to enter in a [`Wait`] state until the the start of the next
     /// VBLANK after a number of VSYNC cycles.
@@ -269,7 +269,7 @@ extern "C" {
     /// [`Wait`]: crate::sys::thread::ThreadState::Wait
     #[nid(0x40F1469C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayWaitVblankStartMulti(vsync_cycles: u32) -> SceResult<()>;
+    pub safe fn sceDisplayWaitVblankStartMulti(vsync_cycles: u32) -> SceResult<()>;
 
     /// Makes the calling thread to enter in a [`Wait`] state until the the start of the next
     /// VBLANK after a number of VSYNC cycles, but service any callbacks as necessary.
@@ -289,7 +289,7 @@ extern "C" {
     /// [`Wait`]: crate::sys::thread::ThreadState::Wait
     #[nid(0x77ED8B3A)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayWaitVblankStartMultiCB(vsync_cycles: u32) -> SceResult<()>;
+    pub safe fn sceDisplayWaitVblankStartMultiCB(vsync_cycles: u32) -> SceResult<()>;
 
     /// Gets the current HSYNC count.
     ///
@@ -298,7 +298,7 @@ extern "C" {
     /// Returns the current HSYNC count on success, error value otherwise.
     #[nid(0x773DD3A3)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayGetCurrentHcount() -> SceResult<u32>;
+    pub safe fn sceDisplayGetCurrentHcount() -> SceResult<u32>;
 
     /// Gets the accumulated HSYNC count.
     ///
@@ -307,7 +307,7 @@ extern "C" {
     /// Returns the accumulated HSYNC count on success, error value otherwise.
     #[nid(0x210EAB3A)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayGetAccumulatedHcount() -> SceResult<u32>;
+    pub safe fn sceDisplayGetAccumulatedHcount() -> SceResult<u32>;
 
     /// Gets the current brightness level set.
     ///
@@ -322,7 +322,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x31C4BAA8)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceDisplayGetBrightness(level: &mut u32, mode: &mut u32) -> SceResult<()>;
+    pub safe fn sceDisplayGetBrightness(level: &mut u32, mode: &mut u32) -> SceResult<()>;
 }
 
 // FIXME: Add missing
@@ -331,7 +331,7 @@ extern "C" {
 // - `sceDisplayGetFrameBufferInternal` (not real cracked name)
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "sceDisplay_driver", flags = 0x0001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Sets the display mode.
     ///
     /// # Parameters
@@ -344,7 +344,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x0E20F177)]
-    pub fn sceDisplaySetMode(mode: DisplayMode, width: SceSize, height: SceSize) -> SceResult<()>;
+    pub safe fn sceDisplaySetMode(mode: DisplayMode, width: SceSize, height: SceSize) -> SceResult<()>;
 
     /// Gets the current display mode and display proportions.
     ///
@@ -358,7 +358,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xDEA197D4)]
-    pub fn sceDisplayGetMode(
+    pub safe fn sceDisplayGetMode(
         mode: &mut DisplayMode, width: &mut SceSize, height: &mut SceSize,
     ) -> SceResult<()>;
 
@@ -378,7 +378,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x13AA96B7 }
         else { 0xDBA6C4C4 }
     )]
-    pub fn sceDisplayGetFramePerSec() -> f32;
+    pub safe fn sceDisplayGetFramePerSec() -> f32;
 
 
     /// Sets the display framebuffer.
@@ -461,7 +461,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x044FF282 }
         else { 0xB4F378FA }
     )]
-    pub fn sceDisplayIsForeground() -> bool;
+    pub safe fn sceDisplayIsForeground() -> bool;
 
     /// Sets the hold mode.
     ///
@@ -485,7 +485,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x906281D5 }
         else { 0x7ED59BC4 }
     )]
-    pub fn sceDisplaySetHoldMode(mode: DisplayHoldMode) -> SceResult<()>;
+    pub safe fn sceDisplaySetHoldMode(mode: DisplayHoldMode) -> SceResult<()>;
 
     /// Gets the number of vertical blank pulses up to now
     ///
@@ -503,7 +503,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xE8466BC2 }
         else { 0x9C6EAAD7 }
     )]
-    pub fn sceDisplayGetVcount() -> SceResult<u32>;
+    pub safe fn sceDisplayGetVcount() -> SceResult<u32>;
 
     /// Checks whether VBLANK is active in process.
     ///
@@ -521,7 +521,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x8BE19BF8 }
         else { 0x4D4E10EC }
     )]
-    pub fn sceDisplayIsVblank() -> SceResult<bool>;
+    pub safe fn sceDisplayIsVblank() -> SceResult<bool>;
 
     /// Makes the calling thread to enter in a [`Wait`] state until VBLANK is in process.
     ///
@@ -541,7 +541,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x7FBA941A }
         else { 0x36CDFADE }
     )]
-    pub fn sceDisplayWaitVblank() -> SceResult<()>;
+    pub safe fn sceDisplayWaitVblank() -> SceResult<()>;
 
     /// Makes the calling thread to enter in a [`Wait`] state until VBLANK is in process, but
     /// service any callbacks as necessary.
@@ -562,7 +562,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x16FD49DC }
         else { 0x8EB9EC49 }
     )]
-    pub fn sceDisplayWaitVblankCB() -> SceResult<()>;
+    pub safe fn sceDisplayWaitVblankCB() -> SceResult<()>;
 
     /// Makes the calling thread to enter in a [`Wait`] state until the the start of the **next**
     /// VBLANK.
@@ -583,7 +583,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xB685BA36 }
         else { 0x984C27E7 }
     )]
-    pub fn sceDisplayWaitVblankStart() -> SceResult<()>;
+    pub safe fn sceDisplayWaitVblankStart() -> SceResult<()>;
 
     /// Makes the calling thread to enter in a [`Wait`] state until the the start of the **next**
     /// VBLANK, but service any callbacks as necessary.
@@ -604,7 +604,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x792E8018 }
         else { 0x46F186C3 }
     )]
-    pub fn sceDisplayWaitVblankStartCB() -> SceResult<()>;
+    pub safe fn sceDisplayWaitVblankStartCB() -> SceResult<()>;
 
     /// Makes the calling thread to enter in a [`Wait`] state until the the start of the next
     /// VBLANK after a number of VSYNC cycles.
@@ -628,7 +628,7 @@ extern "C" {
         // else if cfg!(feature = "psp_570") { 0x40F1469C }
         else { 0x40F1469C }
     )]
-    pub fn sceDisplayWaitVblankStartMulti(vsync_cycles: u32) -> SceResult<()>;
+    pub safe fn sceDisplayWaitVblankStartMulti(vsync_cycles: u32) -> SceResult<()>;
 
     /// Makes the calling thread to enter in a [`Wait`] state until the the start of the next
     /// VBLANK after a number of VSYNC cycles, but service any callbacks as necessary.
@@ -652,7 +652,7 @@ extern "C" {
         // else if cfg!(feature = "psp_570") { 0x77ED8B3A }
         else { 0x77ED8B3A }
     )]
-    pub fn sceDisplayWaitVblankStartMultiCB(vsync_cycles: u32) -> SceResult<()>;
+    pub safe fn sceDisplayWaitVblankStartMultiCB(vsync_cycles: u32) -> SceResult<()>;
 
     /// Gets the current HSYNC count.
     ///
@@ -670,7 +670,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x689C0CC2 }
         else { 0x773DD3A3 }
     )]
-    pub fn sceDisplayGetCurrentHcount() -> SceResult<u32>;
+    pub safe fn sceDisplayGetCurrentHcount() -> SceResult<u32>;
 
     /// Gets the accumulated HSYNC count.
     ///
@@ -688,7 +688,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0xA99B94A3 }
         else { 0x210EAB3A }
     )]
-    pub fn sceDisplayGetAccumulatedHcount() -> SceResult<u32>;
+    pub safe fn sceDisplayGetAccumulatedHcount() -> SceResult<u32>;
 
     /// Sets the display brightness to a particular level.
     ///
@@ -712,7 +712,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x776ADFDB }
         else { 0x9E3C6DC6 }
     )]
-    pub fn sceDisplaySetBrightness(level: u32, mode: u32) -> SceResult<()>;
+    pub safe fn sceDisplaySetBrightness(level: u32, mode: u32) -> SceResult<()>;
 
     /// Gets the current brightness level set.
     ///
@@ -736,7 +736,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x1CB8CB47 }
         else { 0x31C4BAA8 }
     )]
-    pub fn sceDisplayGetBrightness(level: &mut u32, mode: &mut u32) -> SceResult<()>;
+    pub safe fn sceDisplayGetBrightness(level: &mut u32, mode: &mut u32) -> SceResult<()>;
 
     /// Sets the display backlight brightness to a particular level.
     ///
@@ -754,7 +754,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.70.
     #[nid(0xE55F0D50)]
-    pub fn sceDisplaySetBacklightSel(level: u32, mode: u32) -> SceResult<()>;
+    pub safe fn sceDisplaySetBacklightSel(level: u32, mode: u32) -> SceResult<()>;
 
     /// Gets the display backlight brightness.
     ///
@@ -768,7 +768,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x96CFAC38)]
-    pub fn sceDisplayGetBacklightSel(level: &mut u32, mode: &mut u32) -> SceResult<()>;
+    pub safe fn sceDisplayGetBacklightSel(level: &mut u32, mode: &mut u32) -> SceResult<()>;
 
     /// Initializes the `sceDisplay*` library.
     ///
@@ -801,7 +801,7 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x32B67781 }
         else { 0x681EE6A7 }
     )]
-    pub fn sceDisplayDisable() -> DisplayState;
+    pub safe fn sceDisplayDisable() -> DisplayState;
 
     /// Enables the display.
     ///
@@ -819,5 +819,5 @@ extern "C" {
         else if cfg!(feature = "psp_370") { 0x946155FD }
         else { 0x432D133F }
     )]
-    pub fn sceDisplayEnable() -> DisplayState;
+    pub safe fn sceDisplayEnable() -> DisplayState;
 }

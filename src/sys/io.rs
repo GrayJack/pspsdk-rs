@@ -547,7 +547,7 @@ pub struct IoHook {
 }
 
 #[psp_stub(libname = "IoFileMgrForUser", flags = 0x4001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Opens a file with the corresponding file access attributes.
     ///
     /// The function only supports full path.
@@ -695,7 +695,7 @@ extern "C" {
     #[eabi(i_ii_i_rii)]
     #[nid(0x27EB27B8)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoLseek(fd: FileId, offset: i64, whence: Whence) -> SceResult64<u64>;
+    pub safe fn sceIoLseek(fd: FileId, offset: i64, whence: Whence) -> SceResult64<u64>;
 
     /// Repositions the file offset of the file descriptor asynchronously.
     ///
@@ -710,7 +710,7 @@ extern "C" {
     #[eabi(i_ii_i_rii)]
     #[nid(0x71B19E77)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoLseekAsync(fd: FileId, offset: i64, whence: Whence) -> SceResult64<u64>;
+    pub safe fn sceIoLseekAsync(fd: FileId, offset: i64, whence: Whence) -> SceResult64<u64>;
 
     /// Repositions the file offset of the file descriptor. (32-bit mode).
     ///
@@ -724,7 +724,7 @@ extern "C" {
     /// Returns the position of the internal file offset on success, error value otherwise.
     #[nid(0x68963324)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoLseek32(fd: FileId, offset: i32, whence: Whence) -> SceResult<SceSize>;
+    pub safe fn sceIoLseek32(fd: FileId, offset: i32, whence: Whence) -> SceResult<SceSize>;
 
     /// Repositions the file offset of the file descriptor. (32-bit mode).
     ///
@@ -738,7 +738,7 @@ extern "C" {
     /// Returns the position of the internal file offset on success, error value otherwise.
     #[nid(0x1B385D8F)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoLseek32Async(fd: FileId, offset: i32, whence: Whence) -> SceResult<SceSize>;
+    pub safe fn sceIoLseek32Async(fd: FileId, offset: i32, whence: Whence) -> SceResult<SceSize>;
 
     /// Removes a file associated to a given path.
     ///
@@ -835,7 +835,7 @@ extern "C" {
     /// directory entries to go. On error, a error value is returned.
     #[nid(0xE3EB004C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoDread(dir_fd: FileId, entry_info: &mut Dirent) -> SceResult<u32>;
+    pub safe fn sceIoDread(dir_fd: FileId, entry_info: &mut Dirent) -> SceResult<u32>;
 
     /// Closes an directory opened with [`sceIoDopen`].
     ///
@@ -1000,7 +1000,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xE23EEC33)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoWaitAsync(fd: FileId, result: &mut i64) -> SceResult<()>;
+    pub safe fn sceIoWaitAsync(fd: FileId, result: &mut i64) -> SceResult<()>;
 
     /// Waits for a file asynchronous action completion with callbacks.
     ///
@@ -1014,7 +1014,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x35DBD746)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoWaitAsyncCB(fd: FileId, result: &mut i64) -> SceResult<()>;
+    pub safe fn sceIoWaitAsyncCB(fd: FileId, result: &mut i64) -> SceResult<()>;
 
     /// Polls a file asynchronous task completion.
     ///
@@ -1028,7 +1028,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0x3251EA56)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoPollAsync(fd: FileId, result: &mut i64) -> SceResult<()>;
+    pub safe fn sceIoPollAsync(fd: FileId, result: &mut i64) -> SceResult<()>;
 
     /// Gets the completions status of a file asynchronous task.
     ///
@@ -1043,7 +1043,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xCB05F8D6)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoGetAsyncStat(fd: FileId, poll: u32, result: &mut i64) -> SceResult<()>;
+    pub safe fn sceIoGetAsyncStat(fd: FileId, poll: u32, result: &mut i64) -> SceResult<()>;
 
     /// Cancels a file asynchronous task.
     ///
@@ -1056,7 +1056,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xE8BC6571)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoCancel(fd: FileId) -> SceResult<()>;
+    pub safe fn sceIoCancel(fd: FileId) -> SceResult<()>;
 
     /// Changes the priority level of a file asynchronous task.
     ///
@@ -1072,7 +1072,7 @@ extern "C" {
     /// `Ok` value on success, error value otherwise.
     #[nid(0xB293727F)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoChangeAsyncPriority(fd: FileId, priority: i32) -> SceResult<()>;
+    pub safe fn sceIoChangeAsyncPriority(fd: FileId, priority: i32) -> SceResult<()>;
 
     /// Sets a callback for the file asynchronous task.
     ///
@@ -1102,7 +1102,7 @@ extern "C" {
     /// Returns the device attribute on success, error value otherwise.
     #[nid(0x08BD7374)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceIoGetDevType(fd: FileId) -> SceResult<DeviceAttribute>;
+    pub safe fn sceIoGetDevType(fd: FileId) -> SceResult<DeviceAttribute>;
 
     /// Gets the list of opened file descriptor UIDs.
     ///
@@ -1133,7 +1133,7 @@ extern "C" {
 // int sceIoAddHook(SceIoHookType *hook);
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "IoFileMgrForKernel", flags = 0x0001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Opens a file with the corresponding file access attributes.
     ///
     /// The function only supports full path.
@@ -1299,7 +1299,7 @@ extern "C" {
     /// Returns the position of the internal file offset on success, error value otherwise.
     #[eabi(i_ii_i_rii)]
     #[nid(0x27EB27B8)]
-    pub fn sceIoLseek(fd: FileId, offset: i64, whence: Whence) -> SceResult64<u64>;
+    pub safe fn sceIoLseek(fd: FileId, offset: i64, whence: Whence) -> SceResult64<u64>;
 
     /// Repositions the file offset of the file descriptor asynchronously.
     ///
@@ -1313,7 +1313,7 @@ extern "C" {
     /// Returns the position of the internal file offset on success, error value otherwise.
     #[eabi(i_ii_i_rii)]
     #[nid(0x71B19E77)]
-    pub fn sceIoLseekAsync(fd: FileId, offset: i64, whence: Whence) -> SceResult64<u64>;
+    pub safe fn sceIoLseekAsync(fd: FileId, offset: i64, whence: Whence) -> SceResult64<u64>;
 
     /// Repositions the file offset of the file descriptor. (32-bit mode).
     ///
@@ -1326,7 +1326,7 @@ extern "C" {
     ///
     /// Returns the position of the internal file offset on success, error value otherwise.
     #[nid(0x68963324)]
-    pub fn sceIoLseek32(fd: FileId, offset: i32, whence: Whence) -> SceResult<SceSize>;
+    pub safe fn sceIoLseek32(fd: FileId, offset: i32, whence: Whence) -> SceResult<SceSize>;
 
     /// Repositions the file offset of the file descriptor asynchronously. (32-bit mode).
     ///
@@ -1340,7 +1340,7 @@ extern "C" {
     ///
     /// Returns the position of the internal file offset on success, error value otherwise.
     #[nid(0x1B385D8F)]
-    pub fn sceIoLseek32Async(fd: FileId, offset: i32, whence: Whence) -> SceResult<SceSize>;
+    pub safe fn sceIoLseek32Async(fd: FileId, offset: i32, whence: Whence) -> SceResult<SceSize>;
 
     /// Removes a file associated to a given path.
     ///
@@ -1430,7 +1430,7 @@ extern "C" {
     /// Returns, on success, `0` if there is no more directory entries left, `> 0` if there are more
     /// directory entries to go. On error, a error value is returned.
     #[nid(0xE3EB004C)]
-    pub fn sceIoDread(dir_fd: FileId, entry_info: &mut Dirent) -> SceResult<u32>;
+    pub safe fn sceIoDread(dir_fd: FileId, entry_info: &mut Dirent) -> SceResult<u32>;
 
     /// Closes an directory opened with [`sceIoDopen`].
     ///
@@ -1599,7 +1599,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xE23EEC33)]
-    pub fn sceIoWaitAsync(fd: FileId, result: &mut i64) -> SceResult<()>;
+    pub safe fn sceIoWaitAsync(fd: FileId, result: &mut i64) -> SceResult<()>;
 
     /// Waits for a file asynchronous action completion with callbacks.
     ///
@@ -1612,7 +1612,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x35DBD746)]
-    pub fn sceIoWaitAsyncCB(fd: FileId, result: &mut i64) -> SceResult<()>;
+    pub safe fn sceIoWaitAsyncCB(fd: FileId, result: &mut i64) -> SceResult<()>;
 
     /// Polls a file asynchronous task completion.
     ///
@@ -1625,7 +1625,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0x3251EA56)]
-    pub fn sceIoPollAsync(fd: FileId, result: &mut i64) -> SceResult<()>;
+    pub safe fn sceIoPollAsync(fd: FileId, result: &mut i64) -> SceResult<()>;
 
     /// Gets the completions status of a file asynchronous task.
     ///
@@ -1639,7 +1639,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xCB05F8D6)]
-    pub fn sceIoGetAsyncStat(fd: FileId, poll: u32, result: &mut i64) -> SceResult<()>;
+    pub safe fn sceIoGetAsyncStat(fd: FileId, poll: u32, result: &mut i64) -> SceResult<()>;
 
     /// Cancels a file asynchronous task.
     ///
@@ -1651,7 +1651,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xE8BC6571)]
-    pub fn sceIoCancel(fd: FileId) -> SceResult<()>;
+    pub safe fn sceIoCancel(fd: FileId) -> SceResult<()>;
 
     /// Changes the priority level of a file asynchronous task.
     ///
@@ -1666,7 +1666,7 @@ extern "C" {
     ///
     /// `Ok` value on success, error value otherwise.
     #[nid(0xB293727F)]
-    pub fn sceIoChangeAsyncPriority(fd: FileId, priority: i32) -> SceResult<()>;
+    pub safe fn sceIoChangeAsyncPriority(fd: FileId, priority: i32) -> SceResult<()>;
 
     /// Sets a callback for the file asynchronous task.
     ///
@@ -1696,7 +1696,7 @@ extern "C" {
     ///
     /// Returns the device attribute on success, error value otherwise.
     #[nid(0x08BD7374)]
-    pub fn sceIoGetDevType(fd: FileId) -> SceResult<DeviceAttribute>;
+    pub safe fn sceIoGetDevType(fd: FileId) -> SceResult<DeviceAttribute>;
 
     /// Gets the real file descriptor UID from global list of UID.
     ///
@@ -1722,7 +1722,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0xE5A18603 }
         else { 0x9B86630B }
     )]
-    pub fn sceIoGetUID(fd: FileId) -> SceResult<FileId>;
+    pub safe fn sceIoGetUID(fd: FileId) -> SceResult<FileId>;
 
     /// Gets the list of opened file descriptor UIDs.
     ///
@@ -1822,7 +1822,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x128BD999 }
         else { 0xBD17474F }
     )]
-    pub fn sceIoGetIobUserLevel(block: &IoBlockInfo) -> u32;
+    pub safe fn sceIoGetIobUserLevel(block: &IoBlockInfo) -> u32;
 
     /// Checks for the validity of a file descriptor.
     ///
@@ -1849,7 +1849,7 @@ extern "C" {
         else if cfg!(feature = "psp_380") { 0x588C6903 }
         else { 0x30E8ABB3 }
     )]
-    pub fn sceIoValidateFd(fd: FileId, unk: u32) -> SceResult<()>;
+    pub safe fn sceIoValidateFd(fd: FileId, unk: u32) -> SceResult<()>;
 
     /// Gets the current working directory for a thread.
     ///
@@ -1911,7 +1911,7 @@ extern "C" {
 // - (putchar, 0xD768752A)
 // - (puts, 0xD97C8CB9)
 #[psp_stub(libname = "StdioForUser", flags = 0x4001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Function to get the current standard in file ID
     ///
     /// # Return Value
@@ -1919,7 +1919,7 @@ extern "C" {
     /// The stdin file ID.
     #[nid(0x172D316E)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelStdin() -> FileId;
+    pub safe fn sceKernelStdin() -> FileId;
 
     /// Function to get the current standard out file ID
     ///
@@ -1928,7 +1928,7 @@ extern "C" {
     /// The stdout file ID.
     #[nid(0xA6BAB2E9)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelStdout() -> FileId;
+    pub safe fn sceKernelStdout() -> FileId;
 
     /// Function to get the current standard error file ID
     ///
@@ -1937,7 +1937,7 @@ extern "C" {
     /// The stderr file ID.
     #[nid(0xF78BA90A)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelStderr() -> FileId;
+    pub safe fn sceKernelStderr() -> FileId;
 
     /// Register a file descriptor as PIPE to stdout.
     ///
@@ -1954,7 +1954,7 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.00.
     #[nid(0x432D8F5C)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelRegisterStdoutPipe(fd: FileId) -> SceResult<()>;
+    pub safe fn sceKernelRegisterStdoutPipe(fd: FileId) -> SceResult<()>;
 
     /// Register a file descriptor as PIPE to stderr.
     ///
@@ -1971,19 +1971,19 @@ extern "C" {
     /// This API was introduced on PSP firmware version 2.00.
     #[nid(0x6F797E03)]
     #[cfg(not(feature = "kernel"))]
-    pub fn sceKernelRegisterStderrPipe(fd: FileId) -> SceResult<()>;
+    pub safe fn sceKernelRegisterStderrPipe(fd: FileId) -> SceResult<()>;
 }
 
 #[cfg(feature = "kernel")]
 #[psp_stub(libname = "StdioForKernel", flags = 0x0001, use_crate)]
-extern "C" {
+unsafe extern "C" {
     /// Function to get the current standard in file ID
     ///
     /// # Return Value
     ///
     /// The stdin file ID.
     #[nid(0x172D316E)]
-    pub fn sceKernelStdin() -> FileId;
+    pub safe fn sceKernelStdin() -> FileId;
 
     /// Function to get the current standard out file ID
     ///
@@ -1991,7 +1991,7 @@ extern "C" {
     ///
     /// The stdout file ID.
     #[nid(0xA6BAB2E9)]
-    pub fn sceKernelStdout() -> FileId;
+    pub safe fn sceKernelStdout() -> FileId;
 
     /// Function to get the current standard error file ID
     ///
@@ -1999,7 +1999,7 @@ extern "C" {
     ///
     /// The stderr file ID.
     #[nid(0xF78BA90A)]
-    pub fn sceKernelStderr() -> FileId;
+    pub safe fn sceKernelStderr() -> FileId;
 
     /// Register a file descriptor as PIPE to stdout.
     ///
@@ -2015,7 +2015,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.00.
     #[nid(0x432D8F5C)]
-    pub fn sceKernelRegisterStdoutPipe(fd: FileId) -> SceResult<()>;
+    pub safe fn sceKernelRegisterStdoutPipe(fd: FileId) -> SceResult<()>;
 
     /// Register a file descriptor as PIPE to stderr.
     ///
@@ -2031,7 +2031,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.00.
     #[nid(0x6F797E03)]
-    pub fn sceKernelRegisterStderrPipe(fd: FileId) -> SceResult<()>;
+    pub safe fn sceKernelRegisterStderrPipe(fd: FileId) -> SceResult<()>;
 
     /// Reopens the standard Out.
     ///
@@ -2077,7 +2077,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.00.
     #[nid(0x2D8551AB)]
-    pub fn sceKernelStdoutReset() -> SceResult<()>;
+    pub safe fn sceKernelStdoutReset() -> SceResult<()>;
 
     /// Resets the standard Error.
     ///
@@ -2089,7 +2089,7 @@ extern "C" {
     ///
     /// This API was introduced on PSP firmware version 2.00.
     #[nid(0x9662BF86)]
-    pub fn sceKernelStderrReset() -> SceResult<()>;
+    pub safe fn sceKernelStderrReset() -> SceResult<()>;
 }
 
 impl FileId {
