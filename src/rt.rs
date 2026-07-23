@@ -91,12 +91,34 @@ pub unsafe fn init_cwd(arg0: *mut u8) {
 }
 
 pub(crate) static MAIN_THREAD_ID: SyncUnsafeCell<Option<ThreadId>> = SyncUnsafeCell::new(None);
+pub(crate) static CUSTOM_CLEANUP: SyncUnsafeCell<Option<fn()>> = SyncUnsafeCell::new(None);
 
 pub(crate) fn main_thread_id() -> Option<ThreadId> {
     let id = unsafe { &*MAIN_THREAD_ID.get() };
     *id
 }
 
+pub(crate) fn custom_cleanup() -> Option<fn()> {
+    let res = unsafe { &*CUSTOM_CLEANUP.get() };
+    *res
+}
+
+/// Sets a custom cleanup procedure that will be called on [`exit`] and on the set callback by
+/// [`enable_home_button`].
+///
+/// It returns the previously set value.
+///
+/// [`exit`]: crate::process::exit
+/// [`enable_home_button`]: crate::enable_home_button
+pub fn set_custom_cleanup(f: fn()) -> Option<fn()> {
+    let cleanup = CUSTOM_CLEANUP.get();
+    let previous = unsafe { cleanup.read() };
+    unsafe {
+        cleanup.write(Some(f));
+    }
+
+    previous
+}
 pub(crate) unsafe fn init(_argc: usize, argv: *const *mut u8) {
     // Ideally this is called on module_start, but people doing barebones project may forget, so we
     // call it here too.
@@ -130,6 +152,10 @@ pub(crate) fn cleanup() {
         crate::io::cleanup();
         // SAFETY: Only called once during runtime cleanup.
         sys::cleanup();
+
+        if let Some(f) = custom_cleanup() {
+            f();
+        }
     });
 }
 
