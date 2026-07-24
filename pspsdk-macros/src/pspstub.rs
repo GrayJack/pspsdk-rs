@@ -555,11 +555,29 @@ impl ToTokens for PspStub {
             }
         };
 
+        #[allow(clippy::collapsible_match)]
+        let flag = if let syn::Expr::Lit(syn::ExprLit { lit, .. }) = &flags {
+            match lit {
+                syn::Lit::Int(lit_int) => quote! {
+                    #crate_path::sys::LibFlags::from_bits_truncate(#lit_int)
+                },
+                _ => quote! {
+                    #flags
+                },
+            }
+        } else {
+            quote! {
+                #flags
+            }
+        };
+
         let generated = quote! {
             #[cfg(target_os = "psp")]
             #[allow(non_snake_case)]
             mod #mod_name {
-                #![allow(non_upper_case_globals, non_snake_case, clippy::missing_safety_doc)]
+                #![allow(non_upper_case_globals, non_snake_case, clippy::missing_safety_doc, unused)]
+
+                use #crate_path::sys::{self, LibFlags};
 
                 #[unsafe(link_section = #resident_section)]
                 static #resident_var: [u8; #crate_path::sys::macro_helpers::lib_name_bytes_len(#lib_name)] = #crate_path::sys::macro_helpers::lib_name_bytes(#lib_name);
@@ -576,7 +594,7 @@ impl ToTokens for PspStub {
                 static #stub_entry_var: #crate_path::sys::library::StubLibraryEntry = #crate_path::sys::library::StubLibraryEntry {
                     name: #resident_var.as_ptr().cast(),
                     version: (#major_version, #minor_version),
-                    flags: #crate_path::sys::LibFlags::from_bits_retain(#flags),
+                    flags: #flag,
                     len: #crate_path::sys::library::STUB_LIBRARY_ENTRY_TABLE_NEW_LEN,
                     var_stub_count: 0,
                     func_stub_count: #fn_stub_count,
@@ -604,14 +622,14 @@ impl ToTokens for PspStub {
 
 pub struct LibInfo {
     lib_name: LitStr,
-    flags: LitInt,
+    flags: Expr,
     major_version: LitInt,
     minor_version: LitInt,
 }
 
 pub struct StubArgs {
     lib_name: Option<LitStr>,
-    flags: Option<LitInt>,
+    flags: Option<Expr>,
     major_version: LitInt,
     minor_version: LitInt,
     use_crate: bool,
@@ -622,7 +640,7 @@ impl StubArgs {
         if meta.path.is_ident("libname") || meta.path.is_ident("name") {
             self.lib_name = meta.value()?.parse()?;
         } else if meta.path.is_ident("flags") {
-            self.flags = meta.value()?.parse()?;
+            self.flags = Some(meta.value()?.parse()?);
         } else if meta.path.is_ident("version") {
             let tuple: ExprTuple = meta.value()?.parse()?;
 

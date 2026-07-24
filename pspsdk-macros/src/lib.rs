@@ -18,7 +18,7 @@ mod pspstub;
 /// # Macro parameters
 ///
 /// - `libname`: The name of the library to create stubs.
-/// - `flags`: The library flags.
+/// - `flags`: The library flags. It can be a integer literal or a expression of `LibFlags`.
 /// - `version`: Optional. A tuple with a major and minor version of the stub library. If not set,
 ///   it defaults to `(0, 0)`.
 ///
@@ -59,6 +59,15 @@ mod pspstub;
 /// unsafe extern "C" {
 ///     #[eabi(i6)]
 ///     unsafe fn stub_function(a1: i32, a2: *mut u8, a3: u8, a4: u16, a5: bool, a6: usize);
+/// }
+/// ```
+///
+/// Using `LibFlags`:
+///
+/// ```no_run
+/// #[pspsdk::psp_stub(libname = "LibraryName", flags = LibFlags::AutoExport.union(LibFlags::WeakImport), version = (1, 0))]
+/// unsafe extern "C" {
+///     unsafe fn stub_function();
 /// }
 /// ```
 #[proc_macro_attribute]
