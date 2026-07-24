@@ -13,6 +13,54 @@ mod export_impl;
 mod exports_impl;
 mod pspstub;
 
+/// Creates a PSP stub library from a `extern "C"` block.
+///
+/// # Macro parameters
+///
+/// - `libname`: The name of the library to create stubs.
+/// - `flags`: The library flags.
+/// - `version`: Optional. A tuple with a major and minor version of the stub library. If not set,
+///   it defaults to `(0, 0)`.
+///
+/// # Extern "C" block items attributes
+///
+/// - `nid`: An attribute that specifies the NID of the extern item. If an item lacks it, it derives
+///   the NID value from a hash method from the item name.
+/// - `eabi`: Specifies for function items with 5 or more parameters to generate a function that
+///   uses the MIPS eabi calling convention. If not used, such functions default to use the `o32`
+///   MIPS calling convention which may not work depending on many factors.
+///   - `i5`: Function with 5 parameters (up to 32 bit in size) using eabi calling convention.
+///   - `i6`: Function with 6 parameters (up to 32 bit in size) using eabi calling convention.
+///   - `i7`: Function with 7 parameters (up to 32 bit in size) using eabi calling convention.
+///   - `i8`: Function with 8 parameters (up to 32 bit in size) using eabi calling convention.
+///   - `i_ii_i_ri`: Function with the parameters in the shape of `(32bit, 64bit, 32bit) -> 32bit`
+///     using eabi calling convention.
+///   - `i_ii_i_rii`: Function with the parameters in the shape of `(32bit, 64bit, 32bit) -> 64bit`
+///     using eabi calling convention.
+///
+/// # Examples
+///
+/// ```no_run
+/// #[pspsdk::psp_stub(libname = "LibraryName", flags = 0x0001, version = (1, 0))]
+/// unsafe extern "C" {
+///     // The NID will be automatically decided by hash.
+///     unsafe fn stub_function();
+///
+///     // The NID can also be specified.
+///     #[nid(0xDEADCAFE)]
+///     safe fn another_function(arg: i32) -> i32;
+/// }
+/// ```
+///
+/// Specifying eabi usage:
+///
+/// ```no_run
+/// #[pspsdk::psp_stub(libname = "LibraryName", flags = 0x0001)]
+/// unsafe extern "C" {
+///     #[eabi(i6)]
+///     unsafe fn stub_function(a1: i32, a2: *mut u8, a3: u8, a4: u16, a5: bool, a6: usize);
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn psp_stub(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut args: StubArgs = StubArgs::default();

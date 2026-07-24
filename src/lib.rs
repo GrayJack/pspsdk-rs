@@ -7,7 +7,6 @@
     pattern_type_macro,
     structural_match,
     asm_experimental_arch,
-    c_variadic,
     allocator_api,
     alloc_error_handler,
     std_internals,

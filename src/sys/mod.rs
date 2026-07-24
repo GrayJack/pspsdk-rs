@@ -1,3 +1,4 @@
+//! The low-level implementations, type definition, and system stubs for the PSP system.
 use core::{marker::PhantomData, ops::ControlFlow};
 
 use bitflag_attr::bitflag;
@@ -32,15 +33,19 @@ pub mod usersystemlib;
 #[cfg(feature = "non-stub-code")]
 pub mod sync;
 
-#[cfg(target_os = "psp")]
-pub type SceSize = usize;
-#[cfg(not(target_os = "psp"))]
-pub type SceSize = u32;
+/// A `usize`-like with the guarantee to be the correct size on PSP.
+pub type SceSize = cfg_select! {
+    target_os = "psp" => usize,
+    target_pointer_width = "32" => usize,
+    _ => u32,
+};
 
-#[cfg(target_os = "psp")]
-pub type SceIsize = isize;
-#[cfg(not(target_os = "psp"))]
-pub type SceIsize = i32;
+/// A `isize`-like with the guarantee to be the correct size on PSP.
+pub type SceIsize = cfg_select! {
+    target_os = "psp" => isize,
+    target_pointer_width = "32" => isize,
+    _ => i32,
+};
 
 /// Identification number for several kernel objects.
 #[repr(transparent)]
