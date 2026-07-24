@@ -3,11 +3,12 @@ name = "psp-prx-barebones"
 version = "0.1.0"
 edition = "2024"
 
+[profile.dev]
+opt-level = "s"
+
 [profile.release]
-opt-level = "z"
-strip = true
+opt-level = "s"
 lto = "thin"
-codegen-units = 1
 # panic = "abort"
 
 [dependencies]

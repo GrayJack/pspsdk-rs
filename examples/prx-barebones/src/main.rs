@@ -21,8 +21,8 @@ fn psp_main() -> SceResult<()> {
 #[unsafe(no_mangle)]
 extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
     #[allow(unreachable_code)]
-    extern "C" fn psp_main_thread(argc_bytes: usize, argp: *mut c_void) -> SceResult<u32> {
-        let res = pspsdk::call_main!(psp_main, argc_bytes, argp);
+    extern "C" fn psp_main_thread(argc: usize, argv: *mut c_void) -> SceResult<u32> {
+        let res = pspsdk::call_main!(psp_main, argc, argv);
 
         pspsdk::process::exit(res as i32);
         SceResult::new(res as u32)

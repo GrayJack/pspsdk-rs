@@ -4,5 +4,13 @@ version = "0.1.0"
 authors = ["Marko Mijalkovic <marko.mijalkovic97@gmail.com>"]
 edition = "2018"
 
+[profile.dev]
+opt-level = "s"
+
+[profile.release]
+opt-level = "s"
+lto = "thin"
+# panic = "abort"
+
 [dependencies]
 pspsdk = { path = "../../" }
