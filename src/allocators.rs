@@ -269,6 +269,8 @@ unsafe impl Allocator for PartitionAlloc {
 #[alloc_error_handler]
 #[cfg(not(feature = "std"))]
 fn aeh(layout: core::alloc::Layout) -> ! {
+    use crate::sys::SceError;
+
     crate::println!(
         "Failed to allocate {} bytes with {} alignment",
         layout.size(),
@@ -276,9 +278,7 @@ fn aeh(layout: core::alloc::Layout) -> ! {
     );
     loop {
         if crate::sys::is_interrupt_enabled() {
-            use crate::sys::{thread::sceKernelExitDeleteThread, SceError};
-
-            let _ = sceKernelExitDeleteThread(SceError::NO_MEMORY.to_inner());
+            crate::process::exit(SceError::NO_MEMORY.to_inner().cast_signed());
         }
         core::hint::spin_loop()
     }

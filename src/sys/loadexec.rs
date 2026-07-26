@@ -51,7 +51,7 @@ pub struct LoadExecVshOptions {
     pub unk2: u32,
 }
 
-#[psp_stub(libname = "LoadExecForUser", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "LoadExecForUser", flags = 0x4009, use_crate)]
 unsafe extern "C" {
     /// Exits the game and reboot back to the XMB/VSH.
     ///

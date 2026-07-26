@@ -363,7 +363,7 @@ pub struct InputDataTransferHandle {
 pub type InputDataTransferFn =
     unsafe extern "C" fn(src: *mut c_void, dest: *mut CtrlDataExt) -> SceResult<u32>;
 
-#[psp_stub(libname = "sceCtrl", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "sceCtrl", flags = 0x4009, use_crate)]
 unsafe extern "C" {
     /// Sets the controller input sampling mode.
     ///
@@ -804,7 +804,7 @@ unsafe extern "C" {
 }
 
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "sceCtrl_driver", flags = 0x0001, use_crate)]
+#[psp_stub(libname = "sceCtrl_driver", flags = 0x0009, use_crate)]
 unsafe extern "C" {
     /// Sets the controller input sampling mode.
     ///

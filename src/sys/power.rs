@@ -123,7 +123,7 @@ pub enum ExclusiveWlanMode {
 // - `scePowerRequestSuspendTouchAndGo`
 // - `scePowerSetCallbackMode`
 // - `scePowerSetPowerSwMode`
-#[psp_stub(libname = "scePower", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "scePower", flags = 0x4009, use_crate)]
 unsafe extern "C" {
     /// Checks if power is supplied from external power source.
     ///
@@ -716,7 +716,7 @@ unsafe extern "C" {
 // - `scePowerSetCallbackMode`
 // - `scePowerSetPowerSwMode`
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "scePower_driver", flags = 0x0001, use_crate)]
+#[psp_stub(libname = "scePower_driver", flags = 0x0009, use_crate)]
 unsafe extern "C" {
     /// Checks if power is supplied from external power source.
     ///

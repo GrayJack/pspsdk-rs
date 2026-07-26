@@ -64,7 +64,7 @@ pub enum DayOfWeek {
     Saturday = 6,
 }
 
-#[psp_stub(libname = "sceRtc", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "sceRtc", flags = 0x4009, use_crate)]
 unsafe extern "C" {
     /// Gets the resolution of the real-time clock tick.
     ///
@@ -781,7 +781,7 @@ unsafe extern "C" {
 // - `sceRtcSuspend`
 // - `sceRtcEnd`
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "sceRtc_driver", flags = 0x0001, use_crate)]
+#[psp_stub(libname = "sceRtc_driver", flags = 0x0009, use_crate)]
 unsafe extern "C" {
     /// Gets the resolution of the real-time clock tick.
     ///

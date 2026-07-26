@@ -1062,7 +1062,7 @@ pub struct KtlsId(SceUid);
 /// Returns unknown value on success, error value otherwise.
 pub type KtlsAllocFunc = unsafe extern "C" fn(size: SceSize, common: *mut c_void) -> SceResult<u32>;
 
-#[psp_stub(libname = "ThreadManForUser", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "ThreadManForUser", flags = 0x4009, use_crate)]
 unsafe extern "C" {
     /// Create a thread.
     ///
@@ -3438,7 +3438,7 @@ unsafe extern "C" {
 }
 
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "ThreadManForKernel", flags = 0x0001, use_crate)]
+#[psp_stub(libname = "ThreadManForKernel", flags = 0x0009, use_crate)]
 unsafe extern "C" {
     /// Create a thread.
     ///

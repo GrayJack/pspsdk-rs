@@ -74,7 +74,7 @@ pub enum AudioInputFrequency {
     Khz11_025 = 11025,
 }
 
-#[psp_stub(libname = "sceAudio", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "sceAudio", flags = 0x4009, use_crate)]
 unsafe extern "C" {
     /// Allocate and initialize a hardware output channel.
     ///

@@ -17,7 +17,7 @@ use crate::sys::{
 // - `sceKernelCpuSuspendIntr`
 // - `sceKernelIsCpuIntrEnable`
 // - `sceKernelIsCpuIntrSuspended`
-#[psp_stub(libname = "Kernel_Library", flags = 0x0001, use_crate)]
+#[psp_stub(libname = "Kernel_Library", flags = 0x0009, use_crate)]
 unsafe extern "C" {
     /// Gets the remaining free size of the calling thread stack (?)
     ///

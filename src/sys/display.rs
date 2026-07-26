@@ -73,7 +73,7 @@ pub enum DisplayState {
 }
 
 
-#[psp_stub(libname = "sceDisplay", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "sceDisplay", flags = 0x4009, use_crate)]
 unsafe extern "C" {
     /// Sets the display mode.
     ///
@@ -333,7 +333,7 @@ unsafe extern "C" {
 // - `sceDisplaySetFrameBufferInternal` (not real cracked name)
 // - `sceDisplayGetFrameBufferInternal` (not real cracked name)
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "sceDisplay_driver", flags = 0x0001, use_crate)]
+#[psp_stub(libname = "sceDisplay_driver", flags = 0x0009, use_crate)]
 unsafe extern "C" {
     /// Sets the display mode.
     ///

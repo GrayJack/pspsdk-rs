@@ -547,7 +547,7 @@ pub struct IoHook {
     pub func_table: *mut DriveFunctionTable,
 }
 
-#[psp_stub(libname = "IoFileMgrForUser", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "IoFileMgrForUser", flags = 0x4009, use_crate)]
 unsafe extern "C" {
     /// Opens a file with the corresponding file access attributes.
     ///
@@ -1133,7 +1133,7 @@ unsafe extern "C" {
 // int sceIoGetFdDebugInfo(int fd, SceIoFdDebugInfo *outInfo);
 // int sceIoAddHook(SceIoHookType *hook);
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "IoFileMgrForKernel", flags = 0x0001, use_crate)]
+#[psp_stub(libname = "IoFileMgrForKernel", flags = 0x0009, use_crate)]
 unsafe extern "C" {
     /// Opens a file with the corresponding file access attributes.
     ///
@@ -1911,7 +1911,7 @@ unsafe extern "C" {
 // - (printf, 0xCAB439DF)
 // - (putchar, 0xD768752A)
 // - (puts, 0xD97C8CB9)
-#[psp_stub(libname = "StdioForUser", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "StdioForUser", flags = 0x4009, use_crate)]
 unsafe extern "C" {
     /// Function to get the current standard in file ID
     ///
@@ -1976,7 +1976,7 @@ unsafe extern "C" {
 }
 
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "StdioForKernel", flags = 0x0001, use_crate)]
+#[psp_stub(libname = "StdioForKernel", flags = 0x0009, use_crate)]
 unsafe extern "C" {
     /// Function to get the current standard in file ID
     ///

@@ -200,7 +200,7 @@ pub struct KernelModuleInfoV1 {
     pub bss_size: SceSize,
 }
 
-#[psp_stub(libname = "ModuleMgrForUser", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "ModuleMgrForUser", flags = 0x4009, use_crate)]
 unsafe extern "C" {
     /// Loads a module.
     ///

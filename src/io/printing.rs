@@ -192,7 +192,6 @@ unsafe fn init() {
         );
         let vram_base = VRAM_BASE.load(Ordering::Acquire);
 
-        // TODO: Change sys types to usize.
         let _res = sceDisplaySetMode(DisplayMode::Lcd, DISPLAY_WIDTH, DISPLAY_HEIGHT);
         let _res = sceDisplaySetFrameBuf(
             vram_base.cast(),

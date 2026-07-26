@@ -31,7 +31,7 @@ pub enum AudioRoutingVolumeMode {
     ForceMaximum = 0x01,
 }
 
-#[psp_stub(libname = "sceAudioRouting", flags = 0x4001, version = (0x00, 0x11), use_crate)]
+#[psp_stub(libname = "sceAudioRouting", flags = 0x4009, version = (0x00, 0x11), use_crate)]
 unsafe extern "C" {
     /// Gets the current audio routing mode.
     ///
@@ -79,7 +79,7 @@ unsafe extern "C" {
 }
 
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "sceAudioRouting_driver", flags = 0x0001, version = (0x00, 0x11), use_crate)]
+#[psp_stub(libname = "sceAudioRouting_driver", flags = 0x0009, version = (0x00, 0x11), use_crate)]
 unsafe extern "C" {
     /// Gets the current audio routing mode.
     ///

@@ -6,7 +6,7 @@ use crate::sys::{
     SceResult, SceSize,
 };
 
-#[psp_stub(libname = "sceSuspendForUser", flags = 0x4000, use_crate)]
+#[psp_stub(libname = "sceSuspendForUser", flags = 0x4008, use_crate)]
 unsafe extern "C" {
     /// Locks power state of the device.
     ///
@@ -184,7 +184,7 @@ unsafe extern "C" {
 }
 
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "sceSuspendForKernel", flags = 0x0001, use_crate)]
+#[psp_stub(libname = "sceSuspendForKernel", flags = 0x0009, use_crate)]
 unsafe extern "C" {
     /// Locks power state of the device.
     ///

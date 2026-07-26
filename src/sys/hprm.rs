@@ -30,7 +30,7 @@ pub enum HprmKey {
     Hold = 0x80,
 }
 
-#[psp_stub(libname = "sceHprm", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "sceHprm", flags = 0x4009, use_crate)]
 unsafe extern "C" {
     /// Peek at the current key being pressed on the remote.
     ///
@@ -136,7 +136,7 @@ unsafe extern "C" {
 // FIXME: Add NID for the OFW range 3.70 to 3.73, but before that, we should find the version ranges
 // that had no change in NIDs to reduce the number of needed features
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "sceHprm_driver", flags = 0x0001, use_crate)]
+#[psp_stub(libname = "sceHprm_driver", flags = 0x0009, use_crate)]
 unsafe extern "C" {
     /// Initialize Headphone Remote module.
     #[nid(0x1C5BC5A0)]

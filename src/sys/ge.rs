@@ -678,7 +678,7 @@ pub struct GeBreakpoint {
     pub count: u32,
 }
 
-#[psp_stub(libname = "sceGe_user", flags = 0x4001, use_crate)]
+#[psp_stub(libname = "sceGe_user", flags = 0x4009, use_crate)]
 unsafe extern "C" {
     /// Gets the size of eDRAM.
     ///
@@ -938,7 +938,7 @@ unsafe extern "C" {
 // - `sceGeSetGeometryClock`
 // - `sceGeSetReg`
 #[cfg(feature = "kernel")]
-#[psp_stub(libname = "sceGe_driver", flags = 0x0001, use_crate)]
+#[psp_stub(libname = "sceGe_driver", flags = 0x0009, use_crate)]
 unsafe extern "C" {
     /// Gets the size of eDRAM.
     ///
