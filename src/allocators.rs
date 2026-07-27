@@ -1,18 +1,27 @@
 //! Allocators for the PSP system.
 use core::{
     alloc::{AllocError, Allocator, GlobalAlloc},
+    ffi::CStr,
+    mem::MaybeUninit,
     ptr::{self, NonNull},
 };
 
-use crate::sys::{
-    mem::{
-        sceKernelAllocPartitionMemory, sceKernelFreePartitionMemory, sceKernelGetBlockHeadAddr,
-        MemoryBlockId, MemoryBlockKind,
+use crate::{
+    io,
+    sys::{
+        mem::{
+            sceKernelAllocPartitionMemory, sceKernelFreePartitionMemory, sceKernelGetBlockHeadAddr,
+            MemoryBlockId,
+        },
+        thread::{
+            sceKernelCreateVpl, sceKernelDeleteVpl, sceKernelFreeVpl, sceKernelTryAllocateVpl,
+            VplAttributes, VplId,
+        },
+        SceUid,
     },
-    SceUid,
 };
 
-pub use crate::sys::mem::MemoryPartitionId;
+pub use crate::sys::mem::{MemoryBlockKind, MemoryPartitionId};
 
 #[global_allocator]
 static GLOBAL_ALLOC: SystemAlloc = SystemAlloc;
@@ -29,11 +38,24 @@ pub struct SystemAlloc;
 /// An allocator to a specific PSP RAM partition
 pub struct PartitionAlloc {
     partition: MemoryPartitionId,
+    policy: MemoryBlockKind,
 }
 
 impl PartitionAlloc {
+    /// Creates a new `PartitionAlloc` that will allocate in the given PSP `partition`.
+    ///
+    /// The allocation policy is to allocate from the lowest available address.
     pub const fn new(partition: MemoryPartitionId) -> Self {
-        Self { partition }
+        Self {
+            partition,
+            policy: MemoryBlockKind::Low,
+        }
+    }
+
+    /// Creates a new `PartitionAlloc` that will allocate in the given PSP `partition` with a
+    /// specified allocation `policy`.
+    pub const fn with_block_kind(partition: MemoryPartitionId, policy: MemoryBlockKind) -> Self {
+        Self { partition, policy }
     }
 }
 
@@ -160,7 +182,7 @@ unsafe impl GlobalAlloc for PartitionAlloc {
             sceKernelAllocPartitionMemory(
                 self.partition,
                 c"PartitionAlloc".as_ptr().cast(),
-                MemoryBlockKind::Low,
+                self.policy,
                 size,
                 0,
             )
@@ -217,7 +239,7 @@ unsafe impl Allocator for PartitionAlloc {
                     sceKernelAllocPartitionMemory(
                         self.partition,
                         c"PartitionAlloc".as_ptr().cast(),
-                        MemoryBlockKind::Low,
+                        self.policy,
                         size,
                         0,
                     )
@@ -263,6 +285,143 @@ unsafe impl Allocator for PartitionAlloc {
                 let _res = sceKernelFreePartitionMemory(id);
             }
         }
+    }
+}
+
+/// A builder for the [`VariablePoolAllocator`].
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+pub struct VariablePoolAllocBuilder {
+    name: &'static CStr,
+    partition: MemoryPartitionId,
+    pool_size: usize,
+    attr: VplAttributes,
+}
+
+/// A memory allocator using the PSP Variable-sized Memory Pool.
+pub struct VariablePoolAlloc {
+    id: VplId,
+}
+
+impl VariablePoolAlloc {
+    /// Creates a variable memory pool allocator with a given size.
+    ///
+    /// The RAM partition used is the default partition on the compilation context. For user
+    /// application is [`MemoryPartitionId::MainUser`] while for kernel it is
+    /// [`MemoryPartitionId::MainKernel`]. To specify or configure the VariablePoolAllocator
+    /// further, you can use [`VariablePoolAllocator::builder`] and build to your liking.
+    pub fn new(pool_size: usize) -> io::Result<Self> {
+        Self::builder().name(c"SDK_VPL").size(pool_size).create()
+    }
+
+    /// Creates a builder for the `VariablePoolAllocator` that can be used to configure it's
+    /// behavior before creating the allocator.
+    #[must_use]
+    pub const fn builder() -> VariablePoolAllocBuilder {
+        VariablePoolAllocBuilder::new()
+    }
+}
+
+unsafe impl Allocator for VariablePoolAlloc {
+    fn allocate(&self, layout: core::alloc::Layout) -> Result<NonNull<[u8]>, AllocError> {
+        match layout.size() {
+            0 => Ok(NonNull::slice_from_raw_parts(layout.dangling_ptr(), 0)),
+            // SAFETY: `layout` is non-zero in size,
+            size => unsafe {
+                let size = size + size_of::<SceUid>() + layout.align();
+
+                let mut mem_block = MaybeUninit::uninit();
+                sceKernelTryAllocateVpl(self.id, size, mem_block.as_mut_ptr())
+                    .into_result()
+                    .map_err(|_| AllocError)?;
+
+                let ptr: *mut u8 = mem_block.assume_init().cast();
+                let align_padding = ptr.wrapping_add(1).align_offset(layout.align());
+
+                let ptr = NonNull::new_unchecked(ptr.wrapping_add(align_padding));
+
+                Ok(NonNull::slice_from_raw_parts(ptr, size))
+            },
+        }
+    }
+
+    unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: core::alloc::Layout) {
+        if layout.size() != 0 {
+            unsafe {
+                let _res = sceKernelFreeVpl(self.id, ptr.as_ptr().cast());
+            }
+        }
+    }
+}
+
+impl Drop for VariablePoolAlloc {
+    fn drop(&mut self) {
+        let _ = sceKernelDeleteVpl(self.id);
+    }
+}
+
+impl VariablePoolAllocBuilder {
+    #[inline]
+    #[must_use]
+    const fn new() -> Self {
+        Self {
+            name: c"",
+            partition: DEFAULT_PARTITION_ID,
+            pool_size: 0,
+            attr: VplAttributes::WaitByFIFO,
+        }
+    }
+
+    /// Sets the name for the [`VariablePoolAllocator`] when created.
+    ///
+    /// This name is only used for debug purposes.
+    pub const fn name(&mut self, name: &'static CStr) -> &mut Self {
+        self.name = name;
+        self
+    }
+
+    /// Sets the PSP RAM partition the [`VariablePoolAllocator`] will use.
+    ///
+    /// If not set, it will default to [`MemoryPartitionId::MainUser`] on user-level software, or
+    /// [`MemoryPartitionId::MainKernel`] on kernel-level software.
+    pub const fn partition(&mut self, partition: MemoryPartitionId) -> &mut Self {
+        self.partition = partition;
+        self
+    }
+
+    /// Sets the size of the [`VariablePoolAllocator`].
+    pub const fn size(&mut self, size: usize) -> &mut Self {
+        self.pool_size = size;
+        self
+    }
+
+    /// Sets the attributes passed to the [`VariablePoolAllocator`] on creation.
+    ///
+    /// If not set, it default to [`VplAttributes::WaitByFIFO`] (the type defaults).
+    pub const fn attributes(&mut self, attr: VplAttributes) -> &mut Self {
+        self.attr = attr;
+        self
+    }
+
+    /// Creates the [`VariablePoolAllocator`] from the set configuration.
+    pub fn create(&self) -> io::Result<VariablePoolAlloc> {
+        let id = unsafe {
+            sceKernelCreateVpl(
+                self.name.as_ptr().cast(),
+                self.partition,
+                self.attr,
+                self.pool_size,
+                None,
+            )
+            .into_result()?
+        };
+
+        Ok(VariablePoolAlloc { id })
+    }
+}
+
+impl Default for VariablePoolAllocBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
