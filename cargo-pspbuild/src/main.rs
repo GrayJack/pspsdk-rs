@@ -254,6 +254,7 @@ fn main() {
         .arg("build")
         .arg("-Z")
         .arg(build_std_flag)
+        .arg("-Zbuild-std-features=optimize_for_size")
         .arg("--target")
         .arg("mipsel-sony-psp")
         .arg("--message-format=json-render-diagnostics")
@@ -273,6 +274,7 @@ fn main() {
             .arg("--format-version=1")
             .arg("-Z")
             .arg(build_std_flag)
+            .arg("-Zbuild-std-features=optimize_for_size")
             .stderr(Stdio::inherit())
             .output()
             .unwrap();
