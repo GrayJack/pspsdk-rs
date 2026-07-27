@@ -21,7 +21,8 @@ use super::PoisonError;
 
 type DefaultRwLock = cfg_select! {
     feature = "kernel" => sys::RwLock,
-    _ => sys::LwRwLock,
+    pbp => sys::LwRwLock,
+    _ => sys::SemaRwLock,
 };
 
 

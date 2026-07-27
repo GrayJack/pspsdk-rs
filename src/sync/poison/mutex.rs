@@ -21,7 +21,8 @@ use super::PoisonError;
 
 type DefaultMutex = cfg_select! {
     feature = "kernel" => sys::Mutex,
-    _ => sys::LwMutex,
+    pbp => sys::LwMutex,
+    _ => sys::SemaMutex,
 };
 
 /// A mutual exclusion primitive useful for protecting shared data

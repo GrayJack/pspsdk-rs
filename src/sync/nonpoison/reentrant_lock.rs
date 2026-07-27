@@ -14,6 +14,12 @@ use crate::{
     },
 };
 
+type DefaultMutex = cfg_select! {
+    feature = "kernel" => sys::Mutex,
+    // pbp => sys::LwMutex,
+    _ => sys::Mutex,
+};
+
 
 /// A re-entrant mutual exclusion lock
 ///
@@ -79,7 +85,7 @@ use crate::{
 // since we're not dealing with multiple threads. If it's not equal,
 // synchronization is left to the mutex, making relaxed memory ordering for
 // the `owner` field fine in all cases.
-pub struct ReentrantLock<T: ?Sized, M = sys::Mutex> {
+pub struct ReentrantLock<T: ?Sized, M = DefaultMutex> {
     mutex: M,
     owner: AtomicUsize,
     lock_count: UnsafeCell<u32>,
@@ -110,7 +116,7 @@ impl<T: RefUnwindSafe + ?Sized, M> RefUnwindSafe for ReentrantLock<T, M> {}
 /// mutability (usually [`RefCell`](core::cell::RefCell)) in order to mutate
 /// the guarded data.
 #[must_use = "if unused the ReentrantLock will immediately unlock"]
-pub struct ReentrantLockGuard<'a, T: ?Sized + 'a, M: RawMutex = sys::Mutex> {
+pub struct ReentrantLockGuard<'a, T: ?Sized + 'a, M: RawMutex = DefaultMutex> {
     lock: &'a ReentrantLock<T, M>,
 }
 
@@ -129,7 +135,7 @@ impl<T> ReentrantLock<T> {
     /// ```
     pub const fn new(t: T) -> ReentrantLock<T> {
         ReentrantLock {
-            mutex: sys::Mutex::new(),
+            mutex: DefaultMutex::new(),
             owner: AtomicUsize::new(0),
             lock_count: UnsafeCell::new(0),
             data: t,

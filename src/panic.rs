@@ -10,7 +10,7 @@ use core::any::Any;
 use core::{
     any::Any,
     mem::{self, ManuallyDrop},
-    panic::{self, Location, PanicInfo, PanicMessage},
+    panic::{self, Location, PanicInfo},
 };
 
 #[cfg(not(feature = "std"))]
