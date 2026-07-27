@@ -52,7 +52,8 @@ pub mod io;
 #[cfg(feature = "non-stub-code")]
 pub mod os;
 #[cfg(feature = "non-stub-code")]
-pub mod panic;
+#[path = "panic.rs"]
+pub mod panicking;
 #[cfg(feature = "non-stub-code")]
 pub mod sync;
 #[cfg(feature = "non-stub-code")]

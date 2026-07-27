@@ -15,18 +15,61 @@ use core::{
 
 #[cfg(not(feature = "std"))]
 use alloc::{boxed::Box, string::String};
+#[cfg(not(feature = "std"))]
+use io_core::io::Write;
 
-#[cfg_attr(panic = "unwind", link(name = "unwind", kind = "static"))]
-unsafe extern "C" {}
+// Prints to the "panic output", depending on the platform this may be:
+// - the standard error output
+// - some dedicated platform specific output
+// - nothing (so this macro is a no-op)
+macro_rules! rtprintpanic {
+    ($($t:tt)*) => {
+        #[cfg(not(panic = "immediate-abort"))] {
+            print(format_args!($($t)*));
+        }
+
+        #[cfg(panic = "immediate-abort")]
+        {
+            let _ = format_args!($($t)*);
+        }
+    }
+}
+
+macro_rules! rtabort {
+    ($($t:tt)*) => {
+        {
+            print_and_die(format_args!("fatal runtime error: {}, aborting\n", format_args!($($t)*)));
+        }
+    }
+}
 
 #[cfg(not(feature = "std"))]
-fn print_and_die(s: String) -> ! {
-    if cfg!(pbp) {
-        crate::dprintln!("{}", s);
-    }
-    crate::println!("{}", s);
+fn print(args: core::fmt::Arguments) {
+    cfg_select! {
+        not(panic = "immediate-abort") => {
+            if cfg!(pbp) {
+                crate::io::printing::_dprint(args);
+            }
 
+            if let Some(mut out) = crate::os::stdio::panic_output() {
+                let _ = out.write_fmt(args);
+            }
+        },
+        _ => {}
+    }
+}
+
+#[cfg(not(feature = "std"))]
+fn print_and_die(args: core::fmt::Arguments) -> ! {
+    print(args);
     crate::process::abort();
+}
+
+#[inline(never)]
+#[cfg(all(not(feature = "std"), panic = "immediate-abort"))]
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    crate::process::abort()
 }
 
 #[inline(never)]
@@ -75,38 +118,24 @@ fn panic(info: &PanicInfo) -> ! {
 fn panic_impl(info: &PanicInfo) -> ! {
     use core::fmt;
 
-    struct PanicPayload<'a> {
-        message: PanicMessage<'a>,
-        location: &'a Location<'a>,
+    struct FormatStringPayload<'a> {
+        inner: &'a core::panic::PanicMessage<'a>,
         string: Option<String>,
     }
 
-    impl<'a> PanicPayload<'a> {
-        fn new(info: &'a PanicInfo<'a>) -> PanicPayload<'a> {
-            let message = info.message();
-            let location = info.location().unwrap();
-            PanicPayload {
-                message,
-                location,
-                string: None,
-            }
-        }
-
+    impl FormatStringPayload<'_> {
         fn fill(&mut self) -> &mut String {
-            let s = alloc::format!(
-                "panicked at {}:{}:{}: {}",
-                self.location.file(),
-                self.location.line(),
-                self.location.column(),
-                self.message.as_str().unwrap_or_default()
-            );
-
-            self.string.get_or_insert(s)
+            let inner = self.inner;
+            // Lazily, the first time this gets called, run the actual string formatting.
+            self.string.get_or_insert_with(|| alloc::format!("{inner}"))
         }
     }
 
-    unsafe impl<'a> panic::PanicPayload for PanicPayload<'a> {
+    unsafe impl panic::PanicPayload for FormatStringPayload<'_> {
         fn take_box(&mut self) -> *mut (dyn Any + Send) {
+            // We do two allocations here, unfortunately. But (a) they're required with the current
+            // scheme, and (b) we don't handle panic + OOM properly anyway (see comment in
+            // begin_panic below).
             let contents = mem::take(self.fill());
             Box::into_raw(Box::new(contents))
         }
@@ -116,17 +145,52 @@ fn panic_impl(info: &PanicInfo) -> ! {
         }
     }
 
-    impl fmt::Display for PanicPayload<'_> {
+    impl fmt::Display for FormatStringPayload<'_> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             if let Some(s) = &self.string {
-                s.fmt(f)
+                f.write_str(s)
             } else {
-                Err(fmt::Error)
+                fmt::Display::fmt(&self.inner, f)
             }
         }
     }
 
-    rust_panic_with_hook(&mut PanicPayload::new(info));
+    struct StaticStrPayload(&'static str);
+
+    unsafe impl panic::PanicPayload for StaticStrPayload {
+        fn take_box(&mut self) -> *mut (dyn Any + Send) {
+            Box::into_raw(Box::new(self.0))
+        }
+
+        fn get(&mut self) -> &(dyn Any + Send) {
+            &self.0
+        }
+
+        fn as_str(&mut self) -> Option<&str> {
+            Some(self.0)
+        }
+    }
+
+    impl fmt::Display for StaticStrPayload {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str(self.0)
+        }
+    }
+
+    let loc = info.location().unwrap(); // The current implementation always returns Some
+    let msg = info.message();
+
+    if let Some(s) = msg.as_str() {
+        rust_panic_with_hook(&mut StaticStrPayload(s), loc);
+    } else {
+        rust_panic_with_hook(
+            &mut FormatStringPayload {
+                inner: &msg,
+                string: None,
+            },
+            loc,
+        );
+    }
 }
 
 /// Central point for dispatching panics.
@@ -135,26 +199,24 @@ fn panic_impl(info: &PanicInfo) -> ! {
 /// panics, panic hooks, and finally dispatching to the panic runtime to either
 /// abort or unwind.
 #[cfg(not(feature = "std"))]
-fn rust_panic_with_hook(payload: &mut dyn panic::PanicPayload) -> ! {
+fn rust_panic_with_hook(
+    payload: &mut dyn panic::PanicPayload, location: &'static Location<'static>,
+) -> ! {
     let panics = update_panic_count(1);
 
-    fn die_nested() -> ! {
-        print_and_die("thread panicked while processing panic. aborting.".into());
-    }
+    // payload.get(); // populate the payload's string
 
-    payload.get(); // populate the payload's string
-
-    if cfg!(pbp) {
-        crate::dprintln!("{}", payload);
-    }
-    crate::println!("{payload}");
+    let message: &str = payload.as_str().unwrap_or_default();
+    rtprintpanic!(
+        "panicked at {location}:\n{message}\nthread panicked while processing panic. aborting.\n"
+    );
 
     if panics > 1 {
         // If a thread panics while it's already unwinding then we
         // have limited options. Currently our preference is to
         // just abort. In the future we may consider resuming
         // unwinding or otherwise exiting the thread cleanly.
-        die_nested();
+        rtabort!("thread panicked while processing panic. aborting.");
     }
 
     rust_panic(payload)
@@ -177,17 +239,15 @@ fn update_panic_count(amt: isize) -> usize {
 }
 
 #[allow(improper_ctypes)]
-#[cfg(panic = "unwind")]
 unsafe extern "C" {
     #[cfg_attr(not(bootstrap), rustc_std_internal_symbol)]
     fn __rust_panic_cleanup(payload: *mut u8) -> *mut (dyn Any + Send + 'static);
 }
 
-#[allow(improper_ctypes, unexpected_cfgs)]
-#[cfg(panic = "unwind")]
-unsafe extern "C-unwind" {
+#[allow(unexpected_cfgs)]
+unsafe extern "Rust" {
     #[cfg_attr(not(bootstrap), rustc_std_internal_symbol)]
-    fn __rust_start_panic(payload: usize) -> u32;
+    fn __rust_start_panic(payload: &mut dyn panic::PanicPayload) -> u32;
 }
 
 #[cfg_attr(not(bootstrap), rustc_std_internal_symbol)]
@@ -201,19 +261,15 @@ extern "C" fn __rust_foreign_exception() -> ! {
 #[unsafe(no_mangle)]
 #[cfg(not(feature = "std"))]
 fn rust_panic(msg: &mut dyn panic::PanicPayload) -> ! {
-    let code = unsafe {
-        let obj = msg;
-        panic_unwind::__rust_start_panic(obj as _)
-    };
-
-    print_and_die(alloc::format!("failed to initiate panic, error {}", code))
+    let code = unsafe { __rust_start_panic(msg) };
+    rtabort!("failed to initiate panic, error {}", code)
 }
 
 #[allow(unexpected_cfgs)]
 #[cfg(not(feature = "std"))]
 #[cfg_attr(not(bootstrap), rustc_std_internal_symbol)]
 extern "C" fn __rust_drop_panic() -> ! {
-    print_and_die("Rust panics must be rethrown".into());
+    rtabort!("Rust panics must be rethrown");
 }
 
 #[cfg(all(feature = "std", not(target_os = "psp")))]
@@ -221,14 +277,14 @@ pub use std::panic::catch_unwind;
 
 /// Invoke a closure, capturing the cause of an unwinding panic if one occurs.
 #[inline(never)]
-#[cfg(all(not(feature = "std"), panic = "abort"))]
+#[cfg(all(not(feature = "std"), panic = "immediate-abort"))]
 pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>> {
     Ok(f())
 }
 
 /// Invoke a closure, capturing the cause of an unwinding panic if one occurs.
 #[inline(never)]
-#[cfg(all(not(feature = "std"), panic = "unwind"))]
+#[cfg(all(not(feature = "std"), not(panic = "immediate-abort")))]
 pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>> {
     // This whole function is directly lifted out of rustc. See comments there
     // for an explanation of how this actually works.
@@ -282,6 +338,9 @@ pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>>
 #[lang = "eh_personality"]
 unsafe extern "C" fn rust_eh_personality() {}
 
+#[cfg_attr(panic = "unwind", link(name = "unwind", kind = "static"))]
+unsafe extern "C" {}
+
 /// These symbols and functions should not actually be used. `libunwind`,
 /// however, requires them to be present so that it can link.
 // TODO: Patch these out of libunwind instead.
@@ -300,9 +359,10 @@ mod libunwind_shims {
     #[unsafe(no_mangle)]
     #[allow(deprecated)]
     unsafe extern "C" fn abort() {
-        loop {
-            crate::sys::spin_loop();
-        }
+        // loop {
+        //     crate::sys::spin_loop();
+        // }
+        crate::process::abort()
     }
 
     #[unsafe(no_mangle)]

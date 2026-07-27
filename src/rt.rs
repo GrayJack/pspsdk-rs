@@ -9,7 +9,7 @@
 use core::cell::SyncUnsafeCell;
 
 use crate::{
-    panic,
+    panicking,
     sys::{self, thread::ThreadId},
 };
 
@@ -197,14 +197,14 @@ fn psp_start_internal(
     //
     // We use `catch_unwind` with `handle_rt_panic` instead of `abort_unwind` to make the error in
     // case of a panic a bit nicer.
-    panic::catch_unwind(move || {
+    panicking::catch_unwind(move || {
         // SAFETY: Only called once during runtime initialization.
         unsafe { init(argc, argv) };
 
-        let ret_code = panic::catch_unwind(main).unwrap_or_else(move |payload| {
+        let ret_code = panicking::catch_unwind(main).unwrap_or_else(move |payload| {
             // Carefully dispose of the panic payload.
-            let payload = panic::AssertUnwindSafe(payload);
-            panic::catch_unwind(move || drop({ payload }.0)).unwrap_or_else(move |e| {
+            let payload = panicking::AssertUnwindSafe(payload);
+            panicking::catch_unwind(move || drop({ payload }.0)).unwrap_or_else(move |e| {
                 core::mem::forget(e); // do *not* drop the 2nd payload
                 cfg_select! {
                     panic = "immediate-abort" => {}

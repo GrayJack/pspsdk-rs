@@ -118,7 +118,7 @@ impl Flag {
     pub fn guard(&self) -> LockResult<Guard> {
         let ret = Guard {
             #[cfg(panic = "unwind")]
-            panicking: crate::panic::panicking(),
+            panicking: crate::panicking::panicking(),
         };
         if self.get() {
             Err(PoisonError::new(ret))
@@ -130,7 +130,7 @@ impl Flag {
     #[inline]
     #[cfg(panic = "unwind")]
     pub fn done(&self, guard: &Guard) {
-        if !guard.panicking && crate::panic::panicking() {
+        if !guard.panicking && crate::panicking::panicking() {
             self.failed.store(true, Ordering::Relaxed);
         }
     }
