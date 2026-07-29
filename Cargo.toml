@@ -1,10 +1,13 @@
 [package]
 name = "pspsdk"
 authors = ["GrayJack <gr41.j4ck@gmail.com>"]
-version = "0.1.0"
+version = "0.0.1"
 license = "MPL-2.0-no-copyleft-exception"
 edition = "2024"
 build = "build.rs"
+categories = ["no-std", "embedded", "external-ffi-bindings"]
+keywords = ["psp", "pspsdk", "mips", "sdk"]
+exclude = ["/.cargo", "/.github", "/.idea", "/.vscode", "/examples"]
 
 [lib]
 crate-type = ["lib", "staticlib"]

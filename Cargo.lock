@@ -4,18 +4,18 @@ version = 4
 
 [[package]]
 name = "bitflag-attr"
-version = "0.13.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "212252f2d7935a34bb21da37dcf3bab496668e6bd0ff77f04982d0e8dbaddad0"
+checksum = "6485adef09238c113b7a8aeb5ddd5a5d0ea7b7aee289cbb1ba657356a45bafcc"
 dependencies = [
  "bitflags-attr-macros",
 ]
 
 [[package]]
 name = "bitflags-attr-macros"
-version = "0.13.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aecb76a3b8f0919f0fa59ce75239fdbaa226ba579e251cc87f4ad4827e94d98d"
+checksum = "f1eb629b2281381ca352cebe7b0684628768b0bbfacddea13e3b08ff3e4a982d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -142,7 +142,7 @@ dependencies = [
 
 [[package]]
 name = "pspsdk"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "bitflag-attr",
  "io_core",
@@ -151,7 +151,7 @@ dependencies = [
 
 [[package]]
 name = "pspsdk-macros"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "proc-macro2",
  "quote",

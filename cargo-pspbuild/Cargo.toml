@@ -1,8 +1,8 @@
 [package]
 name = "cargo-pspbuild"
-version = "0.2.8"
-description = "`cargo build` wrapper for creating Sony PSP executables"
-repository = "https://github.com/overdrivenpotato/rust-psp"
+version = "0.0.1"
+description = "`cargo build` wrapper for creating Sony PSP executables when using pspsdk crate"
+repository = "https://github.com/GrayJack/pspsdk-rs"
 license = "MIT"
 authors = [
     "Marko Mijalkovic <marko.mijalkovic97@gmail.com>",
@@ -10,8 +10,10 @@ authors = [
     "Josh Wood <sk83rjosh@gmail.com>",
     "GrayJack <gr41.j4ck@gmail.com>",
 ]
-edition = "2018"
+edition = "2024"
 default-run = "cargo-pspbuild"
+categories = ["development-tools::cargo-plugins", "embedded"]
+keywords = ["cargo-subcommand", "psp", "pspsdk", "sdk"]
 
 [[bin]]
 name = "prxgen"

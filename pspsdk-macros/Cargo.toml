@@ -1,7 +1,13 @@
 [package]
 name = "pspsdk-macros"
-version = "0.1.0"
+authors = ["GrayJack <gr41.j4ck@gmail.com>"]
+version = "0.0.1"
+license = "MPL-2.0-no-copyleft-exception"
 edition = "2024"
+repository = "https://github.com/GrayJack/pspsdk-rs"
+description = "Procedural macros for the pspsdk crate"
+categories = ["embedded", "rust-patterns"]
+keywords = ["psp", "pspsdk", "sdk", "macro"]
 
 [lib]
 proc-macro = true
