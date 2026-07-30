@@ -6628,7 +6628,7 @@ impl ThreadAttributes {
     #[inline]
     pub const fn main_default() -> Self {
         cfg_select! {
-            prx => Self::from_bits_retain(0),
+            any(prx, feature = "kernel") => Self::from_bits_retain(0),
             eboot => Self::UserMode.union(Self::UseVFPU),
             _ => Self::UserMode,
         }
