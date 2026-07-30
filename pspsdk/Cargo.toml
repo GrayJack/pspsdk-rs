@@ -9,17 +9,15 @@ categories = ["no-std", "embedded", "external-ffi-bindings"]
 keywords = ["psp", "pspsdk", "mips", "sdk"]
 exclude = ["/.cargo", "/.github", "/.idea", "/.vscode", "/examples"]
 readme = "../README.md"
+description = "A SDK for creating PSP modules, including both PRX plugins and regular homebrew apps."
 
 [lib]
 crate-type = ["lib", "staticlib"]
 
-[package.metadata.rust-analyzer]
-rustc_private = true
-
 [dependencies]
 bitflag-attr = { version = "0.14.0" }
 io_core = { version = "0.4.4", features = ["alloc", "nightly"] }
-pspsdk-macros = { path = "../pspsdk-macros", features = [] }
+pspsdk-macros = { path = "../pspsdk-macros", version = "0.0.1", features = [] }
 
 [features]
 default = ["non-stub-code"]
@@ -82,3 +80,15 @@ psp_630 = []
 psp_660 = []
 # Use PSPemu 3.65 NID on kernel modules
 vita_365 = ["psp_660"]
+
+
+[package.metadata.docs.rs]
+default-target = "mipsel-sony-psp"
+features = ["kernel"]
+rustdoc-args = ["-Zunstable-options", "--show-type-layout"]
+cargo-args = [
+    "-Zbuild-std=core,alloc,compiler_builtins,panic_unwind,panic_abort",
+]
+
+[package.metadata.rust-analyzer]
+rustc_private = true
