@@ -219,6 +219,7 @@ impl Condvar {
     /// }
     /// ```
     #[track_caller]
+    #[allow(unreachable_code, reason = "behavior changes in compilation context")]
     pub fn wait<'a, T, M: RawMutex>(&self, guard: MutexGuard<'a, T, M>) -> MutexGuard<'a, T, M> {
         let poisoned = unsafe {
             let lock = mutex::guard_lock(&guard);
@@ -360,6 +361,7 @@ impl Condvar {
     /// }
     /// ```
     #[track_caller]
+    #[allow(unreachable_code, reason = "behavior changes in compilation context")]
     pub fn wait_timeout<'a, T, M: RawMutex>(
         &self, guard: MutexGuard<'a, T, M>, dur: Duration,
     ) -> (MutexGuard<'a, T, M>, WaitTimeoutResult) {

@@ -95,6 +95,7 @@ impl io::Write for Stderr {
     }
 }
 
+#[allow(dead_code, reason = "behavior changes in compilation context")]
 pub fn panic_output() -> Option<impl io::Write> {
     Some(Stderr::new())
 }

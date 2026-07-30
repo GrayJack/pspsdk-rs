@@ -24,8 +24,11 @@ fn main() {
         "unwind"
     };
 
-    println!("cargo:rustc-link-lib=static={unwind}");
-    println!("cargo:rustc-link-search=native=./");
+    if cfg!(not(panic = "immediate-abort")) {
+        println!("cargo:rustc-link-lib=static={unwind}");
+        println!("cargo:rustc-link-search=native=./");
+        println!("cargo:rustc-link-search=native=./pspsdk");
+    }
 }
 
 fn set_check_cfg() {

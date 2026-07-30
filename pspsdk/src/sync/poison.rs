@@ -55,6 +55,8 @@
 //! methods available on it, there is no separate `nonpoison` and `poison` version.
 //!
 //! [`Once`]: crate::sync::poison::Once
+#![allow(unused_imports, reason = "behavior changes in compilation context")]
+
 use core::{
     error::Error,
     fmt,
@@ -128,27 +130,24 @@ impl Flag {
     }
 
     #[inline]
-    #[cfg(panic = "unwind")]
+    #[allow(unused_variables, reason = "behavior changes in compilation context")]
     pub fn done(&self, guard: &Guard) {
-        if !guard.panicking && crate::panicking::panicking() {
-            self.failed.store(true, Ordering::Relaxed);
+        cfg_select! {
+            panic = "unwind" => {
+                if !guard.panicking && crate::panicking::panicking() {
+                    self.failed.store(true, Ordering::Relaxed);
+                }
+            },
+            _ => {}
         }
     }
 
     #[inline]
-    #[cfg(not(panic = "unwind"))]
-    pub fn done(&self, _guard: &Guard) {}
-
-    #[inline]
-    #[cfg(panic = "unwind")]
     pub fn get(&self) -> bool {
-        self.failed.load(Ordering::Relaxed)
-    }
-
-    #[inline(always)]
-    #[cfg(not(panic = "unwind"))]
-    pub fn get(&self) -> bool {
-        false
+        cfg_select! {
+            panic = "unwind" => self.failed.load(Ordering::Relaxed),
+            _ => false,
+        }
     }
 
     #[inline]
@@ -285,7 +284,7 @@ impl<T> PoisonError<T> {
     #[cfg(not(panic = "unwind"))]
     #[track_caller]
     pub fn new(_data: T) -> PoisonError<T> {
-        panic!("PoisonError created in a libstd built with panic=\"abort\"")
+        panic!("PoisonError created in a pspsdk built with panic=\"abort\"")
     }
 
     /// Consumes this error indicating that a lock is poisoned, returning the

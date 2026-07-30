@@ -3,12 +3,17 @@ name = "psp-barebones-hello-world-example"
 version = "0.1.0"
 edition = "2024"
 
-[profile.dev]
-opt-level = "s"
+# Recommend profile configuration.
+# Commented because on workspace, that is configured on the workspace Cargo.toml
+# If you are copying the project to bootstrap a PSP project, uncomment these for
+# smaller size
 
-[profile.release]
-opt-level = "s"
-lto = "thin"
+# [profile.dev]
+# opt-level = "s"
+
+# [profile.release]
+# opt-level = "s"
+# lto = "thin"
 
 [dependencies]
-pspsdk = { path = "../../" }
+pspsdk = { path = "../../pspsdk" }

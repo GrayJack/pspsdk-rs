@@ -1,87 +1,15 @@
-[package]
-name = "pspsdk"
-authors = ["GrayJack <gr41.j4ck@gmail.com>"]
-version = "0.0.1"
-license = "MPL-2.0-no-copyleft-exception"
-edition = "2024"
-build = "build.rs"
-categories = ["no-std", "embedded", "external-ffi-bindings"]
-keywords = ["psp", "pspsdk", "mips", "sdk"]
-exclude = ["/.cargo", "/.github", "/.idea", "/.vscode", "/examples"]
-
-[lib]
-crate-type = ["lib", "staticlib"]
-
-[package.metadata.rust-analyzer]
-rustc_private = true
-
-[dependencies]
-bitflag-attr = { version = "0.14.0" }
-io_core = { version = "0.4.4", features = ["alloc", "nightly"] }
-pspsdk-macros = { path = "pspsdk-macros", features = [] }
-
-[features]
-default = ["non-stub-code"]
-# Enable kernel modules.
-kernel = ["use-stub-c"]
-# Enable CFW modules.
-cfw-api = []
-# Optimize for space instead of speed the basic C-functions required by the
-# linker when such functions doesn't have a stub alternative. (memset, memcpy,
-# memmove, strlen).
-opt-size-c = []
-# Use available stubs in the basic C-functions required by the linker when
-# available (memset, memcpy, memmove, strlen).
-#
-# This is the default for kernel modules as the kernel libc will always be
-# available. It is recommended to enable this feature when:
-# - Creating EBOOT.PBP
-# - Plugins and EBOOT.PBP using `cfw-api` enabled.
-# - When enabling PAF functions (TODO)
-use-stub-c = []
-
-# Build with std support
-std = []
-
-# Includes code that is not stub definition.
-#
-# Compile this library without this feature to have it as a stub provider.
-# Useful to compile this as a static library for other projects.
-non-stub-code = []
-
-# For the following features, you can't enable more than one of them
-# Also, they are more beneficial for CFW implementation, as the SystemControl
-# CFW module requires the NIDs to be correct.
-#
-# For plugins and homebrew apps, they are never required as most moderns CFWs
-# implement NID translation table for non-SystemControl modules.
-#
-# It may be required for signed homebrew apps (homebrew that works on OFW), but
-# that is an edge case.
-
-# Use PSP 1.00~3.73 NID on kernel modules
-psp_100 = []
-# Use PSP 3.70~3.73 NID on kernel modules. Not all modules had this one, so far only sceGE and sceDisplay
-psp_370 = []
-# Use PSP 3.80~3.93 NID on kernel modules
-psp_380 = []
-# Use PSP 3.95~4.05 NID on kernel modules
-psp_395 = []
-# Use PSP 4.20~4.21 NID on kernel modules
-psp_420 = []
-# Use PSP 5.00~5.55 NID on kernel modules
-psp_500 = []
-# Use PSP 5.70 NID on kernel modules
-psp_570 = []
-# Use PSP 6.00~6.20 NID on kernel modules
-psp_600 = []
-# Use PSP 6.30~6.39 NID on kernel modules
-psp_630 = []
-# Use PSP 6.60~6.61 NID on kernel modules (6.61 didn't change NID of exported items)
-psp_660 = []
-# Use PSPemu 3.65 NID on kernel modules
-vita_365 = ["psp_660"]
+# cargo-features = ["panic-immediate-abort"]
 
 [workspace]
-members = ["pspsdk-macros", "examples/*"]
+members = ["pspsdk-macros", "pspsdk", "examples/*"]
 exclude = ["cargo-pspbuild"]
+resolver = "2"
+
+[profile.dev]
+opt-level = "s"
+
+[profile.release]
+opt-level = "s"
+lto = "thin"
+# panic = "abort"
+# panic = "immediate-abort"

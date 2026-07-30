@@ -1,6 +1,7 @@
 #![no_std]
 #![allow(internal_features)]
 #![allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
+#![allow(unused_features, reason = "behavior changes in compilation context")]
 #![feature(
     rustc_attrs,
     pattern_types,
@@ -18,13 +19,16 @@
     never_type,
     sync_unsafe_cell
 )]
-#![cfg_attr(feature = "non-stub-code", feature(panic_unwind))]
+#![cfg_attr(
+    all(feature = "non-stub-code", not(panic = "immediate-abort")),
+    feature(panic_unwind)
+)]
 #![cfg_attr(doc, feature(doc_cfg))]
 // #![cfg_attr(feature = "std", feature(psp_std))]
 
 #[cfg(feature = "non-stub-code")]
 extern crate alloc;
-#[cfg(feature = "non-stub-code")]
+#[cfg(all(feature = "non-stub-code", not(panic = "immediate-abort")))]
 extern crate panic_unwind;
 #[cfg(all(feature = "std", feature = "non-stub-code", not(target_os = "psp")))]
 extern crate std;

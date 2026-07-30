@@ -3,6 +3,7 @@
 // Most of the code here is lifted from `rustc/src/libstd/panicking.rs`. It has
 // been adapted to run on the PSP.
 #![allow(unexpected_cfgs)]
+#![allow(unused_imports, reason = "behavior changes in compilation context")]
 
 #[cfg(feature = "std")]
 use core::any::Any;
@@ -44,6 +45,7 @@ macro_rules! rtabort {
 }
 
 #[cfg(not(feature = "std"))]
+#[allow(unused_variables, reason = "behavior changes in compilation context")]
 fn print(args: core::fmt::Arguments) {
     cfg_select! {
         not(panic = "immediate-abort") => {
@@ -68,12 +70,12 @@ fn print_and_die(args: core::fmt::Arguments) -> ! {
 #[inline(never)]
 #[cfg(all(not(feature = "std"), panic = "immediate-abort"))]
 #[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
+fn panic(_info: &PanicInfo) -> ! {
     crate::process::abort()
 }
 
 #[inline(never)]
-#[cfg(all(not(feature = "std"), panic = "abort"))]
+#[cfg(all(not(feature = "std"), panic = "abort", not(panic = "immediate-abort")))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     let message = info.message();
@@ -115,6 +117,7 @@ fn panic(info: &PanicInfo) -> ! {
 #[inline(always)]
 #[cfg_attr(not(target_os = "psp"), allow(unused))]
 #[cfg(not(feature = "std"))]
+#[allow(dead_code, reason = "behavior changes in compilation context")]
 fn panic_impl(info: &PanicInfo) -> ! {
     use core::fmt;
 
@@ -344,7 +347,7 @@ unsafe extern "C" {}
 /// These symbols and functions should not actually be used. `libunwind`,
 /// however, requires them to be present so that it can link.
 // TODO: Patch these out of libunwind instead.
-#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
+#[cfg(all(target_os = "psp", feature = "non-stub-code", not(panic = "immediate-abort")))]
 mod libunwind_shims {
     #[unsafe(no_mangle)]
     unsafe extern "C" fn fprintf(_stream: *const u8, _format: *const u8, _: ...) -> isize {
