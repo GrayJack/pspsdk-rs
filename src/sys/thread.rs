@@ -6622,3 +6622,15 @@ unsafe impl SceIntoOkValue for KtlsId {
         self.to_inner()
     }
 }
+
+impl ThreadAttributes {
+    /// Creates a `ThreadAttributes` with the default value for the main thread.
+    #[inline]
+    pub const fn main_default() -> Self {
+        cfg_select! {
+            prx => Self::from_bits_retain(0),
+            eboot => Self::UserMode.union(Self::UseVFPU),
+            _ => Self::UserMode,
+        }
+    }
+}

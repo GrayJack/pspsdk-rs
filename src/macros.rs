@@ -527,8 +527,7 @@ macro_rules! default_module_start {
                     32,
                     // 256kb stack
                     256 * 1024,
-                    $crate::sys::thread::ThreadAttributes::UserMode
-                        | $crate::sys::thread::ThreadAttributes::UseVFPU,
+                    $crate::sys::thread::ThreadAttributes::main_default(),
                     None,
                 )
                 .into_result() else {
