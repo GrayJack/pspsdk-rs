@@ -8,6 +8,7 @@ build = "build.rs"
 categories = ["no-std", "embedded", "external-ffi-bindings"]
 keywords = ["psp", "pspsdk", "mips", "sdk"]
 exclude = ["/.cargo", "/.github", "/.idea", "/.vscode", "/examples"]
+readme = "../README.md"
 
 [lib]
 crate-type = ["lib", "staticlib"]

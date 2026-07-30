@@ -1,8 +1,8 @@
 <h1 align="center">PSPSDK-RS</h1>
 
 <p align="center">
-    A work-in-progress library for building PSP modules, including both PRX plugins and regular
-    homebrew apps.
+    A work-in-progress crate for building PSP modules, including both PRX
+    plugins and regular homebrew apps.
 </p>
 
 ```rust
@@ -19,9 +19,9 @@ fn psp_main() {
 
 ## What about rust-psp?
 
-This project is a new SDK, architected from scratch, but some bits and pieces
-from rust-sdk were used to catalise the initial process to minimum working
-hello world example.
+This project is a new Rust SDK for PSP, architected from scratch, but some bits
+and pieces from rust-sdk were used with some modifications to catalise the
+initial process to minimum working project.
 
 ## What about PSPSDK?
 
@@ -38,7 +38,7 @@ libraries, but also having a more type-safe FFI and high-level abstraction.
 - [x] PSP system library support
 - [x] No dependency on PSPSDK / PSPToolchain
 - [x] Add support for creating kernel mode modules
-- [x] Add support to export functions and static variables.
+- [x] Add support to export functions and static variables
 - [ ] Macro-based VFPU assembler
 - [ ] Full 3D graphics support
 - [ ] Reach full parity with user mode support in PSPSDK
@@ -90,12 +90,17 @@ fn psp_main() {
 }
 ```
 
-Now you can simply run `cargo pspbuild` to build your `EBOOT.PBP` file. You can also
-invoke `cargo pspbuild --release` to create a release build.
+Now you can simply run `cargo pspbuild` to build your project; by default, it
+builds a `EBOOT.PBP` file. You can also invoke `cargo pspbuild --release` to
+create a release build.
+
+You can further configure your PSP project by creating a `Psp.toml` file in the
+root of your project. Once created, the `[project]` section and `kind`
+configuration option are mandatory
 
 If you would like to customize your EBOOT with e.g. an icon or new title, you
-can create a `Psp.toml` file in the root of your project. Note that all keys are
-optional:
+can add a `[project.pbp]` section on your `Psp.toml` file. Note that all
+`[project.pbp]` keys are optional:
 
 ```toml
 [project]
@@ -108,7 +113,7 @@ xmb_background_png = "path/to/24bit_480x272_background.png"
 xmb_music_at3 = "path/to/ATRAC3_audio.at3"
 ```
 
-More options can be found in the schema defintion [here](/cargo-pspbuil/src/main.rs#L18-L132).
+More options can be found in the schema definition [here](/cargo-pspbuild/src/main.rs#L18-L132).
 
 
 ## `error[E0460]: found possibly newer version of crate ...`

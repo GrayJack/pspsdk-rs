@@ -1,4 +1,24 @@
 {
+    "files.watcherExclude": {
+        "**/target": true
+    },
+    "rust-analyzer.cargo.cfgs": [
+        "debug_assertions",
+        "miri",
+        "doc",
+        // "prx",
+        // "pbp"
+        // "eboot"
+        // "pboot"
+    ],
+    "rust-analyzer.cargo.features": [
+        "kernel"
+    ],
     "rust-analyzer.cargo.target": "mipsel-sony-psp",
-    "rust-analyzer.cfg.setTest": false
+    "rust-analyzer.cfg.setTest": false,
+    "rust-analyzer.check.features": [
+        "kernel"
+    ],
+    "rust-analyzer.imports.preferNoStd": true,
+    "rust-analyzer.rustc.source": "discover"
 }
