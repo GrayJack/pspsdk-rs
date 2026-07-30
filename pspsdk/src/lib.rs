@@ -24,6 +24,8 @@
     feature(panic_unwind)
 )]
 #![cfg_attr(doc, feature(doc_cfg))]
+// docs.rs needs this
+#![cfg_attr(doc, feature(c_variadic))]
 // #![cfg_attr(feature = "std", feature(psp_std))]
 
 #[cfg(feature = "non-stub-code")]
