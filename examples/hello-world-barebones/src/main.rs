@@ -18,10 +18,10 @@ fn psp_main() {
 #[unsafe(no_mangle)]
 extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
     extern "C" fn psp_main_thread(argc: usize, argv: *mut c_void) -> SceResult<u32> {
-        let res = pspsdk::call_main!(psp_main, argc, argv);
+        let _res = pspsdk::call_main!(psp_main, argc, argv);
 
         // Use this to auto-exit once main is complete
-        // pspsdk::process::exit(res as i32);
+        // pspsdk::process::exit(_res as i32);
         SceResult::new(0)
     }
 
