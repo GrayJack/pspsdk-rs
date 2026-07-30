@@ -1,0 +1,45 @@
+name: Check
+
+on:
+  push:
+    branches: ["**"]
+    tags-ignore: ["**"]
+    paths-ignore:
+      - "**.md"
+      - LICENSE
+      - .github/FUNDING.yml
+      - .gitignore
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "**/LICENSE"
+      - .github/FUNDING.yml
+      - .editorconfig
+      - .gitignore
+
+jobs:
+  check:
+    name: Check and Test
+    runs-on: ubuntu-latest
+    # strategy:
+    #   matrix:
+    #     toolchain: ["nightly"]
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v7
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        # toolchain: ${{ matrix.toolchain }}
+        toolchain: "nightly"
+        components: rust-src
+    - name: Cache cargo output
+      uses: Swatinem/rust-cache@v2
+    - name: Check and install cargo-pspbuild
+      run: cargo install --locked --path ./cargo-pspbuild --force
+    - name: Check user
+      run: cargo check --target=mipsel-sony-psp -Zbuild-std=core,alloc,compiler_builtins,panic_unwind,panic_abort
+    - name: Check kernel
+      run: cargo check --target=mipsel-sony-psp --features=kernel -Zbuild-std=core,alloc,compiler_builtins,panic_unwind,panic_abort
+    - name: Check Examples (release with unwind)
+      run: ./examples/run_all.sh

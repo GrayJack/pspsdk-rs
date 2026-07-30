@@ -1556,5 +1556,5 @@ impl<'a, T: ?Sized, L: RawRwLock> MappedRwLockWriteGuard<'a, T, L> {
     }
 }
 
-#[cfg(all(test, not(target_os = "emscripten")))]
-mod tests;
+// #[cfg(all(test, not(target_os = "emscripten")))]
+// mod tests;

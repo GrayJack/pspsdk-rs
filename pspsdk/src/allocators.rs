@@ -288,7 +288,7 @@ unsafe impl Allocator for PartitionAlloc {
     }
 }
 
-/// A builder for the [`VariablePoolAllocator`].
+/// A builder for the [`VariablePoolAlloc`].
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub struct VariablePoolAllocBuilder {
     name: &'static CStr,
@@ -307,13 +307,13 @@ impl VariablePoolAlloc {
     ///
     /// The RAM partition used is the default partition on the compilation context. For user
     /// application is [`MemoryPartitionId::MainUser`] while for kernel it is
-    /// [`MemoryPartitionId::MainKernel`]. To specify or configure the VariablePoolAllocator
-    /// further, you can use [`VariablePoolAllocator::builder`] and build to your liking.
+    /// [`MemoryPartitionId::MainKernel`]. To specify or configure the `VariablePoolAlloc`
+    /// further, you can use [`VariablePoolAlloc::builder`] and build to your liking.
     pub fn new(pool_size: usize) -> io::Result<Self> {
         Self::builder().name(c"SDK_VPL").size(pool_size).create()
     }
 
-    /// Creates a builder for the `VariablePoolAllocator` that can be used to configure it's
+    /// Creates a builder for the `VariablePoolAlloc` that can be used to configure it's
     /// behavior before creating the allocator.
     #[must_use]
     pub const fn builder() -> VariablePoolAllocBuilder {
@@ -371,7 +371,7 @@ impl VariablePoolAllocBuilder {
         }
     }
 
-    /// Sets the name for the [`VariablePoolAllocator`] when created.
+    /// Sets the name for the [`VariablePoolAlloc`] when created.
     ///
     /// This name is only used for debug purposes.
     pub const fn name(&mut self, name: &'static CStr) -> &mut Self {
@@ -379,7 +379,7 @@ impl VariablePoolAllocBuilder {
         self
     }
 
-    /// Sets the PSP RAM partition the [`VariablePoolAllocator`] will use.
+    /// Sets the PSP RAM partition the [`VariablePoolAlloc`] will use.
     ///
     /// If not set, it will default to [`MemoryPartitionId::MainUser`] on user-level software, or
     /// [`MemoryPartitionId::MainKernel`] on kernel-level software.
@@ -388,13 +388,13 @@ impl VariablePoolAllocBuilder {
         self
     }
 
-    /// Sets the size of the [`VariablePoolAllocator`].
+    /// Sets the size of the [`VariablePoolAlloc`].
     pub const fn size(&mut self, size: usize) -> &mut Self {
         self.pool_size = size;
         self
     }
 
-    /// Sets the attributes passed to the [`VariablePoolAllocator`] on creation.
+    /// Sets the attributes passed to the [`VariablePoolAlloc`] on creation.
     ///
     /// If not set, it default to [`VplAttributes::WaitByFIFO`] (the type defaults).
     pub const fn attributes(&mut self, attr: VplAttributes) -> &mut Self {
@@ -402,7 +402,7 @@ impl VariablePoolAllocBuilder {
         self
     }
 
-    /// Creates the [`VariablePoolAllocator`] from the set configuration.
+    /// Creates the [`VariablePoolAlloc`] from the set configuration.
     pub fn create(&self) -> io::Result<VariablePoolAlloc> {
         let id = unsafe {
             sceKernelCreateVpl(

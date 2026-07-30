@@ -5,5 +5,12 @@ rustdocflags = [
     "--enable-index-page",
 ]
 
-[unstable]
-build-std = ["core", "alloc", "compiler_builtins"]
+# [unstable]
+# build-std = [
+#     "core",
+#     "alloc",
+#     "compiler_builtins",
+#     "panic_unwind",
+#     "panic_abort",
+#     # "std",
+# ]
