@@ -82,10 +82,10 @@ pub enum MemoryBlockKind {
     /// Allocate from the specified address.
     #[doc(alias("SCE_KERNEL_SMEM_Addr", "PSP_SMEM_Addr"))]
     Addr = 2,
-    /// Allocate from the lowest available address aligned to the specified address.
+    /// Allocate from the lowest available address aligned to the specified value.
     #[doc(alias("SCE_KERNEL_SMEM_LOWALIGNED"))]
     LowAligned = 3,
-    /// Allocate from the highest available address aligned to the specified address.
+    /// Allocate from the highest available address aligned to the specified value.
     #[doc(alias("SCE_KERNEL_SMEM_HIGHALIGNED"))]
     HighAligned = 4,
 }
@@ -431,8 +431,10 @@ unsafe extern "C" {
     /// - `name`: Name assigned to the new block. Only used for debug.
     /// - `kind`: Specifies how the block is allocated within the partition.
     /// - `size`: Size of the memory block, in bytes.
-    /// - `addr`: If `kind` is [`MemoryBlockKind::Addr`], then addr specifies the lowest address
-    ///   allocate the block from.
+    /// - `addr_or_align`: If `kind` is [`MemoryBlockKind::Addr`], then `addr_or_align` specifies
+    ///   the lowest address allocate the block from. If `kind` is [`MemoryBlockKind::LowAligned`]
+    ///   or [`MemoryBlockKind::HighAligned`], then `addr_or_align` specifies the alignment for the
+    ///   allocation.
     ///
     /// # Return Value
     ///
@@ -442,7 +444,7 @@ unsafe extern "C" {
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn sceKernelAllocPartitionMemory(
         partition: MemoryPartitionId, name: *const u8, kind: MemoryBlockKind, size: SceSize,
-        addr: SceSize,
+        addr_or_align: SceSize,
     ) -> SceResult<MemoryBlockId>;
 
     /// Gets the address of a memory block.
@@ -691,8 +693,10 @@ unsafe extern "C" {
     /// - `name`: Name assigned to the new block. Only used for debug.
     /// - `kind`: Specifies how the block is allocated within the partition.
     /// - `size`: Size of the memory block, in bytes.
-    /// - `addr`: If `kind` is [`MemoryBlockKind::Addr`], then addr specifies the lowest address
-    ///   allocate the block from.
+    /// - `addr_or_align`: If `kind` is [`MemoryBlockKind::Addr`], then `addr_or_align` specifies
+    ///   the lowest address allocate the block from. If `kind` is [`MemoryBlockKind::LowAligned`]
+    ///   or [`MemoryBlockKind::HighAligned`], then `addr_or_align` specifies the alignment for the
+    ///   allocation.
     ///
     /// # Return Value
     ///
@@ -710,7 +714,7 @@ unsafe extern "C" {
     )]
     pub unsafe fn sceKernelAllocPartitionMemory(
         partition: MemoryPartitionId, name: *const u8, kind: MemoryBlockKind, size: SceSize,
-        addr: SceSize,
+        addr_or_align: SceSize,
     ) -> SceResult<MemoryBlockId>;
 
     /// Gets the address of a memory block.
