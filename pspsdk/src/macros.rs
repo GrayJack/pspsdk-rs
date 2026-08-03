@@ -583,3 +583,35 @@ macro_rules! module {
         }
     };
 }
+
+
+// FIXME: Remove from exports and move
+
+// Prints to the "panic output", depending on the platform this may be:
+// - the standard error output
+// - some dedicated platform specific output
+// - nothing (so this macro is a no-op)
+#[doc(hidden)]
+#[macro_export]
+macro_rules! rtprintpanic {
+    ($($t:tt)*) => {
+        #[cfg(not(panic = "immediate-abort"))] {
+            $crate::panicking::print(format_args!($($t)*));
+        }
+
+        #[cfg(panic = "immediate-abort")]
+        {
+            let _ = format_args!($($t)*);
+        }
+    }
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! rtabort {
+    ($($t:tt)*) => {
+        {
+            $crate::panicking::print_and_die(format_args!("fatal runtime error: {}, aborting\n", format_args!($($t)*)));
+        }
+    }
+}

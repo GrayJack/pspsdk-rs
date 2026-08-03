@@ -16,35 +16,10 @@ use core::{
 
 use alloc::{boxed::Box, string::String};
 
-use crate::process;
-
-// Prints to the "panic output", depending on the platform this may be:
-// - the standard error output
-// - some dedicated platform specific output
-// - nothing (so this macro is a no-op)
-macro_rules! rtprintpanic {
-    ($($t:tt)*) => {
-        #[cfg(not(panic = "immediate-abort"))] {
-            print(format_args!($($t)*));
-        }
-
-        #[cfg(panic = "immediate-abort")]
-        {
-            let _ = format_args!($($t)*);
-        }
-    }
-}
-
-macro_rules! rtabort {
-    ($($t:tt)*) => {
-        {
-            print_and_die(format_args!("fatal runtime error: {}, aborting\n", format_args!($($t)*)));
-        }
-    }
-}
+use crate::{process, rtabort, rtprintpanic};
 
 #[cfg(not(feature = "std"))]
-fn print(args: core::fmt::Arguments) {
+pub(crate) fn print(args: core::fmt::Arguments) {
     use io_core::io::Write;
 
     cfg_select! {
@@ -62,7 +37,7 @@ fn print(args: core::fmt::Arguments) {
 }
 
 #[cfg(not(feature = "std"))]
-fn print_and_die(args: core::fmt::Arguments) -> ! {
+pub(crate) fn print_and_die(args: core::fmt::Arguments) -> ! {
     print(args);
     crate::process::abort();
 }

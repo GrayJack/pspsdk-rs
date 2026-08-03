@@ -39,13 +39,13 @@ extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
             ThreadAttributes::empty(),
             None,
         )
-        .inspect_err(|err| pspsdk::println!("{}", err.to_inner()))
+        .inspect_err(|err| pspsdk::eprintln!("Create {:#X}", err.to_inner()))
         .into_result() else {
             return -1;
         };
 
         let Ok(()) = sceKernelStartThread(id, argc, argv.as_mut_ptr().cast())
-            .inspect_err(|err| pspsdk::println!("{}", err.to_inner()))
+            .inspect_err(|err| pspsdk::eprintln!("Create {:#X}", err.to_inner()))
             .into_result()
         else {
             return -1;

@@ -161,21 +161,7 @@ pub(crate) fn cleanup() {
 
 fn handle_rt_panic<T>(e: alloc::boxed::Box<dyn core::any::Any + Send>) -> T {
     core::mem::forget(e);
-    cfg_select! {
-        panic = "immediate-abort" => {}
-        _ => {
-            if let Some(mut out) = crate::os::stdio::panic_output() {
-                let _ = crate::io::Write::write_fmt(
-                    &mut out,
-                    format_args!(
-                        "fatal runtime error: {}, aborting\n",
-                        format_args!("drop of the panic payload panicked")
-                    ),
-                );
-            }
-        }
-    }
-    crate::process::abort()
+    crate::rtabort!("initialization or cleanup bug")
 }
 
 // To reduce the generated code of the new `psp_start`, this function is doing
@@ -202,29 +188,16 @@ fn psp_start_internal(
         unsafe { init(argc, argv) };
 
         let ret_code = panicking::catch_unwind(main).unwrap_or_else(move |payload| {
+            use crate::sys::SceError;
+
             // Carefully dispose of the panic payload.
             let payload = panicking::AssertUnwindSafe(payload);
             panicking::catch_unwind(move || drop({ payload }.0)).unwrap_or_else(move |e| {
                 core::mem::forget(e); // do *not* drop the 2nd payload
-                cfg_select! {
-                    panic = "immediate-abort" => {}
-                    _ => {
-                        if let Some(mut out) = crate::os::stdio::panic_output() {
-                            let _ = crate::io::Write::write_fmt(
-                                &mut out,
-                                format_args!(
-                                    "fatal runtime error: {}, aborting\n",
-                                    format_args!("drop of the panic payload panicked")
-                                ),
-                            );
-                        }
-                    }
-                }
-
-                crate::process::abort()
+                crate::rtabort!("drop of the panic payload panicked");
             });
             // Return error code for panicking programs.
-            101
+            SceError::NOT_INIT.to_inner().cast_signed()
         });
         let ret_code = ret_code as isize;
 
