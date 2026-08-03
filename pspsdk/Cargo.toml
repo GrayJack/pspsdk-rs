@@ -22,7 +22,7 @@ pspsdk-macros = { path = "../pspsdk-macros", version = "0.0.1", features = [] }
 [features]
 default = ["non-stub-code"]
 # Enable kernel modules.
-kernel = ["use-stub-c"]
+kernel = ["stub-c"]
 # Enable CFW modules.
 cfw-api = []
 # Optimize for space instead of speed the basic C-functions required by the
@@ -37,7 +37,7 @@ opt-size-c = []
 # - Creating EBOOT.PBP
 # - Plugins and EBOOT.PBP using `cfw-api` enabled.
 # - When enabling PAF functions (TODO)
-use-stub-c = []
+stub-c = []
 
 # Build with std support
 std = []

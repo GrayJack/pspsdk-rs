@@ -128,10 +128,10 @@ mod private {
         unsafe {
             cfg_select! {
                 feature = "kernel" => crate::sys::libc::memset(src.cast(), value, num).cast(),
-                all(not(feature = "kernel"), not(feature = "cfw-api"), feature = "use-stub-c") => {
+                all(not(feature = "kernel"), not(feature = "cfw-api"), feature = "stub-c") => {
                     crate::sys::usersystemlib::sceKernelMemset(src.cast(), value, num).cast()
                 },
-                all(not(feature = "kernel"), feature = "cfw-api", feature = "use-stub-c") => {
+                all(not(feature = "kernel"), feature = "cfw-api", feature = "stub-c") => {
                     crate::sys::libc::memset(src, value as i32, num)
                 },
                 _ => {
@@ -148,8 +148,8 @@ mod private {
         unsafe {
             cfg_select! {
                 feature = "kernel" => crate::sys::libc::memcpy(dst.cast(), src.cast(), num).cast(),
-                all(not(feature = "kernel"), feature = "use-stub-c") => crate::sys::usersystemlib::sceKernelMemcpy(dst.cast(), src.cast(), num).cast(),
-                all(not(feature = "kernel"), feature = "cfw-api", feature = "use-stub-c") => {
+                all(not(feature = "kernel"), feature = "stub-c") => crate::sys::usersystemlib::sceKernelMemcpy(dst.cast(), src.cast(), num).cast(),
+                all(not(feature = "kernel"), feature = "cfw-api", feature = "stub-c") => {
                     crate::sys::libc::memcpy(dst, src, num)
                 },
                 _ => {
@@ -166,7 +166,7 @@ mod private {
         unsafe {
             cfg_select! {
                 feature = "kernel" => crate::sys::libc::memcmp(ptr1.cast(), ptr2.cast(), num),
-                all(not(feature = "kernel"), feature = "cfw-api", feature = "use-stub-c") => crate::sys::libc::memcmp(ptr1.cast(), ptr2.cast(), num),
+                all(not(feature = "kernel"), feature = "cfw-api", feature = "stub-c") => crate::sys::libc::memcmp(ptr1.cast(), ptr2.cast(), num),
                 _ => {
                     string_impl::compare_bytes(ptr1.cast(), ptr2.cast(), num)
                 }
@@ -182,7 +182,7 @@ mod private {
         unsafe {
             cfg_select! {
                 feature = "kernel" => crate::sys::libc::memmove(dst.cast(), src.cast(), num).cast(),
-                all(not(feature = "kernel"), feature = "cfw-api", feature = "use-stub-c") => crate::sys::libc::memmove(dst, src, num),
+                all(not(feature = "kernel"), feature = "cfw-api", feature = "stub-c") => crate::sys::libc::memmove(dst, src, num),
                 _ => {
                     use string_impl::PointersOverlap;
 
@@ -208,7 +208,7 @@ mod private {
         unsafe {
             cfg_select! {
                 feature = "kernel" => crate::sys::libc::strlen(s.cast()),
-                all(not(feature = "kernel"), feature = "cfw-api", feature = "use-stub-c") => crate::sys::libc::strlen(s),
+                all(not(feature = "kernel"), feature = "cfw-api", feature = "stub-c") => crate::sys::libc::strlen(s),
                 _ => {
                     string_impl::c_string_length(s.cast())
                 }
