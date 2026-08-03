@@ -2,7 +2,7 @@ use core::{cell::UnsafeCell, time::Duration};
 
 use crate::{
     sync::{RawRwLock, RawRwLockTimed},
-    sys::sync::{Condvar, LwMutex, Mutex, SemaMutex},
+    sys::sync::{Condvar, LwMutex, Mutex, SemaMutex, SpinMutex},
 };
 
 struct State {
@@ -839,6 +839,278 @@ impl RawRwLock for SemaRwLock {
 }
 
 impl RawRwLockTimed for SemaRwLock {
+    #[inline]
+    fn try_read_for(&self, timeout: Duration) -> bool {
+        self.try_read_for(timeout)
+    }
+
+    #[inline]
+    fn try_write_for(&self, timeout: Duration) -> bool {
+        self.try_write_for(timeout)
+    }
+}
+
+/// A raw rwlock with writer-preference based on spin mutex.
+pub struct SpinRwLock {
+    lock: SpinMutex,
+    cond: Condvar,
+    state: UnsafeCell<State>,
+}
+
+impl SpinRwLock {
+    #[inline]
+    pub const fn new() -> Self {
+        Self {
+            lock: SpinMutex::new(),
+            cond: Condvar::new(),
+            state: UnsafeCell::new(State {
+                readers: 0,
+                writer_active: false,
+                write_waiters: 0,
+            }),
+        }
+    }
+
+    #[inline]
+    fn read(&self) {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+
+        // prefer writers: if a writer is active or waiting, block readers
+        loop {
+            if !state.writer_active && state.write_waiters == 0 {
+                break;
+            }
+            unsafe { self.cond.wait(&self.lock) };
+        }
+
+        state.readers += 1;
+        unsafe { self.lock.unlock() };
+    }
+
+    #[inline]
+    fn try_read(&self) -> bool {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+
+        let ok = !state.writer_active && state.write_waiters == 0;
+
+        if ok {
+            state.readers += 1;
+        }
+
+        unsafe { self.lock.unlock() };
+        ok
+    }
+
+    #[inline]
+    fn try_read_for(&self, timeout: Duration) -> bool {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+
+        // prefer writers: if a writer is active or waiting, block readers
+        loop {
+            if !state.writer_active && state.write_waiters == 0 {
+                break;
+            }
+
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+            if !res {
+                unsafe { self.lock.unlock() };
+                return false;
+            }
+        }
+
+        state.readers += 1;
+        unsafe { self.lock.unlock() };
+        true
+    }
+
+    #[inline]
+    fn write(&self) {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+        state.write_waiters += 1;
+
+        // Wait until no readers and no active writer
+        loop {
+            if !state.writer_active && state.readers == 0 {
+                break;
+            }
+
+            unsafe { self.cond.wait(&self.lock) };
+        }
+
+        state.write_waiters -= 1;
+        state.writer_active = true;
+
+        unsafe { self.lock.unlock() };
+    }
+
+    #[inline]
+    fn try_write(&self) -> bool {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+
+        let ok = !state.writer_active && state.readers == 0;
+
+        if ok {
+            state.writer_active = true;
+        }
+
+        unsafe { self.lock.unlock() };
+        ok
+    }
+
+    #[inline]
+    fn try_write_for(&self, timeout: Duration) -> bool {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+        state.write_waiters += 1;
+
+        loop {
+            if !state.writer_active && state.readers == 0 {
+                break;
+            }
+
+            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
+            if !res {
+                unsafe { self.lock.unlock() };
+                return false;
+            }
+        }
+
+        state.write_waiters -= 1;
+        state.writer_active = true;
+
+        unsafe { self.lock.unlock() };
+        true
+    }
+
+    #[inline]
+    #[track_caller]
+    unsafe fn read_unlock(&self) {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+
+        debug_assert!(state.readers > 0, "`read_unlock` without reader");
+        let readers = {
+            let r = state.readers - 1;
+            state.readers = r;
+            r
+        };
+
+        // If last reader and writers are waiting, wake one writer.
+        if readers == 0 && state.write_waiters > 0 {
+            self.cond.notify_one();
+        }
+        unsafe { self.lock.unlock() };
+    }
+
+    #[inline]
+    #[track_caller]
+    unsafe fn write_unlock(&self) {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+
+        debug_assert!(state.writer_active, "`write_unlock` without writer");
+        state.writer_active = false;
+
+        // Prefer writers: wake one writer if any waiting, otherwise wake all readers
+        if state.write_waiters > 0 {
+            self.cond.notify_one();
+        } else {
+            self.cond.notify_all();
+        }
+
+        unsafe { self.lock.unlock() };
+    }
+
+    #[inline]
+    #[track_caller]
+    unsafe fn downgrade(&self) {
+        self.lock.lock();
+
+        // SAFETY: self.lock is locked
+        let state = unsafe { self.state() };
+
+        debug_assert!(state.writer_active, "downgrade without writer");
+        state.writer_active = false;
+        state.readers = state.readers.saturating_add(1);
+
+        // Allow readers to proceed. Writers remain blocked until readers drain.
+        self.cond.notify_all();
+        unsafe { self.lock.unlock() };
+    }
+}
+
+impl SpinRwLock {
+    /// Accesses to this state MUST only happen while `self.lock` is held.
+    unsafe fn state(&self) -> &mut State {
+        unsafe { &mut *self.state.get() }
+    }
+}
+
+unsafe impl Sync for SpinRwLock {}
+
+impl crate::private::Sealed for SpinRwLock {}
+impl RawRwLock for SpinRwLock {
+    const NEW: Self = Self::new();
+
+    #[inline]
+    fn read(&self) {
+        self.read()
+    }
+
+    #[inline]
+    fn try_read(&self) -> bool {
+        self.try_read()
+    }
+
+    #[inline]
+    fn write(&self) {
+        self.write();
+    }
+
+    #[inline]
+    fn try_write(&self) -> bool {
+        self.try_write()
+    }
+
+    #[inline]
+    unsafe fn read_unlock(&self) {
+        unsafe { self.read_unlock() };
+    }
+
+    #[inline]
+    unsafe fn write_unlock(&self) {
+        unsafe { self.write_unlock() };
+    }
+
+    #[inline]
+    #[track_caller]
+    unsafe fn downgrade(&self) {
+        unsafe { self.downgrade() };
+    }
+}
+
+impl RawRwLockTimed for SpinRwLock {
     #[inline]
     fn try_read_for(&self, timeout: Duration) -> bool {
         self.try_read_for(timeout)

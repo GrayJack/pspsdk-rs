@@ -8,7 +8,7 @@ mod mutex;
 pub use mutex::{LwMutex, Mutex, ReentrantMutex, SemaMutex, SpinMutex};
 
 mod rwlock;
-pub use rwlock::{LwRwLock, RwLock, SemaRwLock};
+pub use rwlock::{LwRwLock, RwLock, SemaRwLock, SpinRwLock};
 
 mod condvar;
 pub use condvar::Condvar;

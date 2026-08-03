@@ -717,6 +717,7 @@ impl RawMutexTimed for SemaMutex {
     }
 }
 
+/// A raw mutex based on spin.
 pub struct SpinMutex {
     locked: AtomicBool,
 }

@@ -387,7 +387,7 @@ pub struct LwMutexId(SceUid);
 /// functions related to lightweight mutex (i.e. either live in the data section of a user PRX or
 /// PBP or be allocated in that memory partition).
 #[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[doc(alias = "SceKernelLwMutexWork")]
 pub struct LwMutexWorkArea {
     /// The locking count
@@ -595,7 +595,7 @@ pub enum VplAttributes {
     /// Threads with smaller memory requirements may be serviced ahead of queued threads with
     /// larger requirements.
     ThreadPass = 0x0200,
-    /// Allocates a variable-sized memory pool  closest to memory bottom (i.e. High address).
+    /// Allocates a variable-sized memory pool closest to memory bottom (i.e. High address).
     MemBottom = 0x4000,
 }
 
