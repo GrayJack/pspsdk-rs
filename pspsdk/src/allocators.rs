@@ -442,6 +442,12 @@ impl GlobalVariablePoolAlloc {
     }
 }
 
+impl Default for GlobalVariablePoolAlloc {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 unsafe impl GlobalAlloc for GlobalVariablePoolAlloc {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         let allocator = self.inner.get_or_try_init(|| {
@@ -468,15 +474,14 @@ unsafe impl GlobalAlloc for GlobalVariablePoolAlloc {
                 .create()
         });
 
-        match allocator {
-            Ok(allocator) => unsafe {
+        if let Ok(allocator) = allocator {
+            unsafe {
                 if !ptr.is_null() {
                     // Safety: we checked that is not null
                     let ptr = NonNull::new_unchecked(ptr);
                     allocator.deallocate(ptr, layout);
                 }
-            },
-            Err(_) => {},
+            }
         }
     }
 }
