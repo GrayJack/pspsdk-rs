@@ -17,7 +17,8 @@
     try_trait_v2,
     try_trait_v2_residual,
     never_type,
-    sync_unsafe_cell
+    sync_unsafe_cell,
+    slice_ptr_get
 )]
 #![cfg_attr(
     all(feature = "non-stub-code", not(panic = "immediate-abort")),

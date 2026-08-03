@@ -8,6 +8,7 @@ use core::{
 
 use crate::{
     io,
+    sync::OnceLock,
     sys::{
         mem::{
             sceKernelAllocPartitionMemory, sceKernelFreePartitionMemory, sceKernelGetBlockHeadAddr,
@@ -402,12 +403,18 @@ impl VariablePoolAllocBuilder {
 
     /// Creates the [`VariablePoolAlloc`] from the set configuration.
     pub fn create(&self) -> io::Result<VariablePoolAlloc> {
+        let pool_size = if self.pool_size == 0 {
+            DEFAULT_VPL_SIZE
+        } else {
+            self.pool_size
+        };
+
         let id = unsafe {
             sceKernelCreateVpl(
                 self.name.as_ptr().cast(),
                 self.partition,
                 self.attr,
-                self.pool_size,
+                pool_size,
                 None,
             )
             .into_result()?
@@ -423,20 +430,83 @@ impl Default for VariablePoolAllocBuilder {
     }
 }
 
+pub struct GlobalVariablePoolAlloc {
+    inner: OnceLock<VariablePoolAlloc>,
+}
+
+impl GlobalVariablePoolAlloc {
+    pub const fn new() -> Self {
+        Self {
+            inner: OnceLock::new(),
+        }
+    }
+}
+
+unsafe impl GlobalAlloc for GlobalVariablePoolAlloc {
+    unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
+        let allocator = self.inner.get_or_try_init(|| {
+            VariablePoolAlloc::builder()
+                .name(c"SDK_GLOBAL_VPL")
+                .size(DEFAULT_VPL_SIZE)
+                .create()
+        });
+
+        match allocator {
+            Ok(allocator) => {
+                let res = allocator.allocate(layout);
+                res.map(|r| r.as_mut_ptr()).unwrap_or_else(|_| ptr::null_mut())
+            },
+            Err(_) => ptr::null_mut(),
+        }
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
+        let allocator = self.inner.get_or_try_init(|| {
+            VariablePoolAlloc::builder()
+                .name(c"SDK_GLOBAL_VPL")
+                .size(DEFAULT_VPL_SIZE)
+                .create()
+        });
+
+        match allocator {
+            Ok(allocator) => unsafe {
+                if !ptr.is_null() {
+                    // Safety: we checked that is not null
+                    let ptr = NonNull::new_unchecked(ptr);
+                    allocator.deallocate(ptr, layout);
+                }
+            },
+            Err(_) => {},
+        }
+    }
+}
+
 #[alloc_error_handler]
 #[cfg(not(feature = "std"))]
 fn aeh(layout: core::alloc::Layout) -> ! {
-    use crate::sys::SceError;
+    use crate::{io::Write, sys::SceError};
 
-    crate::println!(
-        "Failed to allocate {} bytes with {} alignment",
-        layout.size(),
-        layout.align()
-    );
-    loop {
+    if cfg!(pbp) {
+        crate::dprintln!(
+            "Failed to allocate {} bytes with {} alignment",
+            layout.size(),
+            layout.align()
+        )
+    }
+
+    if let Some(mut out) = crate::os::stdio::panic_output() {
+        let _ = out.write_fmt(format_args!(
+            "Failed to allocate {} bytes with {} alignment\n",
+            layout.size(),
+            layout.align()
+        ));
+    }
+
+    for _ in 0..10 {
         if crate::sys::is_interrupt_enabled() {
             crate::process::exit(SceError::NO_MEMORY.to_inner().cast_signed());
         }
-        core::hint::spin_loop()
+        crate::sys::spin_loop();
     }
+    crate::process::abort()
 }
