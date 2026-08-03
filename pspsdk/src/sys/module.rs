@@ -346,6 +346,7 @@ unsafe extern "C" {
     ///
     /// Returns `ModuleId` zero value for modules that don't need to be made resident, or a module
     /// UID of the module that was started and made resident on success, error value otherwise.
+    #[eabi(i5)]
     #[nid(0x50F0C1EC)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn sceKernelStartModule(
@@ -371,6 +372,7 @@ unsafe extern "C" {
     ///
     /// Returns `ModuleId` zero value on success, or the module UID if stop entry was successful but
     /// the stop routine fails, error value otherwise.
+    #[eabi(i5)]
     #[nid(0xD1FF982A)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn sceKernelStopModule(
@@ -458,6 +460,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[eabi(i5)]
     #[nid(0x8F2DF740)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn sceKernelStopUnloadSelfModuleWithStatus(
@@ -676,6 +679,7 @@ unsafe extern "C" {
     ///
     /// Returns `ModuleId` zero value for modules that don't need to be made resident, or a module
     /// UID of the module that was started and made resident on success, error value otherwise.
+    #[eabi(i5)]
     #[nid(if cfg!(feature = "psp_660") { 0x3FF74DF1 }
         else if cfg!(feature = "psp_630") { 0xE6BF3960 }
         else if cfg!(feature = "psp_600") { 0xDF8FFFAB }
@@ -709,6 +713,7 @@ unsafe extern "C" {
     ///
     /// Returns `ModuleId` zero value on success, or the module UID if stop entry was successful but
     /// the stop routine fails, error value otherwise.
+    #[eabi(i5)]
     #[nid(if cfg!(feature = "psp_660") { 0xE5D6087B }
         else if cfg!(feature = "psp_630") { 0x4848E645 }
         else if cfg!(feature = "psp_600") { 0xAAFA90C2 }
@@ -825,6 +830,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[eabi(i5)]
     #[nid(if cfg!(feature = "psp_660") { 0xEE6E8F49 }
         else if cfg!(feature = "psp_630") { 0x455DE851 }
         else if cfg!(feature = "psp_600") { 0xB9FAD518 }
