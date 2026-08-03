@@ -6,8 +6,12 @@ use core::{
 
 use alloc::{string::String, vec::Vec};
 
+#[cfg(not(feature = "heap-stdio-buffer"))]
+use crate::io::{ArrayBufReader, ArrayLineWriter};
+#[cfg(feature = "heap-stdio-buffer")]
+use crate::io::{BufReader, LineWriter};
 use crate::{
-    io::{self, ArrayBufReader, ArrayLineWriter, BorrowedCursor, BufRead, Lines, Read, Write},
+    io::{self, BorrowedCursor, BufRead, Lines, Read, Write},
     os::{self, stdio::STDIN_BUF_SIZE},
     sync::{
         nonpoison::{OnceLock, ReentrantLock, ReentrantLockGuard},
@@ -224,6 +228,9 @@ pub fn is_ebadf(err: &io::Error) -> bool {
 /// }
 /// ```
 pub struct Stdin {
+    #[cfg(feature = "heap-stdio-buffer")]
+    inner: &'static Mutex<BufReader<StdinRaw>>,
+    #[cfg(not(feature = "heap-stdio-buffer"))]
     inner: &'static Mutex<ArrayBufReader<StdinRaw, STDIN_BUF_SIZE>>,
 }
 
@@ -249,6 +256,9 @@ pub struct Stdin {
 /// ```
 #[must_use = "if unused stdin will immediately unlock"]
 pub struct StdinLock<'a> {
+    #[cfg(feature = "heap-stdio-buffer")]
+    inner: MutexGuard<'a, BufReader<StdinRaw>>,
+    #[cfg(not(feature = "heap-stdio-buffer"))]
     inner: MutexGuard<'a, ArrayBufReader<StdinRaw, STDIN_BUF_SIZE>>,
 }
 
@@ -288,9 +298,17 @@ pub struct StdinLock<'a> {
 /// ```
 #[must_use]
 pub fn stdin() -> Stdin {
+    #[cfg(feature = "heap-stdio-buffer")]
+    static INSTANCE: OnceLock<Mutex<BufReader<StdinRaw>>> = OnceLock::new();
+    #[cfg(not(feature = "heap-stdio-buffer"))]
     static INSTANCE: OnceLock<Mutex<ArrayBufReader<StdinRaw, STDIN_BUF_SIZE>>> = OnceLock::new();
     Stdin {
-        inner: INSTANCE.get_or_init(|| Mutex::new(ArrayBufReader::new(stdin_raw()))),
+        inner: INSTANCE.get_or_init(|| {
+            Mutex::new(cfg_select! {
+                feature = "heap-stdio-buffer" => BufReader::with_capacity(STDIN_BUF_SIZE, stdin_raw()),
+                _ => ArrayBufReader::new(stdin_raw()),
+            })
+        }),
     }
 }
 
@@ -445,6 +463,13 @@ impl Read for &Stdin {
 // only used by platform-dependent io::copy specializations, i.e. unused on some platforms
 impl StdinLock<'_> {
     #[allow(unused)]
+    #[cfg(feature = "heap-stdio-buffer")]
+    pub(crate) fn as_mut_buf(&mut self) -> &mut BufReader<impl Read> {
+        &mut self.inner
+    }
+
+    #[allow(unused)]
+    #[cfg(not(feature = "heap-stdio-buffer"))]
     pub(crate) fn as_mut_buf(&mut self) -> &mut ArrayBufReader<impl Read, STDIN_BUF_SIZE> {
         &mut self.inner
     }
@@ -526,6 +551,9 @@ pub struct Stdout {
     // FIXME: this should be LineWriter or BufWriter depending on the state of
     //        stdout (tty or not). Note that if this is not line buffered it
     //        should also flush-on-panic or some form of flush-on-abort.
+    #[cfg(feature = "heap-stdio-buffer")]
+    inner: &'static ReentrantLock<RefCell<LineWriter<StdoutRaw>>>,
+    #[cfg(not(feature = "heap-stdio-buffer"))]
     inner: &'static ReentrantLock<RefCell<ArrayLineWriter<StdoutRaw, LINE_BUF_SIZE>>>,
 }
 
@@ -535,9 +563,15 @@ pub struct Stdout {
 /// the [`Stdout::lock`] method. See its documentation for more.
 #[must_use = "if unused stdout will immediately unlock"]
 pub struct StdoutLock<'a> {
+    #[cfg(feature = "heap-stdio-buffer")]
+    inner: ReentrantLockGuard<'a, RefCell<LineWriter<StdoutRaw>>>,
+    #[cfg(not(feature = "heap-stdio-buffer"))]
     inner: ReentrantLockGuard<'a, RefCell<ArrayLineWriter<StdoutRaw, LINE_BUF_SIZE>>>,
 }
 
+#[cfg(feature = "heap-stdio-buffer")]
+static STDOUT: OnceLock<ReentrantLock<RefCell<LineWriter<StdoutRaw>>>> = OnceLock::new();
+#[cfg(not(feature = "heap-stdio-buffer"))]
 static STDOUT: OnceLock<ReentrantLock<RefCell<ArrayLineWriter<StdoutRaw, LINE_BUF_SIZE>>>> =
     OnceLock::new();
 
@@ -579,7 +613,10 @@ static STDOUT: OnceLock<ReentrantLock<RefCell<ArrayLineWriter<StdoutRaw, LINE_BU
 pub fn stdout() -> Stdout {
     Stdout {
         inner: STDOUT
-            .get_or_init(|| ReentrantLock::new(RefCell::new(ArrayLineWriter::new(stdout_raw())))),
+            .get_or_init(|| cfg_select! {
+                feature = "heap-stdio-buffer" => ReentrantLock::new(RefCell::new(LineWriter::with_capacity(LINE_BUF_SIZE, stdout_raw()))),
+                _ => ReentrantLock::new(RefCell::new(ArrayLineWriter::new(stdout_raw()))),
+            }),
     }
 }
 
@@ -591,7 +628,10 @@ pub fn cleanup() {
     let mut initialized = false;
     let stdout = STDOUT.get_or_init(|| {
         initialized = true;
-        ReentrantLock::new(RefCell::new(ArrayLineWriter::new(stdout_raw())))
+        cfg_select! {
+            feature = "heap-stdio-buffer" => ReentrantLock::new(RefCell::new(LineWriter::with_capacity(LINE_BUF_SIZE, stdout_raw()))),
+            _ => ReentrantLock::new(RefCell::new(ArrayLineWriter::new(stdout_raw()))),
+        }
     });
 
     if !initialized {
@@ -600,7 +640,14 @@ pub fn cleanup() {
         // might have leaked a StdoutLock, which would
         // otherwise cause a deadlock here.
         if let Some(lock) = stdout.try_lock() {
-            *lock.borrow_mut() = ArrayLineWriter::new(stdout_raw());
+            cfg_select! {
+                feature = "heap-stdio-buffer" => {
+                    *lock.borrow_mut() = LineWriter::with_capacity(0, stdout_raw());
+                },
+                _ => {
+                    *lock.borrow_mut() = ArrayLineWriter::new(stdout_raw());
+                },
+            }
         }
     }
 }

@@ -23,7 +23,7 @@ pspsdk-macros = { path = "../pspsdk-macros", version = "0.0.1", features = [] }
 default = ["non-stub-code"]
 # Enable kernel modules.
 kernel = ["stub-c"]
-# Enable CFW modules.
+# Enable CFW modules. WIP
 cfw-api = []
 # Optimize for space instead of speed the basic C-functions required by the
 # linker when such functions doesn't have a stub alternative. (memset, memcpy,
@@ -38,6 +38,10 @@ opt-size-c = []
 # - Plugins and EBOOT.PBP using `cfw-api` enabled.
 # - When enabling PAF functions (TODO)
 stub-c = []
+# Uses heap allocated buffer for the stdio high-level types.
+#
+# If not enabled, it uses array based buffers.
+heap-stdio-buffer = []
 
 # Build with std support
 std = []
