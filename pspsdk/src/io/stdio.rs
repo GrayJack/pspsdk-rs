@@ -7,13 +7,18 @@ use core::{
 use alloc::{string::String, vec::Vec};
 
 use crate::{
-    io::{self, BorrowedCursor, BufRead, BufReader, LineWriter, Lines, Read, Write},
-    os,
+    io::{self, ArrayBufReader, ArrayLineWriter, BorrowedCursor, BufRead, Lines, Read, Write},
+    os::{self, stdio::STDIN_BUF_SIZE},
     sync::{
         nonpoison::{OnceLock, ReentrantLock, ReentrantLockGuard},
         poison::{Mutex, MutexGuard},
     },
     sys::SceError,
+};
+
+const LINE_BUF_SIZE: usize = cfg_select! {
+    all(prx, feature = "kernel") => 360,
+    _ => 512,
 };
 
 /// A handle to a raw instance of the standard input stream of this process.
@@ -206,18 +211,6 @@ pub fn is_ebadf(err: &io::Error) -> bool {
 ///
 /// [`io::stdin`]: stdin
 ///
-/// ### Note: Windows Portability Considerations
-///
-/// When operating in a console, the Windows implementation of this stream does not support
-/// non-UTF-8 byte sequences. Attempting to read bytes that are not valid UTF-8 will return
-/// an error.
-///
-/// In a process with a detached console, such as one using
-/// `#![windows_subsystem = "windows"]`, or in a child process spawned from such a process,
-/// the contained handle will be null. In such cases, the standard library's `Read` and
-/// `Write` will do nothing and silently succeed. All other I/O operations, via the
-/// standard library or via raw Windows API calls, will fail.
-///
 /// # Examples
 ///
 /// ```no_run
@@ -231,25 +224,13 @@ pub fn is_ebadf(err: &io::Error) -> bool {
 /// }
 /// ```
 pub struct Stdin {
-    inner: &'static Mutex<BufReader<StdinRaw>>,
+    inner: &'static Mutex<ArrayBufReader<StdinRaw, STDIN_BUF_SIZE>>,
 }
 
 /// A locked reference to the [`Stdin`] handle.
 ///
 /// This handle implements both the [`Read`] and [`BufRead`] traits, and
 /// is constructed via the [`Stdin::lock`] method.
-///
-/// ### Note: Windows Portability Considerations
-///
-/// When operating in a console, the Windows implementation of this stream does not support
-/// non-UTF-8 byte sequences. Attempting to read bytes that are not valid UTF-8 will return
-/// an error.
-///
-/// In a process with a detached console, such as one using
-/// `#![windows_subsystem = "windows"]`, or in a child process spawned from such a process,
-/// the contained handle will be null. In such cases, the standard library's `Read` and
-/// `Write` will do nothing and silently succeed. All other I/O operations, via the
-/// standard library or via raw Windows API calls, will fail.
 ///
 /// # Examples
 ///
@@ -268,7 +249,7 @@ pub struct Stdin {
 /// ```
 #[must_use = "if unused stdin will immediately unlock"]
 pub struct StdinLock<'a> {
-    inner: MutexGuard<'a, BufReader<StdinRaw>>,
+    inner: MutexGuard<'a, ArrayBufReader<StdinRaw, STDIN_BUF_SIZE>>,
 }
 
 /// Constructs a new handle to the standard input of the current process.
@@ -276,18 +257,6 @@ pub struct StdinLock<'a> {
 /// Each handle returned is a reference to a shared global buffer whose access
 /// is synchronized via a mutex. If you need more explicit control over
 /// locking, see the [`Stdin::lock`] method.
-///
-/// ### Note: Windows Portability Considerations
-///
-/// When operating in a console, the Windows implementation of this stream does not support
-/// non-UTF-8 byte sequences. Attempting to read bytes that are not valid UTF-8 will return
-/// an error.
-///
-/// In a process with a detached console, such as one using
-/// `#![windows_subsystem = "windows"]`, or in a child process spawned from such a process,
-/// the contained handle will be null. In such cases, the standard library's `Read` and
-/// `Write` will do nothing and silently succeed. All other I/O operations, via the
-/// standard library or via raw Windows API calls, will fail.
 ///
 /// # Examples
 ///
@@ -319,11 +288,9 @@ pub struct StdinLock<'a> {
 /// ```
 #[must_use]
 pub fn stdin() -> Stdin {
-    static INSTANCE: OnceLock<Mutex<BufReader<StdinRaw>>> = OnceLock::new();
+    static INSTANCE: OnceLock<Mutex<ArrayBufReader<StdinRaw, STDIN_BUF_SIZE>>> = OnceLock::new();
     Stdin {
-        inner: INSTANCE.get_or_init(|| {
-            Mutex::new(BufReader::with_capacity(os::stdio::STDIN_BUF_SIZE, stdin_raw()))
-        }),
+        inner: INSTANCE.get_or_init(|| Mutex::new(ArrayBufReader::new(stdin_raw()))),
     }
 }
 
@@ -478,7 +445,7 @@ impl Read for &Stdin {
 // only used by platform-dependent io::copy specializations, i.e. unused on some platforms
 impl StdinLock<'_> {
     #[allow(unused)]
-    pub(crate) fn as_mut_buf(&mut self) -> &mut BufReader<impl Read> {
+    pub(crate) fn as_mut_buf(&mut self) -> &mut ArrayBufReader<impl Read, STDIN_BUF_SIZE> {
         &mut self.inner
     }
 }
@@ -553,67 +520,32 @@ impl fmt::Debug for StdinLock<'_> {
 ///
 /// Created by the [`io::stdout`] method.
 ///
-/// ### Note: Windows Portability Considerations
-///
-/// When operating in a console, the Windows implementation of this stream does not support
-/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
-/// an error.
-///
-/// In a process with a detached console, such as one using
-/// `#![windows_subsystem = "windows"]`, or in a child process spawned from such a process,
-/// the contained handle will be null. In such cases, the standard library's `Read` and
-/// `Write` will do nothing and silently succeed. All other I/O operations, via the
-/// standard library or via raw Windows API calls, will fail.
-///
 /// [`lock`]: Stdout::lock
 /// [`io::stdout`]: stdout
 pub struct Stdout {
     // FIXME: this should be LineWriter or BufWriter depending on the state of
     //        stdout (tty or not). Note that if this is not line buffered it
     //        should also flush-on-panic or some form of flush-on-abort.
-    inner: &'static ReentrantLock<RefCell<LineWriter<StdoutRaw>>>,
+    inner: &'static ReentrantLock<RefCell<ArrayLineWriter<StdoutRaw, LINE_BUF_SIZE>>>,
 }
 
 /// A locked reference to the [`Stdout`] handle.
 ///
 /// This handle implements the [`Write`] trait, and is constructed via
 /// the [`Stdout::lock`] method. See its documentation for more.
-///
-/// ### Note: Windows Portability Considerations
-///
-/// When operating in a console, the Windows implementation of this stream does not support
-/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
-/// an error.
-///
-/// In a process with a detached console, such as one using
-/// `#![windows_subsystem = "windows"]`, or in a child process spawned from such a process,
-/// the contained handle will be null. In such cases, the standard library's `Read` and
-/// `Write` will do nothing and silently succeed. All other I/O operations, via the
-/// standard library or via raw Windows API calls, will fail.
 #[must_use = "if unused stdout will immediately unlock"]
 pub struct StdoutLock<'a> {
-    inner: ReentrantLockGuard<'a, RefCell<LineWriter<StdoutRaw>>>,
+    inner: ReentrantLockGuard<'a, RefCell<ArrayLineWriter<StdoutRaw, LINE_BUF_SIZE>>>,
 }
 
-static STDOUT: OnceLock<ReentrantLock<RefCell<LineWriter<StdoutRaw>>>> = OnceLock::new();
+static STDOUT: OnceLock<ReentrantLock<RefCell<ArrayLineWriter<StdoutRaw, LINE_BUF_SIZE>>>> =
+    OnceLock::new();
 
 /// Constructs a new handle to the standard output of the current process.
 ///
 /// Each handle returned is a reference to a shared global buffer whose access
 /// is synchronized via a mutex. If you need more explicit control over
 /// locking, see the [`Stdout::lock`] method.
-///
-/// ### Note: Windows Portability Considerations
-///
-/// When operating in a console, the Windows implementation of this stream does not support
-/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
-/// an error.
-///
-/// In a process with a detached console, such as one using
-/// `#![windows_subsystem = "windows"]`, or in a child process spawned from such a process,
-/// the contained handle will be null. In such cases, the standard library's `Read` and
-/// `Write` will do nothing and silently succeed. All other I/O operations, via the
-/// standard library or via raw Windows API calls, will fail.
 ///
 /// # Examples
 ///
@@ -647,7 +579,7 @@ static STDOUT: OnceLock<ReentrantLock<RefCell<LineWriter<StdoutRaw>>>> = OnceLoc
 pub fn stdout() -> Stdout {
     Stdout {
         inner: STDOUT
-            .get_or_init(|| ReentrantLock::new(RefCell::new(LineWriter::new(stdout_raw())))),
+            .get_or_init(|| ReentrantLock::new(RefCell::new(ArrayLineWriter::new(stdout_raw())))),
     }
 }
 
@@ -659,7 +591,7 @@ pub fn cleanup() {
     let mut initialized = false;
     let stdout = STDOUT.get_or_init(|| {
         initialized = true;
-        ReentrantLock::new(RefCell::new(LineWriter::with_capacity(0, stdout_raw())))
+        ReentrantLock::new(RefCell::new(ArrayLineWriter::new(stdout_raw())))
     });
 
     if !initialized {
@@ -668,7 +600,7 @@ pub fn cleanup() {
         // might have leaked a StdoutLock, which would
         // otherwise cause a deadlock here.
         if let Some(lock) = stdout.try_lock() {
-            *lock.borrow_mut() = LineWriter::with_capacity(0, stdout_raw());
+            *lock.borrow_mut() = ArrayLineWriter::new(stdout_raw());
         }
     }
 }
@@ -817,18 +749,6 @@ impl fmt::Debug for StdoutLock<'_> {
 /// For more information, see the [`io::stderr`] method.
 ///
 /// [`io::stderr`]: stderr
-///
-/// ### Note: Windows Portability Considerations
-///
-/// When operating in a console, the Windows implementation of this stream does not support
-/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
-/// an error.
-///
-/// In a process with a detached console, such as one using
-/// `#![windows_subsystem = "windows"]`, or in a child process spawned from such a process,
-/// the contained handle will be null. In such cases, the standard library's `Read` and
-/// `Write` will do nothing and silently succeed. All other I/O operations, via the
-/// standard library or via raw Windows API calls, will fail.
 pub struct Stderr {
     inner: &'static ReentrantLock<RefCell<StderrRaw>>,
 }
@@ -837,18 +757,6 @@ pub struct Stderr {
 ///
 /// This handle implements the [`Write`] trait and is constructed via
 /// the [`Stderr::lock`] method. See its documentation for more.
-///
-/// ### Note: Windows Portability Considerations
-///
-/// When operating in a console, the Windows implementation of this stream does not support
-/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
-/// an error.
-///
-/// In a process with a detached console, such as one using
-/// `#![windows_subsystem = "windows"]`, or in a child process spawned from such a process,
-/// the contained handle will be null. In such cases, the standard library's `Read` and
-/// `Write` will do nothing and silently succeed. All other I/O operations, via the
-/// standard library or via raw Windows API calls, will fail.
 #[must_use = "if unused stderr will immediately unlock"]
 pub struct StderrLock<'a> {
     inner: ReentrantLockGuard<'a, RefCell<StderrRaw>>,
@@ -857,18 +765,6 @@ pub struct StderrLock<'a> {
 /// Constructs a new handle to the standard error of the current process.
 ///
 /// This handle is not buffered.
-///
-/// ### Note: Windows Portability Considerations
-///
-/// When operating in a console, the Windows implementation of this stream does not support
-/// non-UTF-8 byte sequences. Attempting to write bytes that are not valid UTF-8 will return
-/// an error.
-///
-/// In a process with a detached console, such as one using
-/// `#![windows_subsystem = "windows"]`, or in a child process spawned from such a process,
-/// the contained handle will be null. In such cases, the standard library's `Read` and
-/// `Write` will do nothing and silently succeed. All other I/O operations, via the
-/// standard library or via raw Windows API calls, will fail.
 ///
 /// # Examples
 ///
