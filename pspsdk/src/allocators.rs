@@ -26,10 +26,18 @@ pub use crate::sys::mem::{MemoryBlockKind, MemoryPartitionId};
 #[global_allocator]
 static GLOBAL_ALLOC: SystemAlloc = SystemAlloc;
 
-const DEFAULT_PARTITION_ID: MemoryPartitionId = if cfg!(feature = "kernel") {
-    MemoryPartitionId::MainKernel
-} else {
-    MemoryPartitionId::MainUser
+const DEFAULT_PARTITION_ID: MemoryPartitionId = cfg_select! {
+    all(prx, feature = "kernel") => MemoryPartitionId::MainKernel,
+    _ => MemoryPartitionId::MainUser
+};
+
+const DEFAULT_VPL_SIZE: usize = cfg_select! {
+    // 2 KB
+    all(prx, feature = "kernel") => 2048,
+    // 16 KB
+    all(prx, not(feature = "kernel")) => 16*1024,
+    // 64 KB
+    _ => 64*1024,
 };
 
 /// An general allocator for the PSP OS.
@@ -38,7 +46,6 @@ pub struct SystemAlloc;
 /// An allocator to a specific PSP RAM partition
 pub struct PartitionAlloc {
     partition: MemoryPartitionId,
-    policy: MemoryBlockKind,
 }
 
 impl PartitionAlloc {
@@ -46,31 +53,22 @@ impl PartitionAlloc {
     ///
     /// The allocation policy is to allocate from the lowest available address.
     pub const fn new(partition: MemoryPartitionId) -> Self {
-        Self {
-            partition,
-            policy: MemoryBlockKind::Low,
-        }
-    }
-
-    /// Creates a new `PartitionAlloc` that will allocate in the given PSP `partition` with a
-    /// specified allocation `policy`.
-    pub const fn with_block_kind(partition: MemoryPartitionId, policy: MemoryBlockKind) -> Self {
-        Self { partition, policy }
+        Self { partition }
     }
 }
 
 
 unsafe impl GlobalAlloc for SystemAlloc {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        let size = layout.size() + size_of::<SceUid>() + layout.align();
+        let size = layout.size() + size_of::<SceUid>();
 
         let res = unsafe {
             sceKernelAllocPartitionMemory(
                 DEFAULT_PARTITION_ID,
                 c"SystemAlloc".as_ptr().cast(),
-                MemoryBlockKind::Low,
+                MemoryBlockKind::LowAligned,
                 size,
-                0,
+                layout.align(),
             )
         };
 
@@ -119,15 +117,15 @@ unsafe impl Allocator for SystemAlloc {
             0 => Ok(NonNull::slice_from_raw_parts(layout.dangling_ptr(), 0)),
             // SAFETY: `layout` is non-zero in size,
             size => {
-                let size = size + size_of::<SceUid>() + layout.align();
+                let size = size + size_of::<SceUid>();
 
                 let res = unsafe {
                     sceKernelAllocPartitionMemory(
                         DEFAULT_PARTITION_ID,
                         c"SystemAlloc".as_ptr().cast(),
-                        MemoryBlockKind::Low,
+                        MemoryBlockKind::LowAligned,
                         size,
-                        0,
+                        layout.align(),
                     )
                 };
 
@@ -176,15 +174,15 @@ unsafe impl Allocator for SystemAlloc {
 
 unsafe impl GlobalAlloc for PartitionAlloc {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        let size = layout.size() + size_of::<SceUid>() + layout.align();
+        let size = layout.size() + size_of::<SceUid>();
 
         let res = unsafe {
             sceKernelAllocPartitionMemory(
                 self.partition,
                 c"PartitionAlloc".as_ptr().cast(),
-                self.policy,
+                MemoryBlockKind::LowAligned,
                 size,
-                0,
+                layout.align(),
             )
         };
 
@@ -233,15 +231,15 @@ unsafe impl Allocator for PartitionAlloc {
             0 => Ok(NonNull::slice_from_raw_parts(layout.dangling_ptr(), 0)),
             // SAFETY: `layout` is non-zero in size,
             size => {
-                let size = size + size_of::<SceUid>() + layout.align();
+                let size = size + size_of::<SceUid>();
 
                 let res = unsafe {
                     sceKernelAllocPartitionMemory(
                         self.partition,
                         c"PartitionAlloc".as_ptr().cast(),
-                        self.policy,
+                        MemoryBlockKind::LowAligned,
                         size,
-                        0,
+                        layout.align(),
                     )
                 };
 
