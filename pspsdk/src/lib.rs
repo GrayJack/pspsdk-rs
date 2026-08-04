@@ -37,7 +37,7 @@ extern crate panic_unwind;
 extern crate std;
 
 // Re-export proc-macros
-pub use pspsdk_macros::{export, exports, psp_stub};
+pub use pspsdk_macros::{export, exports, psp_fw_cfg, psp_stub};
 
 use crate::sys::{thread::CallbackTermState, SceResult};
 

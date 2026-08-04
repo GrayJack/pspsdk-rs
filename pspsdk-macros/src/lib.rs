@@ -6,11 +6,13 @@ use syn::{parse_macro_input, spanned::Spanned, Result};
 use crate::{
     export_impl::ExportArgs,
     exports_impl::ExportsArgs,
+    pspfwcfg::PspFwCfgArg,
     pspstub::{PspStub, StubArgs},
 };
 
 mod export_impl;
 mod exports_impl;
+mod pspfwcfg;
 mod pspstub;
 
 /// Creates a PSP stub library from a `extern "C"` block.
@@ -288,4 +290,90 @@ pub fn exports(input: TokenStream) -> TokenStream {
     };
 
     ts.into()
+}
+
+const PSPSDK_TARGET_FW: Option<&str> = std::option_env!("PSPSDK_TARGET_FW");
+
+/// Conditionally includes the form to which it is attached based on a PSP Firmware version
+/// targeted.
+///
+/// The macro takes either a decimal integer literal or a range of the same. The integer number is
+/// the firmware version without the ".".
+///
+/// # Example
+///
+/// ```no_run
+/// use pspsdk::{psp_fw_cfg, psp_stub};
+///
+/// #[psp_stub(libname = "SceWhatever", flags = 0x4001)]
+/// unsafe extern "C" {
+///     // Set for a specific version to only show up this item when targeting that specific version
+///     #[psp_fw_cfg(570)]
+///     fn sceWhateverFnOne() -> i32;
+///
+///     // Ranges can also be used. Implicit minimum is `100` and implicit maximum is `661`.
+///     #[psp_fw_cfg(..150)]
+///     fn sceWhateverFnTwo() -> i32;
+///     #[psp_fw_cfg(150..)]
+///     fn sceWhateverFnThree() -> i32;
+///     #[psp_fw_cfg(150..=570)]
+///     fn sceWhateverFnFour() -> i32;
+/// }
+/// ```
+///
+/// It can also be use to specify values for specific versions of the firmware
+///
+/// ```no_run
+/// #[pspsdk::psp_fw_cfg(570)]
+/// const MY_PATCH_OFFSET: usize = 0x2345;
+/// #[pspsdk::psp_fw_cfg(600..630)]
+/// const MY_PATCH_OFFSET: usize = 0x4356;
+/// ```
+#[proc_macro_attribute]
+pub fn psp_fw_cfg(attr: TokenStream, item: TokenStream) -> TokenStream {
+    match psp_fw_cfg_impl(attr, item) {
+        Ok(ts) => ts,
+        Err(err) => err.into_compile_error().into(),
+    }
+}
+
+fn psp_fw_cfg_impl(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
+    let arg: PspFwCfgArg = syn::parse(attr)?;
+
+    let target_fw: Option<u32> = PSPSDK_TARGET_FW
+        .map(|s| s.split('.').collect())
+        .and_then(|s: String| s.parse::<u32>().ok());
+
+    let Some(target_fw) = target_fw else {
+        // If not set, always show item
+        return Ok(item);
+    };
+
+    let res = match arg {
+        PspFwCfgArg::Lit(lit) => {
+            if lit == target_fw {
+                item
+            } else {
+                TokenStream::new()
+            }
+        },
+        PspFwCfgArg::Range(start, end, limits) => match limits {
+            syn::RangeLimits::HalfOpen(_) => {
+                if (start..end).contains(&target_fw) {
+                    item
+                } else {
+                    TokenStream::new()
+                }
+            },
+            syn::RangeLimits::Closed(_) => {
+                if (start..=end).contains(&target_fw) {
+                    item
+                } else {
+                    TokenStream::new()
+                }
+            },
+        },
+    };
+
+    Ok(res)
 }
