@@ -377,3 +377,59 @@ fn psp_fw_cfg_impl(attr: TokenStream, item: TokenStream) -> Result<TokenStream> 
 
     Ok(res)
 }
+
+/// Evaluates to a boolean a targeted PSP firmware version match the expected version.
+///
+/// # Examples
+///
+/// ```no_run
+/// use pspsdk::psp_fw;
+///
+/// const MY_PATCH_OFFSET: usize = if psp_fw!(400..500) {
+///     0x4356
+/// } else if psp_fw!(600..) {
+///     0x2345
+/// } else {
+///     panic!("not a supported PSP firmware version")
+/// };
+/// ```
+#[proc_macro]
+pub fn psp_fw(input: TokenStream) -> TokenStream {
+    let arg: PspFwCfgArg = parse_macro_input!(input as PspFwCfgArg);
+
+    let target_fw: Option<u32> = PSPSDK_TARGET_FW
+        .map(|s| s.split('.').collect())
+        .and_then(|s: String| s.parse::<u32>().ok());
+
+    let Some(target_fw) = target_fw else {
+        // If not set, always false
+        return quote! {false}.into();
+    };
+
+
+    match arg {
+        PspFwCfgArg::Lit(lit) => {
+            if lit == target_fw {
+                quote! {true}.into()
+            } else {
+                quote! {false}.into()
+            }
+        },
+        PspFwCfgArg::Range(start, end, limits) => match limits {
+            syn::RangeLimits::HalfOpen(_) => {
+                if (start..end).contains(&target_fw) {
+                    quote! {true}.into()
+                } else {
+                    quote! {false}.into()
+                }
+            },
+            syn::RangeLimits::Closed(_) => {
+                if (start..=end).contains(&target_fw) {
+                    quote! {true}.into()
+                } else {
+                    quote! {false}.into()
+                }
+            },
+        },
+    }
+}
