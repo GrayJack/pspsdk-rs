@@ -147,7 +147,9 @@ impl<T: SceResultOk> SceResult<T> {
     /// Turn the SceResult into a [`Result`] type.
     pub fn into_result(self) -> Result<T, SceError> {
         match self.as_inner() {
-            0..=0x7FFFFFFF => unsafe { T::handle_ok_value(self.as_inner()) },
+            0..=0x7FFFFFFF => unsafe {
+                T::handle_ok_value(self.as_inner()).ok_or_else(|| SceError::INVALID_VALUE)
+            },
             0x80000001..=0xFFFFFFFF => {
                 Err(unsafe { SceError::from_raw_unchecked(self.as_inner()) })
             },
@@ -160,7 +162,10 @@ impl<T: SceResultOk> SceResult<T> {
     /// Converts `self` into an [`Option<T>`], consuming `self`,
     /// and discarding the error, if any.
     pub fn ok(self) -> Option<T> {
-        self.into_result().ok()
+        match self.as_inner() {
+            0..=0x7FFFFFFF => unsafe { T::handle_ok_value(self.as_inner()) },
+            _ => None,
+        }
     }
 
     /// Converts from `SceResult<T>` to [`Option<SceError>`].
@@ -168,7 +173,13 @@ impl<T: SceResultOk> SceResult<T> {
     /// Converts `self` into an [`Option<SceError>`], consuming `self`,
     /// and discarding the success value, if any.
     pub fn err(self) -> Option<SceError> {
-        self.into_result().err()
+        match self.as_inner() {
+            0..=0x7FFFFFFF => None,
+            0x80000001..=0xFFFFFFFF => {
+                Some(unsafe { SceError::from_raw_unchecked(self.as_inner()) })
+            },
+            0x80000000 => Some(SceError::INVALID_VALUE),
+        }
     }
 
     // Maps a `SceResult<T>` to `Result<U, E>` by applying a function to a
@@ -248,7 +259,7 @@ impl<T: SceResultOk> SceResult<T> {
         if self.is_ok() {
             // SAFETY: We know it is a Ok value
             let res = unsafe { T::handle_ok_value(self.as_inner()) };
-            if let Ok(inner) = res {
+            if let Some(inner) = res {
                 f(&inner)
             }
         }
@@ -315,7 +326,9 @@ impl<T: SceResultOk> SceResult64<T> {
     /// Turn the SceResult64 into a [`Result`] type.
     pub fn into_result(self) -> Result<T, SceError> {
         match self.as_inner() {
-            0..=0xFFFFFFFF_7FFFFFFF => unsafe { T::handle_ok_value64(self.as_inner()) },
+            0..=0xFFFFFFFF_7FFFFFFF => unsafe {
+                T::handle_ok_value64(self.as_inner()).ok_or_else(|| SceError::INVALID_VALUE)
+            },
             0xFFFFFFFF_80000001..=0xFFFFFFFF_FFFFFFFF => {
                 // Only lower bits
                 let err = (self.as_inner() & 0xFFFFFFFF_00000000) as u32;
@@ -418,7 +431,7 @@ impl<T: SceResultOk> SceResult64<T> {
         if self.is_ok() {
             // SAFETY: We know it is a Ok value
             let res = unsafe { T::handle_ok_value64(self.as_inner()) };
-            if let Ok(inner) = res {
+            if let Some(inner) = res {
                 f(&inner)
             }
         }
@@ -459,7 +472,7 @@ impl SceResult<()> {
 /// - Have a max size of 4 bytes
 /// - If a struct, be `repr(transparent)`
 pub unsafe trait SceResultOk: Sized + crate::private::Sealed {
-    /// Turn the Ok value range (`(0,0x7FFFFFFF]`) into a result
+    /// Turn the Ok value range (`(0,0x7FFFFFFF]`) into a option.
     ///
     /// The `ok_value` is always in the ok value range when used by [`SceResult`].
     ///
@@ -468,9 +481,9 @@ pub unsafe trait SceResultOk: Sized + crate::private::Sealed {
     /// implementation is free to not check for values outside of that range.
     ///
     /// For callers outside of [`SceResult`], it must ensure to pass a valid `ok_value`.
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError>;
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self>;
 
-    /// Turn the Ok value range (`(0,0xFFFFFFFF_7FFFFFFF]`) into a result
+    /// Turn the Ok value range (`(0,0xFFFFFFFF_7FFFFFFF]`) into a option.
     ///
     /// The `ok_value` is always in the ok value range when used by [`SceResult64`].
     ///
@@ -479,10 +492,10 @@ pub unsafe trait SceResultOk: Sized + crate::private::Sealed {
     /// implementation is free to not check for values outside of that range.
     ///
     /// For callers outside of [`SceResult64`], it must ensure to pass a valid `ok_value`.
-    unsafe fn handle_ok_value64(ok_value: u64) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value64(ok_value: u64) -> Option<Self> {
         match ok_value {
             0..=0x7FFFFFFF => unsafe { Self::handle_ok_value(ok_value as u32) },
-            _ => Err(SceError::INVALID_VALUE),
+            _ => None,
         }
     }
 }
@@ -521,8 +534,8 @@ macro_rules! __result_ok_int {
     ($($ty:ty),+) => {
         $(
             unsafe impl SceResultOk for $ty {
-                unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
-                    <$ty>::try_from(ok_value).map_err(|_| SceError::INVALID_VALUE)
+                unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
+                    <$ty>::try_from(ok_value).ok()
                 }
             }
 
@@ -539,9 +552,9 @@ __result_ok_int!(i8, u8, i16, u16, bool);
 
 
 unsafe impl SceResultOk for i32 {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         debug_assert!(ok_value <= 0x7FFFFFFF);
-        Ok(u32::cast_signed(ok_value))
+        Some(u32::cast_signed(ok_value))
     }
 }
 unsafe impl SceIntoOkValue for i32 {
@@ -550,9 +563,9 @@ unsafe impl SceIntoOkValue for i32 {
     }
 }
 unsafe impl SceResultOk for u32 {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         debug_assert!(ok_value <= 0x7FFFFFFF);
-        Ok(ok_value)
+        Some(ok_value)
     }
 }
 unsafe impl SceIntoOkValue for u32 {
@@ -561,26 +574,26 @@ unsafe impl SceIntoOkValue for u32 {
     }
 }
 unsafe impl SceResultOk for i64 {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
-        Ok(ok_value as i64)
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
+        Some(ok_value as i64)
     }
 
-    unsafe fn handle_ok_value64(ok_value: u64) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value64(ok_value: u64) -> Option<Self> {
         match ok_value {
-            0..=0xFFFFFFFF_7FFFFFFF => Ok(u64::cast_signed(ok_value)),
-            _ => Err(SceError::INVALID_VALUE),
+            0..=0xFFFFFFFF_7FFFFFFF => Some(u64::cast_signed(ok_value)),
+            _ => None,
         }
     }
 }
 unsafe impl SceResultOk for u64 {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
-        Ok(ok_value as u64)
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
+        Some(ok_value as u64)
     }
 
-    unsafe fn handle_ok_value64(ok_value: u64) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value64(ok_value: u64) -> Option<Self> {
         match ok_value {
-            0..=0xFFFFFFFF_7FFFFFFF => Ok(ok_value),
-            _ => Err(SceError::INVALID_VALUE),
+            0..=0xFFFFFFFF_7FFFFFFF => Some(ok_value),
+            _ => None,
         }
     }
 }
@@ -597,9 +610,9 @@ unsafe impl SceInto64OkValue for u64 {
 
 #[cfg(target_pointer_width = "32")]
 unsafe impl SceResultOk for isize {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         debug_assert!(ok_value <= 0x7FFFFFFF);
-        Ok(ok_value as isize)
+        Some(ok_value as isize)
     }
 }
 #[cfg(target_pointer_width = "32")]
@@ -610,9 +623,9 @@ unsafe impl SceIntoOkValue for isize {
 }
 #[cfg(target_pointer_width = "32")]
 unsafe impl SceResultOk for usize {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         debug_assert!(ok_value <= 0x7FFFFFFF);
-        Ok(ok_value as usize)
+        Some(ok_value as usize)
     }
 }
 #[cfg(target_pointer_width = "32")]
@@ -622,10 +635,10 @@ unsafe impl SceIntoOkValue for usize {
     }
 }
 unsafe impl SceResultOk for () {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         match ok_value {
-            0x00 => Ok(()),
-            _ => Err(SceError::INVALID_VALUE),
+            0x00 => Some(()),
+            _ => None,
         }
     }
 }
@@ -635,8 +648,8 @@ unsafe impl SceIntoOkValue for () {
     }
 }
 unsafe impl SceResultOk for ! {
-    unsafe fn handle_ok_value(_ok_value: u32) -> Result<Self, SceError> {
-        Err(SceError::INVALID_VALUE)
+    unsafe fn handle_ok_value(_ok_value: u32) -> Option<Self> {
+        None
     }
 }
 unsafe impl SceIntoOkValue for ! {
@@ -645,15 +658,15 @@ unsafe impl SceIntoOkValue for ! {
     }
 }
 unsafe impl SceResultOk for core::convert::Infallible {
-    unsafe fn handle_ok_value(_: u32) -> Result<Self, SceError> {
-        Err(SceError::INVALID_VALUE)
+    unsafe fn handle_ok_value(_: u32) -> Option<Self> {
+        None
     }
 }
 unsafe impl SceResultOk for SceUid {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         debug_assert!(ok_value <= 0x7FFFFFFF);
         // SAFETY: SceUid is always on the ok value range
-        Ok(unsafe { Self::from_raw_unchecked(ok_value) })
+        Some(unsafe { Self::from_raw_unchecked(ok_value) })
     }
 }
 unsafe impl SceIntoOkValue for SceUid {

@@ -1676,11 +1676,11 @@ unsafe extern "C" {
 
 impl crate::private::Sealed for InputMode {}
 unsafe impl SceResultOk for InputMode {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         match ok_value {
-            0 => Ok(Self::DigitalOnly),
-            1 => Ok(Self::DigitalAndAnalog),
-            _ => Err(SceError::INVALID_VALUE),
+            0 => Some(Self::DigitalOnly),
+            1 => Some(Self::DigitalAndAnalog),
+            _ => None,
         }
     }
 }
@@ -1726,8 +1726,11 @@ impl SamplingCycle {
 impl crate::private::Sealed for SamplingCycle {}
 unsafe impl SceResultOk for SamplingCycle {
     #[inline]
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
-        Self::new(ok_value)
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
+        match ok_value {
+            0 | 5555..=20000 => Some(unsafe { Self::new_unchecked(ok_value) }),
+            _ => None,
+        }
     }
 }
 unsafe impl SceIntoOkValue for SamplingCycle {

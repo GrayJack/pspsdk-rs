@@ -160,13 +160,13 @@ unsafe extern "C" {
 
 impl crate::private::Sealed for AudioRoutingMode {}
 unsafe impl SceResultOk for AudioRoutingMode {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         match ok_value {
-            0x00 => Ok(Self::Auto),
-            0x01 => Ok(Self::PreferSpeakers),
-            0x02 => Ok(Self::OnlySpeakers),
-            0x03 => Ok(Self::OnlyHeadphone),
-            _ => Err(SceError::INVALID_VALUE),
+            0x00 => Some(Self::Auto),
+            0x01 => Some(Self::PreferSpeakers),
+            0x02 => Some(Self::OnlySpeakers),
+            0x03 => Some(Self::OnlyHeadphone),
+            _ => None,
         }
     }
 }
@@ -183,11 +183,11 @@ unsafe impl SceIntoOkValue for AudioRoutingMode {
 
 impl crate::private::Sealed for AudioRoutingVolumeMode {}
 unsafe impl SceResultOk for AudioRoutingVolumeMode {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         match ok_value {
-            0x00 => Ok(Self::Normal),
-            0x01 => Ok(Self::ForceMaximum),
-            _ => Err(SceError::INVALID_VALUE),
+            0x00 => Some(Self::Normal),
+            0x01 => Some(Self::ForceMaximum),
+            _ => None,
         }
     }
 }

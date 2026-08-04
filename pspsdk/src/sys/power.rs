@@ -2,7 +2,7 @@
 use bitflag_attr::bitflag;
 use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
-use crate::sys::{thread::CallbackId, SceError, SceIntoOkValue, SceResult, SceResultOk, SceSize};
+use crate::sys::{thread::CallbackId, SceIntoOkValue, SceResult, SceResultOk, SceSize};
 
 /// Bitflags that are passed to the `arg` parameter of [`CallbackFunction`]
 /// when registered with [`scePowerRegisterCallback`].
@@ -1756,11 +1756,11 @@ impl PowerCallbackSlot {
 
 impl crate::private::Sealed for PowerCallbackSlot {}
 unsafe impl SceResultOk for PowerCallbackSlot {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         // On result Channel is never 0xFFFFFFFF
         match ok_value {
-            0..=15 => Ok(unsafe { Self::new_unchecked(ok_value) }),
-            _ => Err(SceError::INVALID_VALUE),
+            0..=15 => Some(unsafe { Self::new_unchecked(ok_value) }),
+            _ => None,
         }
     }
 }
@@ -1772,11 +1772,11 @@ unsafe impl SceIntoOkValue for PowerCallbackSlot {
 
 impl crate::private::Sealed for WlanCoexistenceClock {}
 unsafe impl SceResultOk for WlanCoexistenceClock {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         match ok_value {
-            0 => Ok(Self::MaxClock222MHz),
-            1 => Ok(Self::MaxClock333MHz),
-            _ => Err(SceError::INVALID_VALUE),
+            0 => Some(Self::MaxClock222MHz),
+            1 => Some(Self::MaxClock333MHz),
+            _ => None,
         }
     }
 }

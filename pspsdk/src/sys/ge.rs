@@ -4,7 +4,7 @@ use core::{ffi::c_void, fmt};
 #[allow(unused_imports, reason = "used on kernel")]
 use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
-use crate::sys::{SceError, SceIntoOkValue, SceResult, SceResultOk, SceSize, SceUid};
+use crate::sys::{SceIntoOkValue, SceResult, SceResultOk, SceSize, SceUid};
 
 /// A Valid Display list ID.
 #[repr(transparent)]
@@ -1511,14 +1511,14 @@ unsafe extern "C" {
 
 impl crate::private::Sealed for TranslationMemWidth {}
 unsafe impl SceResultOk for TranslationMemWidth {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, super::SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         match ok_value {
-            0 => Ok(Self::LinearMode),
-            512 => Ok(Self::Bytes512),
-            1024 => Ok(Self::Bytes1024),
-            2048 => Ok(Self::Bytes2048),
-            4096 => Ok(Self::Bytes4096),
-            _ => Err(SceError::INVALID_VALUE),
+            0 => Some(Self::LinearMode),
+            512 => Some(Self::Bytes512),
+            1024 => Some(Self::Bytes1024),
+            2048 => Some(Self::Bytes2048),
+            4096 => Some(Self::Bytes4096),
+            _ => None,
         }
     }
 }
@@ -1596,7 +1596,7 @@ impl DisplayListId {
 
 impl crate::private::Sealed for DisplayListId {}
 unsafe impl SceResultOk for DisplayListId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -1658,7 +1658,7 @@ impl GeCallbackId {
 
 impl crate::private::Sealed for GeCallbackId {}
 unsafe impl SceResultOk for GeCallbackId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -1676,14 +1676,14 @@ impl fmt::Debug for GeCallbackId {
 
 impl crate::private::Sealed for DisplayListState {}
 unsafe impl SceResultOk for DisplayListState {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         match ok_value {
-            0 => Ok(Self::Completed),
-            1 => Ok(Self::Queued),
-            2 => Ok(Self::Drawing),
-            3 => Ok(Self::Stalling),
-            4 => Ok(Self::Paused),
-            _ => Err(SceError::INVALID_VALUE),
+            0 => Some(Self::Completed),
+            1 => Some(Self::Queued),
+            2 => Some(Self::Drawing),
+            3 => Some(Self::Stalling),
+            4 => Some(Self::Paused),
+            _ => None,
         }
     }
 }

@@ -8,8 +8,8 @@ use pspsdk_macros::{psp_fw_cfg, psp_stub};
 use crate::{
     allocators::MemoryPartitionId,
     sys::{
-        io::FileId, mem::MemoryBlockId, thread::ThreadAttributes, SceError, SceIntoOkValue,
-        SceResult, SceResultOk, SceSize, SceUid,
+        io::FileId, mem::MemoryBlockId, thread::ThreadAttributes, SceIntoOkValue, SceResult,
+        SceResultOk, SceSize, SceUid,
     },
 };
 
@@ -1031,7 +1031,7 @@ impl ModuleId {
 
 impl crate::private::Sealed for ModuleId {}
 unsafe impl SceResultOk for ModuleId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }

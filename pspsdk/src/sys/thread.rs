@@ -5,8 +5,8 @@ use bitflag_attr::bitflag;
 use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
 use crate::sys::{
-    mem::MemoryPartitionId, time::SystemClock, SceError, SceIntoOkValue, SceRawUid, SceResult,
-    SceResultOk, SceSize, SceUid,
+    mem::MemoryPartitionId, time::SystemClock, SceIntoOkValue, SceRawUid, SceResult, SceResultOk,
+    SceSize, SceUid,
 };
 
 pub use crate::sys::usersystemlib::{
@@ -5682,7 +5682,7 @@ impl ThreadId {
 
 impl crate::private::Sealed for ThreadId {}
 unsafe impl SceResultOk for ThreadId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe {
             SceUid::handle_ok_value(ok_value).map(|id| Self::from_raw_unchecked(id.to_inner()))
         }
@@ -5728,7 +5728,7 @@ impl SemaId {
 
 impl crate::private::Sealed for SemaId {}
 unsafe impl SceResultOk for SemaId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -5772,7 +5772,7 @@ impl EventFlagId {
 
 impl crate::private::Sealed for EventFlagId {}
 unsafe impl SceResultOk for EventFlagId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -5816,7 +5816,7 @@ impl CallbackId {
 
 impl crate::private::Sealed for CallbackId {}
 unsafe impl SceResultOk for CallbackId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -5828,8 +5828,8 @@ unsafe impl SceIntoOkValue for CallbackId {
 
 impl crate::private::Sealed for ThreadState {}
 unsafe impl SceResultOk for ThreadState {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
-        Ok(Self::from_bits_retain(ok_value))
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
+        Some(Self::from_bits_retain(ok_value))
     }
 }
 unsafe impl SceIntoOkValue for ThreadState {
@@ -5872,7 +5872,7 @@ impl MutexId {
 
 impl crate::private::Sealed for MutexId {}
 unsafe impl SceResultOk for MutexId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -6034,7 +6034,7 @@ impl LwMutexId {
 
 impl crate::private::Sealed for LwMutexId {}
 unsafe impl SceResultOk for LwMutexId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -6108,7 +6108,7 @@ impl MsgBoxId {
 
 impl crate::private::Sealed for MsgBoxId {}
 unsafe impl SceResultOk for MsgBoxId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -6165,7 +6165,7 @@ impl MsgPipeId {
 
 impl crate::private::Sealed for MsgPipeId {}
 unsafe impl SceResultOk for MsgPipeId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -6231,7 +6231,7 @@ impl VplId {
 
 impl crate::private::Sealed for VplId {}
 unsafe impl SceResultOk for VplId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -6283,7 +6283,7 @@ impl FplId {
 
 impl crate::private::Sealed for FplId {}
 unsafe impl SceResultOk for FplId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -6336,7 +6336,7 @@ impl TlsPoolId {
 
 impl crate::private::Sealed for TlsPoolId {}
 unsafe impl SceResultOk for TlsPoolId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -6403,7 +6403,7 @@ impl AlarmId {
 
 impl crate::private::Sealed for AlarmId {}
 unsafe impl SceResultOk for AlarmId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -6458,7 +6458,7 @@ impl VirtualTimerId {
 
 impl crate::private::Sealed for VirtualTimerId {}
 unsafe impl SceResultOk for VirtualTimerId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -6493,11 +6493,11 @@ impl Default for VirtualTimerInfo {
 
 impl crate::private::Sealed for VirtualTimerState {}
 unsafe impl SceResultOk for VirtualTimerState {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         match ok_value {
-            0x00 => Ok(Self::NotRunning),
-            0x01 => Ok(Self::Running),
-            _ => Err(SceError::INVALID_VALUE),
+            0x00 => Some(Self::NotRunning),
+            0x01 => Some(Self::Running),
+            _ => None,
         }
     }
 }
@@ -6512,11 +6512,11 @@ unsafe impl SceIntoOkValue for VirtualTimerState {
 
 impl crate::private::Sealed for CallbackTermState {}
 unsafe impl SceResultOk for CallbackTermState {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         match ok_value {
-            0x00 => Ok(Self::NormalTermination),
-            0x01 => Ok(Self::DeletedCallback),
-            _ => Err(SceError::INVALID_VALUE),
+            0x00 => Some(Self::NormalTermination),
+            0x01 => Some(Self::DeletedCallback),
+            _ => None,
         }
     }
 }
@@ -6544,11 +6544,11 @@ impl Default for CallbackInfo {
 
 impl crate::private::Sealed for CallbackCheckStatus {}
 unsafe impl SceResultOk for CallbackCheckStatus {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         match ok_value {
-            0x00 => Ok(Self::NoCallback),
-            0x01 => Ok(Self::CallbackCalled),
-            _ => Err(SceError::INVALID_VALUE),
+            0x00 => Some(Self::NoCallback),
+            0x01 => Some(Self::CallbackCalled),
+            _ => None,
         }
     }
 }
@@ -6568,27 +6568,27 @@ impl Default for SystemInfo {
 
 impl crate::private::Sealed for ThreadIdKind {}
 unsafe impl SceResultOk for ThreadIdKind {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         match ok_value {
-            1 => Ok(Self::Any),
-            2 => Ok(Self::Semaphore),
-            3 => Ok(Self::EventFlag),
-            4 => Ok(Self::MessageBox),
-            5 => Ok(Self::VariablepMemoryPool),
-            6 => Ok(Self::FixeMemoryPool),
-            7 => Ok(Self::MessagePipe),
-            8 => Ok(Self::Callback),
-            9 => Ok(Self::ThreadEventHandler),
-            10 => Ok(Self::Alarm),
-            11 => Ok(Self::VirtualTimer),
-            12 => Ok(Self::Mutex),
-            13 => Ok(Self::LightweightMutex),
-            14 => Ok(Self::TlsMemoryPool),
-            64 => Ok(Self::SleepThread),
-            65 => Ok(Self::DelayThread),
-            66 => Ok(Self::SuspendThread),
-            67 => Ok(Self::DormantThread),
-            _ => Err(SceError::INVALID_VALUE),
+            1 => Some(Self::Any),
+            2 => Some(Self::Semaphore),
+            3 => Some(Self::EventFlag),
+            4 => Some(Self::MessageBox),
+            5 => Some(Self::VariablepMemoryPool),
+            6 => Some(Self::FixeMemoryPool),
+            7 => Some(Self::MessagePipe),
+            8 => Some(Self::Callback),
+            9 => Some(Self::ThreadEventHandler),
+            10 => Some(Self::Alarm),
+            11 => Some(Self::VirtualTimer),
+            12 => Some(Self::Mutex),
+            13 => Some(Self::LightweightMutex),
+            14 => Some(Self::TlsMemoryPool),
+            64 => Some(Self::SleepThread),
+            65 => Some(Self::DelayThread),
+            66 => Some(Self::SuspendThread),
+            67 => Some(Self::DormantThread),
+            _ => None,
         }
     }
 }
@@ -6645,7 +6645,7 @@ impl KtlsId {
 
 impl crate::private::Sealed for KtlsId {}
 unsafe impl SceResultOk for KtlsId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }

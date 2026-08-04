@@ -1673,7 +1673,7 @@ impl MemoryBlockId {
 
 impl crate::private::Sealed for MemoryBlockId {}
 unsafe impl SceResultOk for MemoryBlockId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -1717,7 +1717,7 @@ impl HeapId {
 
 impl crate::private::Sealed for HeapId {}
 unsafe impl SceResultOk for HeapId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         unsafe { SceUid::handle_ok_value(ok_value).map(Self) }
     }
 }
@@ -1729,8 +1729,8 @@ unsafe impl SceIntoOkValue for HeapId {
 
 impl crate::private::Sealed for HeapCreateFlag {}
 unsafe impl SceResultOk for HeapCreateFlag {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
-        Ok(Self::from_bits_retain(ok_value))
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
+        Some(Self::from_bits_retain(ok_value))
     }
 }
 unsafe impl SceIntoOkValue for HeapCreateFlag {

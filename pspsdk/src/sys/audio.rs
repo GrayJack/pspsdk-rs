@@ -154,11 +154,11 @@ impl AudioChannelId {
 
 impl crate::private::Sealed for AudioChannelId {}
 unsafe impl SceResultOk for AudioChannelId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         // On result Channel is never 0xFFFFFFFF
         match ok_value {
-            0..=7 => Ok(unsafe { Self::from_raw_unchecked(ok_value) }),
-            _ => Err(SceError::INVALID_VALUE),
+            0..=7 => Some(unsafe { Self::from_raw_unchecked(ok_value) }),
+            _ => None,
         }
     }
 }

@@ -411,10 +411,10 @@ impl AtracId {
 
 impl crate::private::Sealed for AtracId {}
 unsafe impl SceResultOk for AtracId {
-    unsafe fn handle_ok_value(ok_value: u32) -> Result<Self, SceError> {
+    unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         match ok_value {
-            0..6 => Ok(unsafe { Self::from_raw_unchecked(ok_value) }),
-            _ => Err(SceError::INVALID_VALUE),
+            0..6 => Some(unsafe { Self::from_raw_unchecked(ok_value) }),
+            _ => None,
         }
     }
 }
