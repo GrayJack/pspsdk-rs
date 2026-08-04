@@ -25,6 +25,11 @@ struct PspConfig {
 struct PspProject {
     /// The kind of project to build.
     kind: ProjectKind,
+    /// The target PSP firmware to compile the code.
+    #[serde(alias = "target-fw")]
+    #[serde(alias = "target-firmware")]
+    #[serde(alias = "target_firmware")]
+    target_fw: Option<String>,
     /// EBOOT/PBOOT configuration.
     pbp: Option<PbpConfig>,
 }
@@ -226,8 +231,18 @@ fn main() {
     }
 
     let config = match fs::read_to_string(CONFIG_NAME) {
-        Ok(value) => match toml::from_str(&value) {
-            Ok(config) => config,
+        Ok(value) => match toml::from_str::<PspConfig>(&value) {
+            Ok(config) => {
+                if let Some(target_fw) = config.project.target_fw.as_ref()
+                    && !VALID_FW_VERSIONS.contains(&target_fw.as_str())
+                {
+                    println!("Invalid `target-firmware` version: `{target_fw}`");
+                    println!("Valid values are: {VALID_FW_VERSIONS:?}");
+                    process::exit(1);
+                }
+
+                config
+            },
             Err(e) => {
                 println!("Failed to read Psp.toml: {}", e);
                 println!("Please ensure that it is formatted correctly.");
@@ -250,7 +265,10 @@ fn main() {
     };
 
     let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
-    let mut build_process = Command::new(&cargo)
+
+    let mut cargo_build_cmd = Command::new(&cargo);
+
+    cargo_build_cmd
         .arg("build")
         .arg("-Z")
         .arg(build_std_flag)
@@ -264,20 +282,35 @@ fn main() {
             ProjectKind::Eboot => "--cfg eboot --cfg pbp",
             ProjectKind::Pboot => "--cfg pboot --cfg pbp",
         })
-        .stdout(Stdio::piped())
-        .spawn()
-        .unwrap();
+        .stdout(Stdio::piped());
+
+    if let Some(target_fw) = config.project.target_fw.clone() {
+        cargo_build_cmd.env("PSPSDK_TARGET_FW", target_fw);
+    }
+
+    let mut build_process = cargo_build_cmd.spawn().unwrap();
 
     let lone = {
-        let output = Command::new(cargo)
+        let mut cargo_metadata_cmd = Command::new(cargo);
+
+        cargo_metadata_cmd
             .arg("metadata")
             .arg("--format-version=1")
             .arg("-Z")
             .arg(build_std_flag)
             .arg("-Zbuild-std-features=optimize_for_size")
-            .stderr(Stdio::inherit())
-            .output()
-            .unwrap();
+            .env("RUSTFLAGS", match config.project.kind {
+                ProjectKind::Prx => "--cfg prx",
+                ProjectKind::Eboot => "--cfg eboot --cfg pbp",
+                ProjectKind::Pboot => "--cfg pboot --cfg pbp",
+            })
+            .stderr(Stdio::inherit());
+
+        if let Some(target_fw) = config.project.target_fw {
+            cargo_metadata_cmd.env("PSPSDK_TARGET_FW", target_fw);
+        }
+
+        let output = cargo_metadata_cmd.output().unwrap();
 
         if !output.status.success() {
             panic!("`cargo metadata` command exited with status: {:?}", output.status);
@@ -407,3 +440,13 @@ fn main() {
         }
     }
 }
+
+const VALID_FW_VERSIONS: &[&str] = &[
+    "0.30", "0.31", "0.40", "0.50", "0.60", "0.65", "0.70", "0.80", "0.90", "1.00", "1.01", "1.02",
+    "1.03", "1.50", "1.51", "1.52", "2.00", "2.01", "2.50", "2.60", "2.70", "2.71", "2.80", "2.81",
+    "2.82", "3.00", "3.01", "3.02", "3.03", "3.10", "3.11", "3.30", "3.40", "3.50", "3.51", "3.52",
+    "3.60", "3.70", "3.71", "3.72", "3.73", "3.80", "3.90", "3.93", "3.95", "3.96", "4.00", "4.01",
+    "4.05", "4.20", "4.21", "5.00", "5.01", "5.02", "5.03", "5.05", "5.50", "5.51", "5.55", "5.70",
+    "6.00", "6.10", "6.20", "6.30", "6.31", "6.35", "6.36", "6.37", "6.38", "6.39", "6.50", "6.60",
+    "6.61",
+];
