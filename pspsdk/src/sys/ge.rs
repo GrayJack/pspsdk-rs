@@ -1,7 +1,8 @@
 //! Graphic Engine operation and management.
 use core::{ffi::c_void, fmt};
 
-use pspsdk_macros::psp_stub;
+#[allow(unused_imports, reason = "used on kernel")]
+use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
 use crate::sys::{SceError, SceIntoOkValue, SceResult, SceResultOk, SceSize, SceUid};
 
@@ -1070,6 +1071,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(if cfg!(feature = "psp_660") { 0x5E7DE870 }
         else if cfg!(feature = "psp_630") { 0x8083DAFC }
         else if cfg!(feature = "psp_600") { 0x56A5110E }
@@ -1384,6 +1386,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.80.
+    #[psp_fw_cfg(280..)]
     #[nid(if cfg!(feature = "psp_660") { 0xD8633888 }
         else if cfg!(feature = "psp_630") { 0x2444EC4D }
         else if cfg!(feature = "psp_600") { 0xD4D665C9 }
@@ -1406,6 +1409,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.80.
+    #[psp_fw_cfg(280..)]
     #[nid(if cfg!(feature = "psp_660") { 0x547EC5F0 }
         else if cfg!(feature = "psp_630") { 0x35AF4E6C }
         else if cfg!(feature = "psp_600") { 0xC774B373 }
@@ -1434,6 +1438,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.50.
+    #[psp_fw_cfg(250..)]
     #[nid(if cfg!(feature = "psp_660") { 0x82F1049F }
         else if cfg!(feature = "psp_630") { 0x20EF3AC2 }
         else if cfg!(feature = "psp_600") { 0x002E0226 }
@@ -1463,6 +1468,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.50.
+    #[psp_fw_cfg(250..)]
     #[nid(if cfg!(feature = "psp_660") { 0x05238809 }
         else if cfg!(feature = "psp_630") { 0x39F15186 }
         else if cfg!(feature = "psp_600") { 0x3832B8F7 }

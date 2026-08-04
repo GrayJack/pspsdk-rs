@@ -4,7 +4,7 @@
 mod non_stub;
 #[cfg(feature = "non-stub-code")]
 pub(crate) use non_stub::{Instant, SystemTime, UNIX_EPOCH};
-use pspsdk_macros::psp_stub;
+use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
 use crate::sys::{thread::CallbackId, SceError, SceIntoOkValue, SceResult, SceResultOk};
 
@@ -132,6 +132,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 5.00.
+    #[psp_fw_cfg(500..)]
     #[nid(0xF5FCC995)]
     pub safe fn sceRtcGetCurrentNetworkTick(tick: &mut u64) -> SceResult<()>;
 
@@ -149,6 +150,7 @@ unsafe extern "C" {
     ///
     /// This API was introduced on PSP firmware version 1.00 on kernel-level, and 3.95 on
     /// userland-level.
+    #[psp_fw_cfg(395..)]
     #[nid(0xC2DDBEB5)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceRtcGetAlarmTick(tick: &mut u64) -> SceResult<()>;
@@ -172,6 +174,7 @@ unsafe extern "C" {
     ///
     /// This API was introduced on PSP firmware version 1.00 on kernel-level, and 3.95 on
     /// userland-level.
+    #[psp_fw_cfg(395..)]
     #[nid(0x7D1FBED3)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceRtcSetAlarmTick(tick: &u64) -> SceResult<()>;
@@ -185,6 +188,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0x81FCDA34)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceRtcIsAlarmed() -> SceResult<bool>;
@@ -207,6 +211,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0xFB3B18CD)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceRtcRegisterCallback(id: CallbackId) -> SceResult<()>;
@@ -229,6 +234,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0x6A676D2D)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceRtcUnregisterCallback(id: CallbackId) -> SceResult<()>;
@@ -242,6 +248,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.50.
+    #[psp_fw_cfg(150..)]
     #[nid(0x011F03C1)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceRtcGetAccumulativeTime() -> u64;
@@ -260,6 +267,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(0x203CEB0D)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceRtcGetLastReincarnatedTime(tick: &mut u64) -> SceResult<()>;
@@ -277,6 +285,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(0x62685E98)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceRtcGetLastAdjustedTime(tick: &mut u64) -> SceResult<()>;
@@ -664,6 +673,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(0xE1C93E47)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceRtcGetTime64_t(date_time: &DateTime, posix_time: &mut u64) -> SceResult<()>;
@@ -682,6 +692,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(0x1909C99B)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn sceRtcSetTime64_t(date_time: *mut DateTime, posix_time: u64) -> SceResult<()>;
@@ -924,6 +935,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(if cfg!(feature = "psp_660") { 0xCF76CFE5 }
         else if cfg!(feature = "psp_630") { 0xBEBE31B8 }
         else if cfg!(feature = "psp_600") { 0x46C695AA }
@@ -955,6 +967,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(if cfg!(feature = "psp_660") { 0x530A903E }
         else if cfg!(feature = "psp_630") { 0x12DDA3D7 }
         else if cfg!(feature = "psp_600") { 0xE1F7B409 }
@@ -986,6 +999,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(if cfg!(feature = "psp_660") { 0x366669D6 }
         else if cfg!(feature = "psp_630") { 0x642544CD }
         else if cfg!(feature = "psp_600") { 0x19C3C426 }
@@ -1010,6 +1024,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.50.
+    #[psp_fw_cfg(150..)]
     #[nid(0x011F03C1)]
     pub safe fn sceRtcGetAccumulativeTime() -> u64;
 
@@ -1027,6 +1042,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(if cfg!(feature = "psp_660") { 0x7C6E9610 }
         else if cfg!(feature = "psp_630") { 0xA01B48AC }
         else if cfg!(feature = "psp_600") { 0xC55A5A0C }
@@ -1053,6 +1069,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(if cfg!(feature = "psp_660") { 0xE98FEC46 }
         else if cfg!(feature = "psp_630") { 0x65725896 }
         else if cfg!(feature = "psp_600") { 0x7D70D63F }
@@ -1636,6 +1653,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(if cfg!(feature = "psp_660") { 0x94225550 }
         else if cfg!(feature = "psp_630") { 0x0C8E0D5C }
         else if cfg!(feature = "psp_600") { 0x4F9F0E2C }
@@ -1663,6 +1681,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(if cfg!(feature = "psp_660") { 0xCF4E0EE0 }
         else if cfg!(feature = "psp_630") { 0xDACE3710 }
         else if cfg!(feature = "psp_600") { 0xCD653A7E }

@@ -2,7 +2,7 @@
 #![allow(unused_imports)]
 use core::ffi::c_void;
 
-use pspsdk_macros::psp_stub;
+use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
 use crate::sys::{SceError, SceResult, SceSize, SceUid};
 
@@ -170,6 +170,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(0xB4F378FA)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceDisplayIsForeground() -> bool;
@@ -270,6 +271,7 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 5.00.
     ///
     /// [`Wait`]: crate::sys::thread::ThreadState::Wait
+    #[psp_fw_cfg(500..)]
     #[nid(0x40F1469C)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceDisplayWaitVblankStartMulti(vsync_cycles: u32) -> SceResult<()>;
@@ -290,6 +292,7 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 5.00.
     ///
     /// [`Wait`]: crate::sys::thread::ThreadState::Wait
+    #[psp_fw_cfg(500..)]
     #[nid(0x77ED8B3A)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceDisplayWaitVblankStartMultiCB(vsync_cycles: u32) -> SceResult<()>;
@@ -455,6 +458,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(if cfg!(feature = "psp_660") { 0x99E358F1 }
         // else if cfg!(feature = "psp_630") { 0xB4F378FA }
         // else if cfg!(feature = "psp_600") { 0xB4F378FA }
@@ -627,6 +631,7 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 5.00.
     ///
     /// [`Wait`]: crate::sys::thread::ThreadState::Wait
+    #[psp_fw_cfg(500..)]
     #[nid(if cfg!(feature = "psp_660") { 0xA70066A1 }
         // else if cfg!(feature = "psp_630") { 0x40F1469C }
         // else if cfg!(feature = "psp_600") { 0x40F1469C }
@@ -651,6 +656,7 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 5.00.
     ///
     /// [`Wait`]: crate::sys::thread::ThreadState::Wait
+    #[psp_fw_cfg(500..)]
     #[nid(if cfg!(feature = "psp_660") { 0x113958AE }
         // else if cfg!(feature = "psp_630") { 0x77ED8B3A }
         // else if cfg!(feature = "psp_600") { 0x77ED8B3A }
@@ -758,6 +764,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0xE55F0D50)]
     pub safe fn sceDisplaySetBacklightSel(level: u32, mode: u32) -> SceResult<()>;
 

@@ -2,7 +2,7 @@
 use core::{ffi::c_void, mem, ptr::NonNull};
 
 use bitflag_attr::bitflag;
-use pspsdk_macros::psp_stub;
+use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
 use crate::sys::{
     thread::{CallbackId, EventFlagId, SemaId, ThreadId},
@@ -1713,6 +1713,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.50.
+    #[psp_fw_cfg(350..)]
     #[nid(if cfg!(feature = "psp_660") { 0xDCCD6185 }
         else if cfg!(feature = "psp_630") { 0x64ED84C9 }
         else if cfg!(feature = "psp_600") { 0x4F663EBF }
@@ -1788,6 +1789,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.80.
+    #[psp_fw_cfg(280..)]
     #[nid(if cfg!(feature = "psp_660") { 0x76DA16E3 }
         // else if cfg!(feature = "psp_630") { 0x5216CE3F }
         // else if cfg!(feature = "psp_600") { 0x5216CE3F }
@@ -1813,6 +1815,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.52.
+    #[psp_fw_cfg(152..)]
     #[nid(if cfg!(feature = "psp_660") { 0x49356C12 }
         else if cfg!(feature = "psp_630") { 0x804DFCE6 }
         else if cfg!(feature = "psp_600") { 0x6CE0E5F0 }
@@ -1840,6 +1843,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.70.
+    #[psp_fw_cfg(370..)]
     #[nid(if cfg!(feature = "psp_660") { 0x2B6A9B21 }
         else if cfg!(feature = "psp_630") { 0x13A4DEB0 }
         else if cfg!(feature = "psp_600") { 0xF2990AC6 }
@@ -1953,6 +1957,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(0x432D8F5C)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceKernelRegisterStdoutPipe(fd: FileId) -> SceResult<()>;
@@ -1970,6 +1975,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(0x6F797E03)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceKernelRegisterStderrPipe(fd: FileId) -> SceResult<()>;
@@ -2015,6 +2021,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(0x432D8F5C)]
     pub safe fn sceKernelRegisterStdoutPipe(fd: FileId) -> SceResult<()>;
 
@@ -2031,6 +2038,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(0x6F797E03)]
     pub safe fn sceKernelRegisterStderrPipe(fd: FileId) -> SceResult<()>;
 
@@ -2077,6 +2085,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(0x2D8551AB)]
     pub safe fn sceKernelStdoutReset() -> SceResult<()>;
 
@@ -2089,6 +2098,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.00.
+    #[psp_fw_cfg(200..)]
     #[nid(0x9662BF86)]
     pub safe fn sceKernelStderrReset() -> SceResult<()>;
 }

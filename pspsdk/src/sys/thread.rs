@@ -2,7 +2,7 @@
 use core::ffi::c_void;
 
 use bitflag_attr::bitflag;
-use pspsdk_macros::psp_stub;
+use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
 use crate::sys::{
     mem::MemoryPartitionId, time::SystemClock, SceError, SceIntoOkValue, SceRawUid, SceResult,
@@ -1299,6 +1299,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.80
+    #[psp_fw_cfg(280..)]
     #[nid(0x1AF94D03)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceKernelDonateWakeupThread(donate_id: ThreadId) -> SceResult<()>;
@@ -1874,6 +1875,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0xB7D098C6)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn sceKernelCreateMutex(
@@ -1893,6 +1895,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0xF8170FBE)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceKernelDeleteMutex(id: MutexId) -> SceResult<()>;
@@ -1914,6 +1917,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0xB011B11F)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceKernelLockMutex(
@@ -1938,6 +1942,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0x5BF4DD27)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceKernelLockMutexCB(
@@ -1959,6 +1964,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0x0DDCD2C9)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceKernelTryLockMutex(id: MutexId, lock_count: u32) -> SceResult<()>;
@@ -1978,6 +1984,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0x6B30100F)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceKernelUnlockMutex(id: MutexId, unlock_count: u32) -> SceResult<()>;
@@ -1998,6 +2005,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0x87D9223C)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceKernelCancelMutex(id: MutexId, new_lock_count: u32, numWaitThreads: &mut u32);
@@ -2017,6 +2025,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0xA9C2CB9A)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceKernelReferMutexStatus(id: MutexId, info: &mut MutexInfo) -> SceResult<()>;
@@ -2041,6 +2050,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[eabi(i5)]
     #[nid(0x19CFF145)]
     pub unsafe fn sceKernelCreateLwMutex(
@@ -2061,6 +2071,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[nid(0x60107536)]
     pub safe fn sceKernelDeleteLwMutex(work_area: &mut LwMutexWorkArea) -> SceResult<()>;
 
@@ -2081,6 +2092,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[nid(0x7CFF8CF3)]
     pub safe fn _sceKernelLockLwMutex(
         work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
@@ -2104,6 +2116,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[nid(0x31327F19)]
     pub safe fn _sceKernelLockLwMutexCB(
         work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
@@ -2124,6 +2137,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[nid(0x71040D5C)]
     pub safe fn _sceKernelTryLockLwMutex(
         work_area: &mut LwMutexWorkArea, lock_count: u32,
@@ -2144,6 +2158,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[nid(0xBEED3A47)]
     pub safe fn _sceKernelUnlockLwMutex(
         work_area: &mut LwMutexWorkArea, unlock_count: u32,
@@ -2164,6 +2179,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[nid(0x4C145944)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceKernelReferLwMutexStatusByID(
@@ -2788,6 +2804,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 5.70.
+    #[psp_fw_cfg(570..)]
     #[eabi(i6)]
     #[nid(0x8DAFF657)]
     pub unsafe fn sceKernelCreateTlspl(
@@ -2808,6 +2825,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 5.70.
+    #[psp_fw_cfg(570..)]
     #[nid(0x32BF938E)]
     pub safe fn sceKernelDeleteTlspl(id: TlsPoolId) -> SceResult<()>;
 
@@ -2827,6 +2845,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 5.70.
+    #[psp_fw_cfg(570..)]
     #[nid(0x65F54FFB)]
     pub unsafe fn _sceKernelAllocateTlspl(
         id: TlsPoolId, tls_addr: *mut *mut c_void, unk: u32,
@@ -2847,6 +2866,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 5.70.
+    #[psp_fw_cfg(570..)]
     #[nid(0x721067F3)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn sceKernelReferTlsplStatus(id: TlsPoolId, info: &mut TlsPoolInfo) -> SceResult<()>;
@@ -3431,6 +3451,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 5.70.
+    #[psp_fw_cfg(570..)]
     #[nid(0xBC80EC7C)]
     pub safe fn sceKernelExtendThreadStack(
         stack_size: SceSize, func: ExtendStackFunc, common: *mut c_void,
@@ -3673,6 +3694,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.80
+    #[psp_fw_cfg(280..)]
     #[nid(0x1AF94D03)]
     pub safe fn sceKernelDonateWakeupThread(donate_id: ThreadId) -> SceResult<()>;
 
@@ -4238,6 +4260,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0xB7D098C6)]
     pub unsafe fn sceKernelCreateMutex(
         name: *const u8, attr: MutexAttributes, init_count: i32, options: Option<&MutexOptions>,
@@ -4256,6 +4279,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0xF8170FBE)]
     pub safe fn sceKernelDeleteMutex(id: MutexId) -> SceResult<()>;
 
@@ -4276,6 +4300,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0xB011B11F)]
     pub safe fn sceKernelLockMutex(
         id: MutexId, lock_count: u32, timeout: Option<&mut u32>,
@@ -4299,6 +4324,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0x5BF4DD27)]
     pub safe fn sceKernelLockMutexCB(
         id: MutexId, lock_count: u32, timeout: Option<&mut u32>,
@@ -4319,6 +4345,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0x0DDCD2C9)]
     pub safe fn sceKernelTryLockMutex(id: MutexId, lock_count: u32) -> SceResult<()>;
 
@@ -4337,6 +4364,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0x6B30100F)]
     pub safe fn sceKernelUnlockMutex(id: MutexId, unlock_count: u32) -> SceResult<()>;
 
@@ -4356,6 +4384,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0x87D9223C)]
     pub safe fn sceKernelCancelMutex(id: MutexId, new_lock_count: u32, numWaitThreads: &mut u32);
 
@@ -4374,6 +4403,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.70.
+    #[psp_fw_cfg(270..)]
     #[nid(0xA9C2CB9A)]
     pub safe fn sceKernelReferMutexStatus(id: MutexId, info: &mut MutexInfo) -> SceResult<()>;
 
@@ -4392,6 +4422,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[nid(0x4C145944)]
     pub safe fn sceKernelReferLwMutexStatusByID(
         id: LwMutexId, info: &mut LwMutexInfo,
@@ -4977,6 +5008,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 5.70.
+    #[psp_fw_cfg(570..)]
     #[nid(0x721067F3)]
     pub safe fn sceKernelReferTlsplStatus(id: TlsPoolId, info: &mut TlsPoolInfo) -> SceResult<()>;
 

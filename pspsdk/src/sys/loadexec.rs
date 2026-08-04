@@ -1,7 +1,8 @@
 //! Load, execution and exit management.
 use core::ffi::c_void;
 
-use pspsdk_macros::psp_stub;
+#[allow(unused_imports, reason = "used on kernel")]
+use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
 use crate::sys::{thread::CallbackId, SceResult, SceSize};
 
@@ -140,6 +141,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(if cfg!(feature = "psp_660") { 0x24114598 }
         // else if cfg!(feature = "psp_630") { 0xD9739B89 }
         // else if cfg!(feature = "psp_600") { 0xD9739B89 }
@@ -185,7 +187,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.00 [and removed on version 1.52].
-    #[cfg(feature = "psp_100")]
+    #[psp_fw_cfg(..152)]
     #[nid(0x71A1D738)]
     pub unsafe fn sceKernelLoadExecBufferPlain(
         buf_size: SceSize, buf: *const u8, options: Option<&LoadExecOptions>,
@@ -232,6 +234,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.52.
+    #[psp_fw_cfg(152..)]
     #[nid(if cfg!(feature = "psp_660") { 0xC3474C2A }
         // else if cfg!(feature = "psp_630") { 0x6D302D3D }
         // else if cfg!(feature = "psp_600") { 0x6D302D3D }
@@ -316,6 +319,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.50.
+    #[psp_fw_cfg(150..)]
     #[nid(if cfg!(feature = "psp_660") { 0x1B305B09 }
         // else if cfg!(feature = "psp_630") { 0x7B7C47EF }
         // else if cfg!(feature = "psp_600") { 0x7B7C47EF }
@@ -433,6 +437,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.00.
+    #[psp_fw_cfg(300..)]
     #[nid(if cfg!(feature = "psp_660") { 0x00745486 }
         // else if cfg!(feature = "psp_630") { 0x061D9514 }
         // else if cfg!(feature = "psp_600") { 0x061D9514 }
@@ -465,6 +470,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.00.
+    #[psp_fw_cfg(300..)]
     #[nid(if cfg!(feature = "psp_660") { 0x7CABED9B }
         // else if cfg!(feature = "psp_630") { 0xB7AB08DA }
         // else if cfg!(feature = "psp_600") { 0xB7AB08DA }
@@ -489,6 +495,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(if cfg!(feature = "psp_660") { 0xB57D0DEC }
         // else if cfg!(feature = "psp_630") { 0x659188E1 }
         // else if cfg!(feature = "psp_600") { 0x659188E1 }

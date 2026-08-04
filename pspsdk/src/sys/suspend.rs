@@ -1,5 +1,5 @@
 //! Suspend operations.
-use pspsdk_macros::psp_stub;
+use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
 use crate::sys::{
     power::{PowerLockKind, PowerTick},
@@ -88,6 +88,7 @@ unsafe extern "C" {
     /// [`PowerCallbackArg::Standby`]: crate::sys::power::PowerCallbackArg::Standby
     /// [`PowerCallbackArg::Suspending`]: crate::sys::power::PowerCallbackArg::Suspending
     /// [`PowerCallbackArg::ResumeComplete`]: crate::sys::power::PowerCallbackArg::ResumeComplete
+    #[psp_fw_cfg(150..)]
     #[nid(0x3E0271D3)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn sceKernelVolatileMemLock(
@@ -136,6 +137,7 @@ unsafe extern "C" {
     /// [`PowerCallbackArg::Standby`]: crate::sys::power::PowerCallbackArg::Standby
     /// [`PowerCallbackArg::Suspending`]: crate::sys::power::PowerCallbackArg::Suspending
     /// [`PowerCallbackArg::ResumeComplete`]: crate::sys::power::PowerCallbackArg::ResumeComplete
+    #[psp_fw_cfg(150..)]
     #[nid(0xA14F40B2)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn sceKernelVolatileMemTryLock(
@@ -164,6 +166,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.50.
+    #[psp_fw_cfg(150..)]
     #[nid(0xA569E425)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn sceKernelVolatileMemUnlock(unk: u32) -> SceResult<()>;
@@ -264,6 +267,7 @@ unsafe extern "C" {
     /// [`PowerCallbackArg::Standby`]: crate::sys::power::PowerCallbackArg::Standby
     /// [`PowerCallbackArg::Suspending`]: crate::sys::power::PowerCallbackArg::Suspending
     /// [`PowerCallbackArg::ResumeComplete`]: crate::sys::power::PowerCallbackArg::ResumeComplete
+    #[psp_fw_cfg(150..)]
     #[nid(0x3E0271D3)]
     pub unsafe fn sceKernelVolatileMemLock(
         unk: u32, ptr: *mut *mut u8, size: &mut SceSize,
@@ -311,6 +315,7 @@ unsafe extern "C" {
     /// [`PowerCallbackArg::Standby`]: crate::sys::power::PowerCallbackArg::Standby
     /// [`PowerCallbackArg::Suspending`]: crate::sys::power::PowerCallbackArg::Suspending
     /// [`PowerCallbackArg::ResumeComplete`]: crate::sys::power::PowerCallbackArg::ResumeComplete
+    #[psp_fw_cfg(150..)]
     #[nid(0xA14F40B2)]
     pub unsafe fn sceKernelVolatileMemTryLock(
         unk: u32, ptr: *mut *mut u8, size: &mut SceSize,
@@ -338,6 +343,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.50.
+    #[psp_fw_cfg(150..)]
     #[nid(0xA569E425)]
     pub unsafe fn sceKernelVolatileMemUnlock(unk: u32) -> SceResult<()>;
 

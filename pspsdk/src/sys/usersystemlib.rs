@@ -2,7 +2,7 @@
 
 use core::ffi::c_void;
 
-use pspsdk_macros::psp_stub;
+use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
 use crate::sys::{
     thread::{LwMutexInfo, LwMutexWorkArea, ThreadId, TlsPoolId},
@@ -40,6 +40,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 5.70.
+    #[psp_fw_cfg(570..)]
     #[nid(0xFA835CDE)]
     pub safe fn sceKernelGetTlsAddr(id: TlsPoolId) -> *mut c_void;
 
@@ -60,6 +61,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[nid(0xBEA46419)]
     pub safe fn sceKernelLockLwMutex(
         work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
@@ -83,6 +85,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[nid(0x1FC64E09)]
     pub safe fn sceKernelLockLwMutexCB(
         work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
@@ -103,6 +106,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[nid(0xDC692EE3)]
     pub safe fn sceKernelTryLockLwMutex(
         work_area: &mut LwMutexWorkArea, lock_count: u32,
@@ -123,6 +127,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[nid(0x15B6446B)]
     pub safe fn sceKernelUnlockLwMutex(
         work_area: &mut LwMutexWorkArea, unlock_count: u32,
@@ -143,6 +148,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 3.95.
+    #[psp_fw_cfg(395..)]
     #[nid(0xC1734599)]
     pub safe fn sceKernelReferLwMutexStatus(
         work_area: &mut LwMutexWorkArea, info: &mut LwMutexInfo,

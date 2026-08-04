@@ -1,6 +1,6 @@
 //! Power management.
 use bitflag_attr::bitflag;
-use pspsdk_macros::psp_stub;
+use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
 use crate::sys::{thread::CallbackId, SceError, SceIntoOkValue, SceResult, SceResultOk, SceSize};
 
@@ -249,6 +249,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 6.30.
+    #[psp_fw_cfg(630..)]
     #[nid(0xA85880D0)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn scePowerCheckWlanCoexistenceClock() -> SceResult<WlanCoexistenceClock>;
@@ -280,6 +281,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.50.
+    #[psp_fw_cfg(150..)]
     #[nid(0x34F9C463)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn scePowerGetPllClockFrequencyInt() -> u32;
@@ -293,6 +295,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.50.
+    #[psp_fw_cfg(150..)]
     #[nid(0xEA382A27)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn scePowerGetPllClockFrequencyFloat() -> u32;
@@ -319,6 +322,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(0xFDB5BFE9)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn scePowerGetCpuClockFrequencyInt() -> u32;
@@ -332,6 +336,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(0xB1A52C83)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn scePowerGetCpuClockFrequencyFloat() -> f32;
@@ -358,6 +363,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(0xBD681969)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn scePowerGetBusClockFrequencyInt() -> u32;
@@ -371,6 +377,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(0x9BADB3EB)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn scePowerGetBusClockFrequencyFloat() -> f32;
@@ -408,6 +415,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(0x442BFBAC)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn scePowerGetBacklightMaximum() -> u8;
@@ -430,6 +438,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(0xB4432BC8)]
     #[cfg(not(feature = "kernel"))]
     pub safe fn scePowerGetBatteryChargingStatus() -> SceResult<u32>;
@@ -582,6 +591,7 @@ unsafe extern "C" {
     /// [create]: crate::sys::thread::sceKernelCreateCallback
     /// [register]: crate::sys::power::scePowerRegisterCallback
     /// [`CallbackFunction`]: crate::sys::thread::CallbackFunction
+    #[psp_fw_cfg(150..)]
     #[nid(0x23C31FFE)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn scePowerVolatileMemLock(
@@ -627,6 +637,7 @@ unsafe extern "C" {
     /// [register]: crate::sys::power::scePowerRegisterCallback
     /// [`CallbackFunction`]: crate::sys::thread::CallbackFunction
     /// [`SceError::POWER_CANNOT_LOCK_VMEM`]: crate::sys::SceError::POWER_CANNOT_LOCK_VMEM
+    #[psp_fw_cfg(150..)]
     #[nid(0xFA97A599)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn scePowerVolatileMemTryLock(
@@ -655,6 +666,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.50.
+    #[psp_fw_cfg(150..)]
     #[nid(0xB3EDD801)]
     #[cfg(not(feature = "kernel"))]
     pub unsafe fn scePowerVolatileMemUnlock(unk: u32) -> SceResult<()>;
@@ -930,6 +942,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 6.30.
+    #[psp_fw_cfg(630..)]
     #[nid(if cfg!(feature = "psp_660") { 0x693F6CF0 } else { 0x330AC84F })]
     pub safe fn scePowerCheckWlanCoexistenceClock() -> SceResult<WlanCoexistenceClock>;
 
@@ -970,6 +983,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.50.
+    #[psp_fw_cfg(150..)]
     #[nid(if cfg!(feature = "psp_660") { 0x67BD889B }
         else if cfg!(feature = "psp_630") { 0xDCC6E49B }
         else if cfg!(feature = "psp_600") { 0xBA93F79B }
@@ -992,6 +1006,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.50.
+    #[psp_fw_cfg(150..)]
     #[nid(if cfg!(feature = "psp_660") { 0xBA8CBCBF }
         else if cfg!(feature = "psp_630") { 0xCC998F67 }
         else if cfg!(feature = "psp_600") { 0x279FD567 }
@@ -1036,6 +1051,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(0xFDB5BFE9)]
     pub safe fn scePowerGetCpuClockFrequencyInt() -> u32;
 
@@ -1048,6 +1064,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(if cfg!(feature = "psp_660") { 0xDC4395E2 }
         else if cfg!(feature = "psp_630") { 0xCC998F67 }
         else if cfg!(feature = "psp_600") { 0x4CAE06EF }
@@ -1092,6 +1109,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(if cfg!(feature = "psp_660") { 0x04711DFB }
         else if cfg!(feature = "psp_630") { 0x9F53A71F }
         else if cfg!(feature = "psp_600") { 0xBF5BA7FC }
@@ -1114,6 +1132,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(if cfg!(feature = "psp_660") { 0x1FF8DA3B }
         else if cfg!(feature = "psp_630") { 0xCC998F67 }
         else if cfg!(feature = "psp_600") { 0x279FD567 }
@@ -1178,6 +1197,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(if cfg!(feature = "psp_660") { 0x2509FF3B }
         else if cfg!(feature = "psp_630") { 0x57F6311D }
         else if cfg!(feature = "psp_600") { 0x4084E678 }
@@ -1218,6 +1238,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.03.
+    #[psp_fw_cfg(103..)]
     #[nid(if cfg!(feature = "psp_660") { 0x67492C52 }
         else if cfg!(feature = "psp_630") { 0x481F5556 }
         else if cfg!(feature = "psp_600") { 0x5D9E954F }
@@ -1396,6 +1417,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 2.50.
+    #[psp_fw_cfg(250..)]
     #[nid(if cfg!(feature = "psp_660") { 0x114B75AB }
         else if cfg!(feature = "psp_630") { 0xA7308D7A }
         else if cfg!(feature = "psp_600") { 0x207119B3 }
@@ -1562,6 +1584,7 @@ unsafe extern "C" {
     /// [create]: crate::sys::thread::sceKernelCreateCallback
     /// [register]: crate::sys::power::scePowerRegisterCallback
     /// [`CallbackFunction`]: crate::sys::thread::CallbackFunction
+    #[psp_fw_cfg(150..)]
     #[nid(if cfg!(feature = "psp_660") { 0x70F42744 }
         else if cfg!(feature = "psp_630") { 0x503F08C9 }
         else if cfg!(feature = "psp_600") { 0x12FFFD34 }
@@ -1616,6 +1639,7 @@ unsafe extern "C" {
     /// [register]: crate::sys::power::scePowerRegisterCallback
     /// [`CallbackFunction`]: crate::sys::thread::CallbackFunction
     /// [`SceError::POWER_CANNOT_LOCK_VMEM`]: crate::sys::SceError::POWER_CANNOT_LOCK_VMEM
+    #[psp_fw_cfg(150..)]
     #[nid(if cfg!(feature = "psp_660") { 0xA882AEB7 }
         else if cfg!(feature = "psp_630") { 0x37DB9C37 }
         else if cfg!(feature = "psp_600") { 0x74035D33 }
@@ -1653,6 +1677,7 @@ unsafe extern "C" {
     /// # Firmware Version
     ///
     /// This API was introduced on PSP firmware version 1.50.
+    #[psp_fw_cfg(150..)]
     #[nid(if cfg!(feature = "psp_660") { 0x5978B1C2 }
         else if cfg!(feature = "psp_630") { 0x88D4244D }
         else if cfg!(feature = "psp_600") { 0x8E71E273 }
