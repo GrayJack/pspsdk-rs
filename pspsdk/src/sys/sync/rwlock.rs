@@ -1,8 +1,12 @@
-use core::{cell::UnsafeCell, time::Duration};
+use core::{
+    cell::UnsafeCell,
+    sync::atomic::{AtomicUsize, Ordering},
+    time::Duration,
+};
 
 use crate::{
     sync::{RawRwLock, RawRwLockTimed},
-    sys::sync::{Condvar, LwMutex, Mutex, SemaMutex, SpinMutex},
+    sys::sync::{Condvar, LwMutex, Mutex, SemaMutex},
 };
 
 struct State {
@@ -850,224 +854,109 @@ impl RawRwLockTimed for SemaRwLock {
     }
 }
 
-/// A raw rwlock with writer-preference based on spin mutex.
+/// Normal shared lock counter
+const SHARED: usize = 1 << 2;
+/// Special upgradable shared lock flag
+const UPGRADABLE: usize = 1 << 1;
+/// Exclusive lock flag
+const EXCLUSIVE: usize = 1;
+
+/// A raw rwlock with writer-preference based on atomics.
 pub struct SpinRwLock {
-    lock: SpinMutex,
-    cond: Condvar,
-    state: UnsafeCell<State>,
+    lock: AtomicUsize,
 }
 
 impl SpinRwLock {
     #[inline]
     pub const fn new() -> Self {
         Self {
-            lock: SpinMutex::new(),
-            cond: Condvar::new(),
-            state: UnsafeCell::new(State {
-                readers: 0,
-                writer_active: false,
-                write_waiters: 0,
-            }),
+            lock: AtomicUsize::new(0),
         }
+    }
+
+    fn is_read(&self) -> bool {
+        self.lock.load(Ordering::Relaxed) & !(EXCLUSIVE | UPGRADABLE) != 0
+    }
+
+    fn is_write(&self) -> bool {
+        self.lock.load(Ordering::Relaxed) & EXCLUSIVE == EXCLUSIVE
+    }
+
+    #[track_caller]
+    fn acquire_read(&self) -> usize {
+        let value = self.lock.fetch_add(SHARED, Ordering::Acquire);
+
+        // An arbitrary cap that allows us to catch overflows long before they happen
+        if value > usize::MAX / 2 {
+            self.lock.fetch_sub(SHARED, Ordering::Relaxed);
+            panic!("Too many shared locks, cannot safely proceed");
+        }
+
+        value
     }
 
     #[inline]
     fn read(&self) {
-        self.lock.lock();
-
-        // SAFETY: self.lock is locked
-        let state = unsafe { self.state() };
-
-        // prefer writers: if a writer is active or waiting, block readers
-        loop {
-            if !state.writer_active && state.write_waiters == 0 {
-                break;
-            }
-            unsafe { self.cond.wait(&self.lock) };
+        while !self.try_read() {
+            crate::sys::spin_loop();
         }
-
-        state.readers += 1;
-        unsafe { self.lock.unlock() };
     }
 
     #[inline]
+    #[track_caller]
     fn try_read(&self) -> bool {
-        self.lock.lock();
+        let value = self.acquire_read();
 
-        // SAFETY: self.lock is locked
-        let state = unsafe { self.state() };
+        let acquired = value & EXCLUSIVE != EXCLUSIVE;
 
-        let ok = !state.writer_active && state.write_waiters == 0;
-
-        if ok {
-            state.readers += 1;
+        if !acquired {
+            unsafe { self.read_unlock() };
         }
 
-        unsafe { self.lock.unlock() };
-        ok
-    }
-
-    #[inline]
-    fn try_read_for(&self, timeout: Duration) -> bool {
-        self.lock.lock();
-
-        // SAFETY: self.lock is locked
-        let state = unsafe { self.state() };
-
-        // prefer writers: if a writer is active or waiting, block readers
-        loop {
-            if !state.writer_active && state.write_waiters == 0 {
-                break;
-            }
-
-            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
-            if !res {
-                unsafe { self.lock.unlock() };
-                return false;
-            }
-        }
-
-        state.readers += 1;
-        unsafe { self.lock.unlock() };
-        true
-    }
-
-    #[inline]
-    fn write(&self) {
-        self.lock.lock();
-
-        // SAFETY: self.lock is locked
-        let state = unsafe { self.state() };
-        state.write_waiters += 1;
-
-        // Wait until no readers and no active writer
-        loop {
-            if !state.writer_active && state.readers == 0 {
-                break;
-            }
-
-            unsafe { self.cond.wait(&self.lock) };
-        }
-
-        state.write_waiters -= 1;
-        state.writer_active = true;
-
-        unsafe { self.lock.unlock() };
-    }
-
-    #[inline]
-    fn try_write(&self) -> bool {
-        self.lock.lock();
-
-        // SAFETY: self.lock is locked
-        let state = unsafe { self.state() };
-
-        let ok = !state.writer_active && state.readers == 0;
-
-        if ok {
-            state.writer_active = true;
-        }
-
-        unsafe { self.lock.unlock() };
-        ok
-    }
-
-    #[inline]
-    fn try_write_for(&self, timeout: Duration) -> bool {
-        self.lock.lock();
-
-        // SAFETY: self.lock is locked
-        let state = unsafe { self.state() };
-        state.write_waiters += 1;
-
-        loop {
-            if !state.writer_active && state.readers == 0 {
-                break;
-            }
-
-            let res = unsafe { self.cond.wait_timeout(&self.lock, timeout) };
-            if !res {
-                unsafe { self.lock.unlock() };
-                return false;
-            }
-        }
-
-        state.write_waiters -= 1;
-        state.writer_active = true;
-
-        unsafe { self.lock.unlock() };
-        true
+        acquired
     }
 
     #[inline]
     #[track_caller]
     unsafe fn read_unlock(&self) {
-        self.lock.lock();
+        debug_assert!(self.is_read());
 
-        // SAFETY: self.lock is locked
-        let state = unsafe { self.state() };
+        self.lock.fetch_sub(SHARED, Ordering::Release);
+    }
 
-        debug_assert!(state.readers > 0, "`read_unlock` without reader");
-        let readers = {
-            let r = state.readers - 1;
-            state.readers = r;
-            r
-        };
-
-        // If last reader and writers are waiting, wake one writer.
-        if readers == 0 && state.write_waiters > 0 {
-            self.cond.notify_one();
+    #[inline]
+    fn write(&self) {
+        while !self.try_write() {
+            crate::sys::spin_loop();
         }
-        unsafe { self.lock.unlock() };
+    }
+
+    #[inline]
+    fn try_write(&self) -> bool {
+        self.lock
+            .compare_exchange(0, EXCLUSIVE, Ordering::Acquire, Ordering::Relaxed)
+            .is_ok()
     }
 
     #[inline]
     #[track_caller]
     unsafe fn write_unlock(&self) {
-        self.lock.lock();
+        debug_assert!(self.is_write());
 
-        // SAFETY: self.lock is locked
-        let state = unsafe { self.state() };
-
-        debug_assert!(state.writer_active, "`write_unlock` without writer");
-        state.writer_active = false;
-
-        // Prefer writers: wake one writer if any waiting, otherwise wake all readers
-        if state.write_waiters > 0 {
-            self.cond.notify_one();
-        } else {
-            self.cond.notify_all();
-        }
-
-        unsafe { self.lock.unlock() };
+        self.lock.fetch_and(!EXCLUSIVE, Ordering::Release);
     }
 
     #[inline]
     #[track_caller]
     unsafe fn downgrade(&self) {
-        self.lock.lock();
+        // Reserve the shared guard for ourselves
+        self.acquire_read();
 
-        // SAFETY: self.lock is locked
-        let state = unsafe { self.state() };
-
-        debug_assert!(state.writer_active, "downgrade without writer");
-        state.writer_active = false;
-        state.readers = state.readers.saturating_add(1);
-
-        // Allow readers to proceed. Writers remain blocked until readers drain.
-        self.cond.notify_all();
-        unsafe { self.lock.unlock() };
+        unsafe {
+            self.write_unlock();
+        }
     }
 }
-
-impl SpinRwLock {
-    /// Accesses to this state MUST only happen while `self.lock` is held.
-    unsafe fn state(&self) -> &mut State {
-        unsafe { &mut *self.state.get() }
-    }
-}
-
-unsafe impl Sync for SpinRwLock {}
 
 impl crate::private::Sealed for SpinRwLock {}
 impl RawRwLock for SpinRwLock {
@@ -1107,17 +996,5 @@ impl RawRwLock for SpinRwLock {
     #[track_caller]
     unsafe fn downgrade(&self) {
         unsafe { self.downgrade() };
-    }
-}
-
-impl RawRwLockTimed for SpinRwLock {
-    #[inline]
-    fn try_read_for(&self, timeout: Duration) -> bool {
-        self.try_read_for(timeout)
-    }
-
-    #[inline]
-    fn try_write_for(&self, timeout: Duration) -> bool {
-        self.try_write_for(timeout)
     }
 }
