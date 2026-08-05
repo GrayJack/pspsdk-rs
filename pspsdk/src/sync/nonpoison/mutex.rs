@@ -9,6 +9,7 @@ use core::{
 };
 
 use crate::{
+    psp_fw_select,
     sync::{
         nonpoison::{TryLockError, TryLockResult},
         RawMutex, RawMutexTimed,
@@ -17,10 +18,14 @@ use crate::{
     time::Instant,
 };
 
-type DefaultMutex = cfg_select! {
-    feature = "kernel" => sys::Mutex,
-    pbp => sys::LwMutex,
-    _ => sys::SemaMutex,
+type DefaultMutex = psp_fw_select! {
+    ..270 => sys::SemaMutex,
+    270..395 => sys::Mutex,
+    395.. => cfg_select! {
+        // pbp => sys::LwMutex,
+        _ => sys::Mutex,
+    },
+    _ => sys::SpinMutex,
 };
 
 /// A mutual exclusion primitive useful for protecting shared data

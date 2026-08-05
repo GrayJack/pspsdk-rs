@@ -7,6 +7,7 @@ use core::{
 };
 
 use crate::{
+    psp_fw_select,
     sync::RawMutex,
     sys::{
         sync as sys,
@@ -14,10 +15,14 @@ use crate::{
     },
 };
 
-type DefaultMutex = cfg_select! {
-    feature = "kernel" => sys::Mutex,
-    // pbp => sys::LwMutex,
-    _ => sys::Mutex,
+type DefaultMutex = psp_fw_select! {
+    ..270 => sys::SemaMutex,
+    270..395 => sys::Mutex,
+    395.. => cfg_select! {
+        // pbp => sys::LwMutex,
+        _ => sys::Mutex,
+    },
+    _ => sys::SpinMutex,
 };
 
 
@@ -334,11 +339,11 @@ impl<T: ?Sized, M: RawMutex> Drop for ReentrantLockGuard<'_, T, M> {
 // This can be used as a non-null usize-sized ID.
 pub(crate) fn current_thread_id() -> ThreadId {
     cfg_select! {
-        target_os = "psp" => {
-            sceKernelGetThreadId().into_result().expect("wrong context for `sceKernelGetThreadId`")
-        }
+        target_os = "psp" => sceKernelGetThreadId()
+            .into_result()
+            .expect("wrong context for `sceKernelGetThreadId`"),
         _ => {
             unimplemented!("Not a PSP OS")
-        }
+        },
     }
 }

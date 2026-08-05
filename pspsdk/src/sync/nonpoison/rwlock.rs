@@ -9,6 +9,7 @@ use core::{
 
 
 use crate::{
+    psp_fw_select,
     sync::{
         nonpoison::{TryLockError, TryLockResult},
         RawRwLock, RawRwLockTimed,
@@ -17,10 +18,14 @@ use crate::{
     time::{Duration, Instant},
 };
 
-type DefaultRwLock = cfg_select! {
-    feature = "kernel" => sys::RwLock,
-    pbp => sys::LwRwLock,
-    _ => sys::SemaRwLock,
+type DefaultRwLock = psp_fw_select! {
+    ..270 => sys::SemaRwLock,
+    270..395 => sys::RwLock,
+    395.. => cfg_select! {
+        // pbp => sys::LwRwLock,
+        _ => sys::RwLock,
+    },
+    _ => sys::SpinRwLock,
 };
 
 
