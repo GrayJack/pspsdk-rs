@@ -37,7 +37,7 @@ extern crate panic_unwind;
 extern crate std;
 
 // Re-export proc-macros
-pub use pspsdk_macros::{export, exports, psp_fw, psp_fw_cfg, psp_stub};
+pub use pspsdk_macros::{export, exports, psp_fw, psp_fw_cfg, psp_fw_select, psp_stub};
 
 use crate::sys::{thread::CallbackTermState, SceResult};
 
@@ -137,7 +137,7 @@ mod private {
                 _ => {
                     string_impl::set_bytes(src.cast(), value as u8, num);
                     src
-                }
+                },
             }
         }
     }
@@ -148,14 +148,16 @@ mod private {
         unsafe {
             cfg_select! {
                 feature = "kernel" => crate::sys::libc::memcpy(dst.cast(), src.cast(), num).cast(),
-                all(not(feature = "kernel"), feature = "stub-c") => crate::sys::usersystemlib::sceKernelMemcpy(dst.cast(), src.cast(), num).cast(),
+                all(not(feature = "kernel"), feature = "stub-c") => {
+                    crate::sys::usersystemlib::sceKernelMemcpy(dst.cast(), src.cast(), num).cast()
+                },
                 all(not(feature = "kernel"), feature = "cfw-api", feature = "stub-c") => {
                     crate::sys::libc::memcpy(dst, src, num)
                 },
                 _ => {
                     string_impl::copy_forward(dst.cast(), src.cast(), num);
                     dst
-                }
+                },
             }
         }
     }
@@ -166,10 +168,10 @@ mod private {
         unsafe {
             cfg_select! {
                 feature = "kernel" => crate::sys::libc::memcmp(ptr1.cast(), ptr2.cast(), num),
-                all(not(feature = "kernel"), feature = "cfw-api", feature = "stub-c") => crate::sys::libc::memcmp(ptr1.cast(), ptr2.cast(), num),
-                _ => {
-                    string_impl::compare_bytes(ptr1.cast(), ptr2.cast(), num)
-                }
+                all(not(feature = "kernel"), feature = "cfw-api", feature = "stub-c") => {
+                    crate::sys::libc::memcmp(ptr1.cast(), ptr2.cast(), num)
+                },
+                _ => string_impl::compare_bytes(ptr1.cast(), ptr2.cast(), num),
             }
         }
     }
@@ -182,7 +184,9 @@ mod private {
         unsafe {
             cfg_select! {
                 feature = "kernel" => crate::sys::libc::memmove(dst.cast(), src.cast(), num).cast(),
-                all(not(feature = "kernel"), feature = "cfw-api", feature = "stub-c") => crate::sys::libc::memmove(dst, src, num),
+                all(not(feature = "kernel"), feature = "cfw-api", feature = "stub-c") => {
+                    crate::sys::libc::memmove(dst, src, num)
+                },
                 _ => {
                     use string_impl::PointersOverlap;
 
@@ -197,7 +201,7 @@ mod private {
                     }
 
                     dst
-                }
+                },
             }
         }
     }
@@ -208,10 +212,10 @@ mod private {
         unsafe {
             cfg_select! {
                 feature = "kernel" => crate::sys::libc::strlen(s.cast()),
-                all(not(feature = "kernel"), feature = "cfw-api", feature = "stub-c") => crate::sys::libc::strlen(s),
-                _ => {
-                    string_impl::c_string_length(s.cast())
-                }
+                all(not(feature = "kernel"), feature = "cfw-api", feature = "stub-c") => {
+                    crate::sys::libc::strlen(s)
+                },
+                _ => string_impl::c_string_length(s.cast()),
             }
         }
     }
@@ -226,8 +230,8 @@ pub fn set_psp_os_functions() {
     cfg_select! {
         feature = "non-stub-code" => {
             io_core::os::set_os_functions(io::PSP_OS_FUNCS);
-        }
-        _ => {}
+        },
+        _ => {},
     }
 }
 

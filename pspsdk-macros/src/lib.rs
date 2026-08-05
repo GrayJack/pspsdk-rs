@@ -6,7 +6,7 @@ use syn::{parse_macro_input, spanned::Spanned, Result};
 use crate::{
     export_impl::ExportArgs,
     exports_impl::ExportsArgs,
-    pspfwcfg::PspFwCfgArg,
+    pspfwcfg::{PspFwCfgArg, PspFwSelect, PspFwSelectArm},
     pspstub::{PspStub, StubArgs},
 };
 
@@ -432,4 +432,120 @@ pub fn psp_fw(input: TokenStream) -> TokenStream {
             },
         },
     }
+}
+
+/// Selects code at compile-time based on `psp_fw` predicates.
+///
+/// This macro evaluates, at compile-time, a series of `psp_fw` predicates,
+/// selects the first that is true, and emits the code guarded by that
+/// predicate. The code guarded by other predicates is not emitted.
+///
+/// An optional trailing `_` wildcard can be used to specify a fallback. If
+/// none of the predicates are true, a [`compile_error`] is emitted.
+///
+/// # Examples
+///
+/// ```no_run
+/// pspsdk::psp_fw_select! {
+///     ..150 => {
+///         pub fn my_func() -> i32 { /* PSP <1.50 specific functionality */ }
+///     },
+///     150..370 => {
+///         pub fn my_func() -> i32 { /* PSP 1.50~370 specific functionality */ }
+///     },
+///     _ => {
+///         pub fn my_func() -> i32 { /* fallback implementation */ }
+///     },
+/// }
+/// ```
+///
+/// The `psp_fw_select!` macro can also be used in expression position, with or without braces on
+/// the right-hand side:
+///
+/// ```no_run
+/// let _some_string = pspsdk::psp_fw_select! {
+///     ..420 => "With great power comes great electricity bills",
+///     _ => { "Behind every successful diet is an unwatched pizza" }
+/// };
+/// ```
+///
+/// It can also be used on type expression right-hand side:
+///
+/// ```no_run
+/// struct StructV1 {
+///     // fields
+/// }
+/// struct StructV2 {
+///     // fields
+/// }
+///
+/// type Struct = pspsdk::psp_fw_select! {
+///     ..150 => StructV1,
+///     _ => StructV2,
+/// };
+/// ```
+#[proc_macro]
+pub fn psp_fw_select(input: TokenStream) -> TokenStream {
+    let arg: PspFwSelect = parse_macro_input!(input as PspFwSelect);
+
+    match psp_fw_select_impl(arg) {
+        Ok(ts) => ts,
+        Err(err) => err.into_compile_error().into(),
+    }
+}
+
+fn psp_fw_select_impl(arg: PspFwSelect) -> Result<TokenStream> {
+    let target_fw: Option<u32> = PSPSDK_TARGET_FW
+        .map(|s| s.split('.').collect())
+        .and_then(|s: String| s.parse::<u32>().ok());
+
+    let last_idx = arg.arms.len() - 1;
+
+    let mut res = None;
+    if let Some(target_fw) = target_fw {
+        for (idx, PspFwSelectArm { cond, ts, .. }) in arg.arms.into_iter().enumerate() {
+            match cond {
+                pspfwcfg::PspFwSelectCondPat::Lit(lit) => {
+                    if lit == target_fw {
+                        res = Some(ts);
+                    } else {
+                        continue;
+                    }
+                },
+                pspfwcfg::PspFwSelectCondPat::Range(start, end, limits) => match limits {
+                    syn::RangeLimits::HalfOpen(_) => {
+                        if (start..end).contains(&target_fw) {
+                            res = Some(ts);
+                        } else {
+                            continue;
+                        }
+                    },
+                    syn::RangeLimits::Closed(_) => {
+                        if (start..=end).contains(&target_fw) {
+                            res = Some(ts);
+                        } else {
+                            continue;
+                        }
+                    },
+                },
+                pspfwcfg::PspFwSelectCondPat::Wild => {
+                    if idx != last_idx {
+                        return Err(syn::Error::new(
+                            Span::mixed_site(),
+                            "wild pattern must always be the last arm",
+                        ));
+                    } else {
+                        res = Some(ts);
+                    }
+                },
+            }
+        }
+    }
+
+    res.ok_or_else(|| {
+        syn::Error::new(
+            Span::call_site(),
+            "none of the predicates in this `psp_fw_select` evaluated to true",
+        )
+    })
 }
