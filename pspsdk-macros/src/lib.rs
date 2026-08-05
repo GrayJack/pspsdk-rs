@@ -502,43 +502,43 @@ fn psp_fw_select_impl(arg: PspFwSelect) -> Result<TokenStream> {
     let last_idx = arg.arms.len() - 1;
 
     let mut res = None;
-    if let Some(target_fw) = target_fw {
-        for (idx, PspFwSelectArm { cond, ts, .. }) in arg.arms.into_iter().enumerate() {
-            match cond {
-                pspfwcfg::PspFwSelectCondPat::Lit(lit) => {
-                    if lit == target_fw {
+
+    let target_fw = target_fw.unwrap_or(0);
+    for (idx, PspFwSelectArm { cond, ts, .. }) in arg.arms.into_iter().enumerate() {
+        match cond {
+            pspfwcfg::PspFwSelectCondPat::Lit(lit) => {
+                if lit == target_fw {
+                    res = Some(ts);
+                } else {
+                    continue;
+                }
+            },
+            pspfwcfg::PspFwSelectCondPat::Range(start, end, limits) => match limits {
+                syn::RangeLimits::HalfOpen(_) => {
+                    if (start..end).contains(&target_fw) {
                         res = Some(ts);
                     } else {
                         continue;
                     }
                 },
-                pspfwcfg::PspFwSelectCondPat::Range(start, end, limits) => match limits {
-                    syn::RangeLimits::HalfOpen(_) => {
-                        if (start..end).contains(&target_fw) {
-                            res = Some(ts);
-                        } else {
-                            continue;
-                        }
-                    },
-                    syn::RangeLimits::Closed(_) => {
-                        if (start..=end).contains(&target_fw) {
-                            res = Some(ts);
-                        } else {
-                            continue;
-                        }
-                    },
-                },
-                pspfwcfg::PspFwSelectCondPat::Wild => {
-                    if idx != last_idx {
-                        return Err(syn::Error::new(
-                            Span::mixed_site(),
-                            "wild pattern must always be the last arm",
-                        ));
-                    } else {
+                syn::RangeLimits::Closed(_) => {
+                    if (start..=end).contains(&target_fw) {
                         res = Some(ts);
+                    } else {
+                        continue;
                     }
                 },
-            }
+            },
+            pspfwcfg::PspFwSelectCondPat::Wild => {
+                if idx != last_idx {
+                    return Err(syn::Error::new(
+                        Span::mixed_site(),
+                        "wild pattern must always be the last arm",
+                    ));
+                } else {
+                    res = Some(ts);
+                }
+            },
         }
     }
 
