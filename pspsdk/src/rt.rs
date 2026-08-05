@@ -28,17 +28,19 @@ pub unsafe fn process_argc_argv(
     let mut loc = 0;
     let ptr: *mut u8 = argp.cast();
 
-    while loc < argc_bytes {
-        unsafe {
-            argv[argc] = ptr.add(loc);
+    if !ptr.is_null() {
+        while loc < argc_bytes {
+            unsafe {
+                argv[argc] = ptr.add(loc);
 
-            let arg_len = crate::private::strlen(argv[argc].cast()) + 1;
+                let arg_len = crate::private::strlen(argv[argc].cast()) + 1;
 
-            loc += arg_len;
-            argc += 1;
+                loc += arg_len;
+                argc += 1;
 
-            if argc == 19 {
-                break;
+                if argc == 19 {
+                    break;
+                }
             }
         }
     }

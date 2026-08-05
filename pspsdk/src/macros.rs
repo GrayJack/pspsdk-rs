@@ -425,7 +425,7 @@ macro_rules! _start {
         let res = $crate::psp_start($psp_main, $argc, (&raw const $argv).cast());
 
         pspsdk::process::exit(res as i32);
-        $crate::sys::SceResult::new(res as u32)
+        $crate::sys::SceResult::new(0)
     }};
 }
 
