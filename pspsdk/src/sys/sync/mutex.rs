@@ -6,8 +6,10 @@ use core::{
 
 use alloc::boxed::Box;
 
+#[allow(unused_imports, reason = "Context compilation")]
 use crate::{
     allocators::PartitionAlloc,
+    psp_fw_select,
     sync::{RawMutex, RawMutexTimed},
     sys::{
         is_interrupt_enabled,
@@ -15,10 +17,11 @@ use crate::{
         thread::{
             _sceKernelLockLwMutex, _sceKernelTryLockLwMutex, _sceKernelUnlockLwMutex,
             sceKernelCreateLwMutex, sceKernelCreateMutex, sceKernelCreateSema,
-            sceKernelDeleteLwMutex, sceKernelDeleteMutex, sceKernelDeleteSema, sceKernelLockMutex,
-            sceKernelPollSema, sceKernelSignalSema, sceKernelTryLockMutex, sceKernelUnlockMutex,
-            sceKernelWaitSema, LwMutexWorkArea, MutexAttributes, MutexId, SemaId,
-            SemaphoreAttributes,
+            sceKernelDeleteLwMutex, sceKernelDeleteMutex, sceKernelDeleteSema,
+            sceKernelLockLwMutex, sceKernelLockMutex, sceKernelPollSema, sceKernelSignalSema,
+            sceKernelTryLockLwMutex, sceKernelTryLockMutex, sceKernelUnlockLwMutex,
+            sceKernelUnlockMutex, sceKernelWaitSema, LwMutexWorkArea, MutexAttributes, MutexId,
+            SemaId, SemaphoreAttributes,
         },
         SceError,
     },
@@ -399,7 +402,10 @@ impl LwMutex {
         let work_area = self.get_work_area().unwrap_or_else(|| panic!("failed to init lwmutex"));
 
         if is_interrupt_enabled() {
-            let res = _sceKernelLockLwMutex(work_area, 1, None);
+            let res = cfg_select! {
+                pbp => sceKernelLockLwMutex(work_area, 1, None),
+                _ => _sceKernelLockLwMutex(work_area, 1, None),
+            };
             if res.is_err() {
                 panic!("failed to lock lwmutex: {:#X}", res.as_inner());
             }
@@ -412,7 +418,10 @@ impl LwMutex {
             return false;
         };
 
-        _sceKernelTryLockLwMutex(work_area, 1).into_result().is_ok()
+        cfg_select! {
+            pbp => sceKernelTryLockLwMutex(work_area, 1).into_result().is_ok(),
+            _ => _sceKernelTryLockLwMutex(work_area, 1).into_result().is_ok(),
+        }
     }
 
     #[inline]
@@ -424,7 +433,10 @@ impl LwMutex {
         if is_interrupt_enabled() {
             let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-            let res = _sceKernelLockLwMutex(work_area, 1, Some(&mut timeout));
+            let res = cfg_select! {
+                pbp => sceKernelLockLwMutex(work_area, 1, Some(&mut timeout)),
+                _ => _sceKernelLockLwMutex(work_area, 1, Some(&mut timeout)),
+            };
 
             match res.into_result() {
                 Ok(_) => true,
@@ -442,7 +454,11 @@ impl LwMutex {
             return;
         };
 
-        let _ = _sceKernelUnlockLwMutex(work_area, 1);
+
+        let _ = cfg_select! {
+            pbp => sceKernelUnlockLwMutex(work_area, 1),
+            _ => _sceKernelUnlockLwMutex(work_area, 1),
+        };
     }
 }
 
@@ -729,15 +745,20 @@ impl SpinMutex {
         }
     }
 
+    fn is_locked(&self) -> bool {
+        self.locked.load(Ordering::Relaxed)
+    }
+
     #[inline]
     #[track_caller]
     pub fn lock(&self) {
-        while self
-            .locked
-            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
-            .is_err()
-        {
-            crate::sys::spin_loop();
+        while !self.try_lock_weak() {
+            // Wait until the lock looks unlocked before retrying
+            // Code from https://github.com/mvdnes/spin-rs/commit/d3e60d19adbde8c8e9d3199c7c51e51ee5a20bf6
+            while self.is_locked() {
+                // Tell the CPU that we're inside a busy-wait loop
+                crate::sys::spin_loop();
+            }
         }
     }
 
@@ -745,6 +766,13 @@ impl SpinMutex {
     pub fn try_lock(&self) -> bool {
         self.locked
             .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+            .is_ok()
+    }
+
+    fn try_lock_weak(&self) -> bool {
+        // The Orderings are the same as try_lock, and are still correct here.
+        self.locked
+            .compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed)
             .is_ok()
     }
 
