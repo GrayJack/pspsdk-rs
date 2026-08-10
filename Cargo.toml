@@ -7,6 +7,7 @@ resolver = "2"
 
 [profile.dev]
 opt-level = "s"
+lto = "thin"
 
 [profile.release]
 opt-level = "s"

@@ -30,6 +30,9 @@ struct PspProject {
     #[serde(alias = "target-firmware")]
     #[serde(alias = "target_firmware")]
     target_fw: Option<String>,
+    /// Enable human readable error messages.
+    #[serde(alias = "human-readable-os-errors")]
+    human_readable_os_errors: Option<bool>,
     /// EBOOT/PBOOT configuration.
     pbp: Option<PbpConfig>,
 }
@@ -268,6 +271,18 @@ fn main() {
 
     let mut cargo_build_cmd = Command::new(&cargo);
 
+    let mut rustflags = String::with_capacity(1024);
+
+    match config.project.kind {
+        ProjectKind::Prx => rustflags.push_str("--cfg prx "),
+        ProjectKind::Eboot => rustflags.push_str("--cfg eboot --cfg pbp "),
+        ProjectKind::Pboot => rustflags.push_str("--cfg pboot --cfg pbp "),
+    };
+
+    if let Some(true) = config.project.human_readable_os_errors {
+        rustflags.push_str("--cfg os_err_human ");
+    }
+
     cargo_build_cmd
         .arg("build")
         .arg("-Z")
@@ -277,11 +292,7 @@ fn main() {
         .arg("mipsel-sony-psp")
         .arg("--message-format=json-render-diagnostics")
         .args(args)
-        .env("RUSTFLAGS", match config.project.kind {
-            ProjectKind::Prx => "--cfg prx",
-            ProjectKind::Eboot => "--cfg eboot --cfg pbp",
-            ProjectKind::Pboot => "--cfg pboot --cfg pbp",
-        })
+        .env("RUSTFLAGS", rustflags)
         .stdout(Stdio::piped());
 
     if let Some(target_fw) = config.project.target_fw.clone() {
