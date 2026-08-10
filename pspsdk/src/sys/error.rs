@@ -1889,7 +1889,7 @@ impl core::fmt::Debug for SceError {
             .field("code", &format_args!("{:#010X}", self.to_inner()));
 
         cfg_select! {
-            debug_assertions => {
+            os_err_human => {
                 let msg = self.error_msg();
 
                 if !msg.is_empty() {
@@ -1906,12 +1906,17 @@ impl core::fmt::Debug for SceError {
 
 impl core::fmt::Display for SceError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let err = self.error_msg();
+        cfg_select! {
+            os_err_human => {
+                let err = self.error_msg();
 
-        if err.is_empty() {
-            write!(f, "{} error: {:#010X}", self.facility(), self.to_inner())
-        } else {
-            f.pad(err)
+                if err.is_empty() {
+                    write!(f, "{} error: {:#010X}", self.facility(), self.to_inner())
+                } else {
+                    f.pad(err)
+                }
+            },
+            _ => write!(f, "{} error: {:#010X}", self.facility(), self.to_inner()),
         }
     }
 }
@@ -1920,8 +1925,7 @@ impl SceError {
     // FIXME: Add more errors
     pub(crate) const fn error_msg(&self) -> &'static str {
         cfg_select! {
-            not(debug_assertions) => "",
-            debug_assertions => match *self {
+            os_err_human => match *self {
                 SceError::NOT_INIT => "not initialized",
                 SceError::WRONG_VERSION => "version does not match",
                 SceError::NOT_IMPL => "not implemented",
@@ -2005,7 +2009,9 @@ impl SceError {
                 SceError::DEADLOCK => "deadlock",
                 SceError::NOT_LOCKED => "not locked or not possible to lock",
                 SceError::INVALID_FILE_FMT => "invalid file format",
-                SceError::NOT_SUPPORTED_OP => "file operation not supported on device or mount point",
+                SceError::NOT_SUPPORTED_OP => {
+                    "file operation not supported on device or mount point"
+                },
                 SceError::BAD_EXCHANGE => "bad or invalid exchange",
                 SceError::INVALID_SLOT => "invalid slot value",
                 SceError::FILE_DEADLOCK => "file lock deadlock",
@@ -2069,7 +2075,9 @@ impl SceError {
                 SceError::KERNEL_NOTFOUND_HANDLER => "kernel error: handler not found",
                 SceError::KERNEL_ILLEGAL_INTRLEVEL => "kernel error: illegal interrupt level",
                 SceError::KERNEL_ILLEGAL_ADDRESS => "kernel error: illegal address",
-                SceError::KERNEL_INVALID_INTRPARAM => "kernel error: invalid IntrHandlerOptions::size",
+                SceError::KERNEL_INVALID_INTRPARAM => {
+                    "kernel error: invalid IntrHandlerOptions::size"
+                },
                 SceError::KERNEL_INVALID_STACK_ADDRESS => "kernel error: invalid stack address",
                 SceError::KERNEL_ALREADY_STACK_SET => "kernel error: stack address already set",
                 SceError::KERNEL_NO_TIMER => "kernel error: no available timer found",
@@ -2118,7 +2126,9 @@ impl SceError {
                 SceError::KERNEL_MEMBLOCK_NOT_NEIGHBOR => {
                     "kernel error: memory blocks are not neighbors"
                 },
-                SceError::KERNEL_MEMBLOCK_JOINT_FAIL => "kernel error: failed to join memory blocks",
+                SceError::KERNEL_MEMBLOCK_JOINT_FAIL => {
+                    "kernel error: failed to join memory blocks"
+                },
                 SceError::KERNEL_MEMBLOCK_SEPARATED_FAIL => {
                     "kernel error: failed to separate memory blocks"
                 },
@@ -2147,7 +2157,9 @@ impl SceError {
                 SceError::KERNEL_LIBRARY_INUSE => "kernel error: library is currently in use",
                 SceError::KERNEL_ALREADY_STOPPING => "kernel error: library is already stopping",
                 SceError::KERNEL_INVALID_OFFSET => "kernel error: invalid module offset value",
-                SceError::KERNEL_INVALID_POSITION => "kernel error: invalid load-module position value",
+                SceError::KERNEL_INVALID_POSITION => {
+                    "kernel error: invalid load-module position value"
+                },
                 SceError::KERNEL_INVALID_ACCESS => "kernel error: invalid load-module access value",
                 SceError::KERNEL_MODULE_MGR_BUSY => "kernel error: module manager is busy",
                 SceError::KERNEL_INVALID_FLAG => "kernel error: invalid module flags",
@@ -2165,7 +2177,9 @@ impl SceError {
                 SceError::KERNEL_INVALID_FILENAME => "kernel error: invalid load-exec filename",
                 SceError::KERNEL_NO_EXIT_CALLBACK => "kernel error: no exit callback",
                 SceError::KERNEL_MEDIA_CHANGED => "kernel error: media has changed",
-                SceError::KERNEL_USE_BETA_VERSION_MODULE => "kernel error: be version module not used",
+                SceError::KERNEL_USE_BETA_VERSION_MODULE => {
+                    "kernel error: be version module not used"
+                },
                 SceError::KERNEL_BSOD => "kernel error: blue screen of death occurred",
                 SceError::KERNEL_REBOOT_AFTER_HIBERNATION => {
                     "kernel error: system rebooted after hibernation"
@@ -2234,7 +2248,9 @@ impl SceError {
                     "kernel error: mutex is not owned and can not be released"
                 },
                 SceError::KERNEL_MUTEX_LOCK_OVERFLOW => "kernel error: mutex lock counter overflow",
-                SceError::KERNEL_MUTEX_UNLOCK_UNDERFLOW => "kernel error: mutex lock counter underflow",
+                SceError::KERNEL_MUTEX_UNLOCK_UNDERFLOW => {
+                    "kernel error: mutex lock counter underflow"
+                },
                 SceError::KERNEL_MUTEX_NOT_REENTRANT => "kernel error: mutex is not reentrant",
                 SceError::KERNEL_MSG_BOX_LOOP => {
                     "kernel error: infinite loop detected in a message box"
@@ -2256,7 +2272,9 @@ impl SceError {
                 SceError::KERNEL_TLS_POOL_UNKNWON_ID => "kernel error: unknown TLS pool ID",
                 SceError::KERNEL_UTLS_IS_FULL => "kernel error: UTLS is full",
                 SceError::KERNEL_UTLS_IS_BUSY => "kernel error: UTLS is busy",
-                SceError::KERNEL_PM_INVALID_PRIORITY => "kernel error: power manager invalid priority",
+                SceError::KERNEL_PM_INVALID_PRIORITY => {
+                    "kernel error: power manager invalid priority"
+                },
                 SceError::KERNEL_PM_INVALID_DEVNAME => {
                     "kernel error: power manager invalid device name"
                 },
@@ -2272,14 +2290,22 @@ impl SceError {
                 SceError::KERNEL_PM_INVALID_MAJOR_STATE => {
                     "kernel error: power manager invalid major state"
                 },
-                SceError::KERNEL_PM_INVALID_REQUEST => "kernel error: power manager invalid request",
-                SceError::KERNEL_PM_UNKNOWN_REQUEST => "kernel error: power manager unknown request",
+                SceError::KERNEL_PM_INVALID_REQUEST => {
+                    "kernel error: power manager invalid request"
+                },
+                SceError::KERNEL_PM_UNKNOWN_REQUEST => {
+                    "kernel error: power manager unknown request"
+                },
                 SceError::KERNEL_PM_INVALID_UNIT => "kernel error: power manager invalid unit",
                 SceError::KERNEL_PM_CANNOT_CANCEL => {
                     "kernel error: power manager operation can not cancel"
                 },
-                SceError::KERNEL_PM_INVALID_PMINFO => "kernel error: invalid power manager information",
-                SceError::KERNEL_PM_INVALID_ARGUMENT => "kernel error: power manager invalid argument",
+                SceError::KERNEL_PM_INVALID_PMINFO => {
+                    "kernel error: invalid power manager information"
+                },
+                SceError::KERNEL_PM_INVALID_ARGUMENT => {
+                    "kernel error: power manager invalid argument"
+                },
                 SceError::KERNEL_PM_ALREADY_TARGET_PWRSTATE => {
                     "kernel error: power manager power state already targeted"
                 },
@@ -2295,13 +2321,17 @@ impl SceError {
                 SceError::KERNEL_DMAC_REQUEST_FAILED => "kernel error: DMAC request failed",
                 SceError::KERNEL_DMAC_REQUEST_DENIED => "kernel error: DMAC request was denied",
                 SceError::KERNEL_DMAC_OP_QUEUED => "kernel error: DMAC operation is already queued",
-                SceError::KERNEL_DMAC_OP_NOT_QUEUED => "kernel error: DMAC operation was not queued",
+                SceError::KERNEL_DMAC_OP_NOT_QUEUED => {
+                    "kernel error: DMAC operation was not queued"
+                },
                 SceError::KERNEL_DMAC_OP_RUNNING => "kernel error: DMAC operation is running",
                 SceError::KERNEL_DMAC_OP_NOT_ASSIGNED => {
                     "kernel error: DMAC operation was not assigned"
                 },
                 SceError::KERNEL_DMAC_OP_TIMEOUT => "kernel error: DMAC operation timed out",
-                SceError::KERNEL_DMAC_OP_FREED => "kernel error: DMAC operation was already released",
+                SceError::KERNEL_DMAC_OP_FREED => {
+                    "kernel error: DMAC operation was already released"
+                },
                 SceError::KERNEL_DMAC_OP_USED => "kernel error: DMAC operation is in use",
                 SceError::KERNEL_DMAC_OP_EMPTY => "kernel error: DMAC operation is empty",
                 SceError::KERNEL_DMAC_OP_ABORTED => "kernel error: DMAC operation was aborted",
@@ -2343,7 +2373,9 @@ impl SceError {
                 SceError::KERNEL_NOCWD => "kernel error: no current working directory",
                 SceError::KERNEL_NAMETOOLONG => "kernel error: file name or path is too long",
                 SceError::KERNEL_STDIO_NOT_OPEN => "kernel error: STDIO was not opened",
-                SceError::KERNEL_DECI2P_UNKNOWN_SOCKET_ID => "kernel error: unknown DECI2 socket ID",
+                SceError::KERNEL_DECI2P_UNKNOWN_SOCKET_ID => {
+                    "kernel error: unknown DECI2 socket ID"
+                },
                 SceError::KERNEL_DECI2P_REGISTERED_PROTOCOL => {
                     "kernel error: DECI2p protocol already registered"
                 },
@@ -2373,13 +2405,14 @@ impl SceError {
                 },
                 SceError::UTILITY_COMMON_DIALOG_TYPE_MISMATCH => {
                     "utility common error: the utility that is running and the function that was \
-                    called are incompatible"
+                     called are incompatible"
                 },
                 SceError::UTILITY_COMMON_CANT_OPEN_MODULE => {
                     "utility common error: utility module cannot be opened"
                 },
                 SceError::UTILITY_COMMON_STATUS_WAITING => {
-                    "utility common error: utility module is in a waiting state and cannot be updated"
+                    "utility common error: utility module is in a waiting state and cannot be \
+                     updated"
                 },
                 SceError::UTILITY_COMMON_UNEXPECTED_PARAMTYPE => {
                     "utility common error: type information was an unexpected value"
@@ -2398,7 +2431,7 @@ impl SceError {
                 },
                 SceError::UTILITY_OSK_FILE_IO => {
                     "utility OSK error: a file I/O error occurred during processing other than for \
-                    accessing the dictionary"
+                     accessing the dictionary"
                 },
                 SceError::UTILITY_OSK_UNKNOWN => "utility OSK error: an unknown error occurred",
                 SceError::UTILITY_SAVEDATA_TYPE => "utility savedata error: type error",
@@ -2406,8 +2439,8 @@ impl SceError {
                     "utility savedata error: no memory stick(tm) was inserted"
                 },
                 SceError::UTILITY_SAVEDATA_LOAD_EJECT_MS => {
-                    "utility savedata error: memory stick(tm) was removed while save data was being \
-                    accessed"
+                    "utility savedata error: memory stick(tm) was removed while save data was \
+                     being accessed"
                 },
                 SceError::UTILITY_SAVEDATA_LOAD_ACCESS_ERROR => {
                     "utility savedata error: memory stick(tm) access error occurred"
@@ -2419,27 +2452,29 @@ impl SceError {
                     "utility savedata error: specified save data was not found"
                 },
                 SceError::UTILITY_SAVEDATA_LOAD_PARAM => {
-                    "utility savedata error: utility could not run because parameter that was passed \
-                    was illegal"
+                    "utility savedata error: utility could not run because parameter that was \
+                     passed was illegal"
                 },
                 SceError::UTILITY_SAVEDATA_LOAD_NO_FILE => {
                     "utility savedata error: specified file could not be found"
                 },
-                SceError::UTILITY_SAVEDATA_LOAD_INTERNAL => "utility savedata error: internal error",
+                SceError::UTILITY_SAVEDATA_LOAD_INTERNAL => {
+                    "utility savedata error: internal error"
+                },
                 SceError::UTILITY_SAVEDATA_SAVE_NO_MS => {
                     "utility savedata error: no memory stick(tm) was inserted"
                 },
                 SceError::UTILITY_SAVEDATA_SAVE_EJECT_MS => {
-                    "utility savedata error: memory stick(tm) was removed while save data was being \
-                    accessed"
+                    "utility savedata error: memory stick(tm) was removed while save data was \
+                     being accessed"
                 },
                 SceError::UTILITY_SAVEDATA_SAVE_MS_NOSPACE => {
-                    "utility savedata error: memory stick(tm) did not contain the amount of free space \
-                    required for saving"
+                    "utility savedata error: memory stick(tm) did not contain the amount of free \
+                     space required for saving"
                 },
                 SceError::UTILITY_SAVEDATA_SAVE_MS_PROTECTED => {
-                    "utility savedata error: save data could not be accessed because memory stick(tm) \
-                    was write-protected"
+                    "utility savedata error: save data could not be accessed because memory \
+                     stick(tm) was write-protected"
                 },
                 SceError::UTILITY_SAVEDATA_SAVE_ACCESS_ERROR => {
                     "utility savedata error: memory stick(tm) access error occurred"
@@ -2448,20 +2483,22 @@ impl SceError {
                     "utility savedata error: specified save data was corrupted"
                 },
                 SceError::UTILITY_SAVEDATA_SAVE_PARAM => {
-                    "utility savedata error: utility could not run because parameter that was passed \
-                    was illegal"
+                    "utility savedata error: utility could not run because parameter that was \
+                     passed was illegal"
                 },
-                SceError::UTILITY_SAVEDATA_SAVE_INTERNAL => "utility savedata error: internal error",
+                SceError::UTILITY_SAVEDATA_SAVE_INTERNAL => {
+                    "utility savedata error: internal error"
+                },
                 SceError::UTILITY_SAVEDATA_DELETE_NO_MS => {
                     "utility savedata error: no memory stick(tm) was inserted"
                 },
                 SceError::UTILITY_SAVEDATA_DELETE_EJECT_MS => {
-                    "utility savedata error: memory stick(tm) was removed while save data was being \
-                    accessed"
+                    "utility savedata error: memory stick(tm) was removed while save data was \
+                     being accessed"
                 },
                 SceError::UTILITY_SAVEDATA_DELETE_MS_PROTECTED => {
-                    "utility savedata error: save data could not be accessed because memory stick(tm) \
-                    was write-protected"
+                    "utility savedata error: save data could not be accessed because memory \
+                     stick(tm) was write-protected"
                 },
                 SceError::UTILITY_SAVEDATA_DELETE_ACCESS_ERROR => {
                     "utility savedata error: memory stick access error occurred"
@@ -2470,16 +2507,18 @@ impl SceError {
                     "utility savedata error: specified save data was not found"
                 },
                 SceError::UTILITY_SAVEDATA_DELETE_PARAM => {
-                    "utility savedata error: utility could not run because parameter that was passed \
-                    was illegal"
+                    "utility savedata error: utility could not run because parameter that was \
+                     passed was illegal"
                 },
-                SceError::UTILITY_SAVEDATA_DELETE_INTERNAL => "utility savedata error: internal error",
+                SceError::UTILITY_SAVEDATA_DELETE_INTERNAL => {
+                    "utility savedata error: internal error"
+                },
                 SceError::UTILITY_SAVEDATA_SIZES_NO_MS => {
                     "utility savedata error: no memory stick(tm) was inserted"
                 },
                 SceError::UTILITY_SAVEDATA_SIZES_EJECT_MS => {
-                    "utility savedata error: memory stick(tm) was removed while save data was being \
-                    accessed"
+                    "utility savedata error: memory stick(tm) was removed while save data was \
+                     being accessed"
                 },
                 SceError::UTILITY_SAVEDATA_SIZES_ACCESS_ERROR => {
                     "utility savedata error: memory stick(tm) access error occurred"
@@ -2491,10 +2530,12 @@ impl SceError {
                     "utility savedata error: specified save data was not found"
                 },
                 SceError::UTILITY_SAVEDATA_SIZES_PARAM => {
-                    "utility savedata error: utility could not run because parameter that was passed \
-                    was illegal"
+                    "utility savedata error: utility could not run because parameter that was \
+                     passed was illegal"
                 },
-                SceError::UTILITY_SAVEDATA_SIZES_INTERNAL => "utility savedata error: internal error",
+                SceError::UTILITY_SAVEDATA_SIZES_INTERNAL => {
+                    "utility savedata error: internal error"
+                },
                 SceError::UTILITY_SAVEDATA_MC_NO_MS => {
                     "utility savedata error: no memory stick(tm) was inserted"
                 },
@@ -2502,12 +2543,12 @@ impl SceError {
                     "utility error: memory stick(tm) was removed while save data was being accessed"
                 },
                 SceError::UTILITY_SAVEDATA_MC_MS_NOSPACE => {
-                    "utility savedata error: memory stick(tm) did not contain the amount of free space \
-                    required for saving"
+                    "utility savedata error: memory stick(tm) did not contain the amount of free \
+                     space required for saving"
                 },
                 SceError::UTILITY_SAVEDATA_MC_MS_PROTECTED => {
-                    "utility savedata error: save data could not be accessed because memory stick(tm) \
-                    was write-protected"
+                    "utility savedata error: save data could not be accessed because memory \
+                     stick(tm) was write-protected"
                 },
                 SceError::UTILITY_SAVEDATA_MC_ACCESS_ERROR => {
                     "utility savedata error: memory stick(tm) access error occurred"
@@ -2519,15 +2560,15 @@ impl SceError {
                     "utility savedata error: specified save data was not found"
                 },
                 SceError::UTILITY_SAVEDATA_MC_PARAM => {
-                    "utility savedata error: utility could not run because parameter that was passed \
-                    was illegal"
+                    "utility savedata error: utility could not run because parameter that was \
+                     passed was illegal"
                 },
                 SceError::UTILITY_SAVEDATA_MC_NO_FILE => {
                     "utility savedata error: specified file could not be found"
                 },
                 SceError::UTILITY_SAVEDATA_MC_SUSPEND_ERROR => {
                     "utility savedata error: processing stopped because the utility was suspended \
-                    during multiple calls"
+                     during multiple calls"
                 },
                 SceError::UTILITY_SAVEDATA_MC_INTERNAL => "utility savedata error: internal error",
                 SceError::UTILITY_SAVEDATA_MC_STATUS_ERROR => {
@@ -2544,24 +2585,26 @@ impl SceError {
                 },
                 SceError::UTILITY_NETCONF_APCTL => {
                     "utility netconf error: an error occurred in infrastructure mode connection \
-                    control."
+                     control."
                 },
                 SceError::UTILITY_NETCONF_ADHOCCTL => {
                     "utility netconf error: an error occurred in ad hoc mode connection control."
                 },
                 SceError::UTILITY_NETCONF_NETCNF => {
                     "utility netconf error: an error occurred when accessing network configuration \
-                    information."
+                     information."
                 },
                 SceError::UTILITY_NETCONF_ALREADY_CONNECTED => {
-                    "utility netconf error: the specified function cannot be used because the status \
-                    shows already connected."
+                    "utility netconf error: the specified function cannot be used because the \
+                     status shows already connected."
                 },
                 SceError::UTILITY_NETCONF_ALREADY_DISCONNECTED => {
-                    "utility netconf error: the specified function cannot be used because the status \
-                    shows already disconnected."
+                    "utility netconf error: the specified function cannot be used because the \
+                     status shows already disconnected."
                 },
-                SceError::UTILITY_MSGDIALOG_PARAM => "utility msg dialog error: parameter is invalid",
+                SceError::UTILITY_MSGDIALOG_PARAM => {
+                    "utility msg dialog error: parameter is invalid"
+                },
                 SceError::UTILITY_MSGDIALOG_INVALID_NUMBER => {
                     "utility msg dialog error: error number is invalid"
                 },
@@ -2573,7 +2616,9 @@ impl SceError {
                     "utility net param error: invalid pointer"
                 },
                 SceError::UTILITY_NET_PARAM_INVALID_CODE => "utility net param error: invalid code",
-                SceError::UTILITY_NET_PARAM_INVALID_VALUE => "utility net param error: invalid value",
+                SceError::UTILITY_NET_PARAM_INVALID_VALUE => {
+                    "utility net param error: invalid value"
+                },
                 SceError::UTILITY_NET_PARAM_UNEXPECTED_PARAMTYPE => {
                     "utility net param error: unexpected parameter type"
                 },
@@ -2599,11 +2644,13 @@ impl SceError {
                     "utility HTML viewer error: the specified initialization parameters are invalid"
                 },
                 SceError::UTILITY_HTMLVIEWER_INSUFFICIENT_HEAP_SPACE => {
-                    "utility HTML viewer error: the size of the heap area specified for the browser is \
-                    insufficient"
+                    "utility HTML viewer error: the size of the heap area specified for the \
+                     browser is insufficient"
                 },
                 SceError::UTILITY_MODULE_INVALID_ID => "utility error: invalid module ID",
-                SceError::UTILITY_MODULE_ALREADY_LOADED => "utility error: module is already loaded",
+                SceError::UTILITY_MODULE_ALREADY_LOADED => {
+                    "utility error: module is already loaded"
+                },
                 SceError::UTILITY_MODULE_NOT_LOADED => "utility error: module is not loaded",
                 SceError::UTILITY_MODULE_CANNOT_START => "utility error: module cannot be started",
                 SceError::UTILITY_MODULE_CANNOT_STOP => "utility error: module cannot be stopped",
@@ -2611,7 +2658,8 @@ impl SceError {
                     "utility screenshot error: the specified display pixel format is invalid."
                 },
                 SceError::UTILITY_SCREENSHOT_INVALID_SCREENSHOT_EXTENT => {
-                    "utility screenshot error: the specified rectangular screenshot area is invalid."
+                    "utility screenshot error: the specified rectangular screenshot area is \
+                     invalid."
                 },
                 SceError::UTILITY_SCREENSHOT_POINTER_IS_NULL => {
                     "utility screenshot error: detected null pointer error."
@@ -2632,7 +2680,8 @@ impl SceError {
                     "utility screenshot error: writing data is not permitted on your memorystick."
                 },
                 SceError::UTILITY_SCREENSHOT_FAILED_MAKE_SCREENSHOT_ROOT_DIR => {
-                    "utility screenshot error: failed to create a root directory for saving screenshot."
+                    "utility screenshot error: failed to create a root directory for saving \
+                     screenshot."
                 },
                 SceError::UTILITY_SCREENSHOT_FAILED_MAKE_SAVE_DIR => {
                     "utility screenshot error: failed to create a directory for saving screenshot."
@@ -2641,17 +2690,19 @@ impl SceError {
                     "utility screenshot error: failed to open a directory for saving screenshot."
                 },
                 SceError::UTILITY_SCREENSHOT_FAILED_READ_SAVE_DIR_INFO => {
-                    "utility screenshot error: failed to get an information of a directory for saving \
-                    screenshot."
+                    "utility screenshot error: failed to get an information of a directory for \
+                     saving screenshot."
                 },
                 SceError::UTILITY_SCREENSHOT_INVALID_FILE_NAME => {
-                    "utility screenshot error: the specified directory name or file name is invalid."
+                    "utility screenshot error: the specified directory name or file name is \
+                     invalid."
                 },
                 SceError::UTILITY_SCREENSHOT_LOAD_EJECT_MS => {
                     "utility screenshot error: memorystick was ejected during screenshot operation."
                 },
                 SceError::UTILITY_SCREENSHOT_SAVE_MS_NOSPACE => {
-                    "utility screenshot error: there is no space to save an image on your memorystick."
+                    "utility screenshot error: there is no space to save an image on your \
+                     memorystick."
                 },
                 SceError::UTILITY_SCREENSHOT_SAVE_ACCESS_ERROR => {
                     "utility screenshot error: memorystick access error occurred."
@@ -2666,14 +2717,16 @@ impl SceError {
                     "utility screenshot error: the specified boot parameter is invalid."
                 },
                 SceError::UTILITY_SCREENSHOT_NOT_FOUND_PSCMDAT_IMAGE_FILE => {
-                    "utility screenshot error: an image file (background, icon) for pscm.dat could not \
-                    be found."
+                    "utility screenshot error: an image file (background, icon) for pscm.dat could \
+                     not be found."
                 },
                 SceError::UTILITY_SCREENSHOT_INVALID_FILE_SIZE => {
-                    "utility screenshot error: the size of an image file (background, icon) is invalid."
+                    "utility screenshot error: the size of an image file (background, icon) is \
+                     invalid."
                 },
                 SceError::UTILITY_SCREENSHOT_INVALID_PATH_SIZE => {
-                    "utility screenshot error: the path of an image file (background, icon) is invalid."
+                    "utility screenshot error: the path of an image file (background, icon) is \
+                     invalid."
                 },
                 SceError::UTILITY_SCREENSHOT_FAILED_OPEN_PSCMDAT => {
                     "utility screenshot error: failed to open pscm.dat."
@@ -2692,23 +2745,23 @@ impl SceError {
                 },
                 SceError::UTILITY_SCREENSHOT_INVALID_COMMENT_PARAMS => {
                     "utility screenshot error: the specified parameter for screenshot comment is \
-                    invalid."
+                     invalid."
                 },
                 SceError::UTILITY_SCREENSHOT_DETECTED_INVALID_STRING => {
-                    "utility screenshot error: an invalid character configuration was detected in the \
-                    specified screenshot utility boot parameter."
+                    "utility screenshot error: an invalid character configuration was detected in \
+                     the specified screenshot utility boot parameter."
                 },
                 SceError::UTILITY_SCREENSHOT_INVALID_UTILITY_TYPE => {
-                    "utility screenshot error: the specified boot parameter for screenshot utility is \
-                    invalid."
+                    "utility screenshot error: the specified boot parameter for screenshot utility \
+                     is invalid."
                 },
                 SceError::UTILITY_SCREENSHOT_INCOMPLETE_WRITING_IMAGE => {
                     "utility screenshot error: screenshot utility detected no space on your \
-                    memorystick during saving screenshot operation."
+                     memorystick during saving screenshot operation."
                 },
                 SceError::UTILITY_SCREENSHOT_HAVE_NOT_CONT_MODE_START_YET => {
-                    "utility screenshot error: you have to start 'cont' mode before invoking 'cont' \
-                    mode functions."
+                    "utility screenshot error: you have to start 'cont' mode before invoking \
+                     'cont' mode functions."
                 },
                 SceError::UTILITY_SCREENSHOT_LOAD_EJECT_MS2 => {
                     "utility screenshot error: memorystick was ejected during screenshot operation."
@@ -2720,8 +2773,8 @@ impl SceError {
                     "utility screenshot error: found same file name without the file extension"
                 },
                 SceError::UTILITY_SCREENSHOT_VAST_THE_MAX_NUMBER_OF_IMAGE_FILE => {
-                    "utility screenshot error: exceeded the maximum number of image files managed by \
-                    this utility"
+                    "utility screenshot error: exceeded the maximum number of image files managed \
+                     by this utility"
                 },
                 SceError::UTILITY_SCREENSHOT_VIEW_ACCESS_ERROR => {
                     "utility screenshot error: memorystick access error occurred during view mode"
@@ -2756,7 +2809,9 @@ impl SceError {
                 SceError::UTILITY_RSS_SUBSCRIBER_SAVE_NO_MS => {
                     "utility error: no memory stick is found"
                 },
-                SceError::UTILITY_RSS_SUBSCRIBER_SAVE_MS_PROTECTED => "utility error: ms is protected",
+                SceError::UTILITY_RSS_SUBSCRIBER_SAVE_MS_PROTECTED => {
+                    "utility error: ms is protected"
+                },
                 SceError::UTILITY_RSS_SUBSCRIBER_SAVE_MS_ACCESS_ERROR => {
                     "utility error: ms access error ( including the case that ms is rom )"
                 },
@@ -2768,13 +2823,19 @@ impl SceError {
                 },
                 SceError::UTILITY_RSS_SUBSCRIBER_INTERNAL_ERROR => "utility error: internal error",
                 SceError::UTILITY_RSS_READER_INVALID_ARGS => "utility error: invalid arguments",
-                SceError::UTILITY_RSS_READER_UNACCEPTABLE_STATE => "utility error: unacceptable state",
+                SceError::UTILITY_RSS_READER_UNACCEPTABLE_STATE => {
+                    "utility error: unacceptable state"
+                },
                 SceError::UTILITY_RSS_READER_CANCELED => "utility error: canceled",
-                SceError::UTILITY_RSS_READER_ALREADY_DOWNLOADED => "utility error: already downloaded",
+                SceError::UTILITY_RSS_READER_ALREADY_DOWNLOADED => {
+                    "utility error: already downloaded"
+                },
                 SceError::UTILITY_RSS_READER_TIMEOUT => "utility error: timeout",
                 SceError::UTILITY_RSS_READER_DNS => "utility error: dns error",
                 SceError::UTILITY_RSS_READER_SSL => "utility error: ssl error",
-                SceError::UTILITY_RSS_READER_UNSUPPORTED_SERVER => "utility error: unsupported server",
+                SceError::UTILITY_RSS_READER_UNSUPPORTED_SERVER => {
+                    "utility error: unsupported server"
+                },
                 SceError::UTILITY_RSS_READER_UNSUPPORTED_XML => "utility error: unsupported xml",
                 SceError::UTILITY_RSS_READER_XML_WELLFORMEDNESS => {
                     "utility error: xml well-formedness error"
@@ -2797,15 +2858,23 @@ impl SceError {
                     "utility error: an internal error occurred in the utility."
                 },
                 SceError::UTILITY_GAMEDATA_INSTALL_NO_MS => "utility error: no ms is inserted.",
-                SceError::UTILITY_GAMEDATA_INSTALL_EJECT_MS => "utility error: ms has been removed.",
-                SceError::UTILITY_GAMEDATA_INSTALL_MS_NOSPACE => "utility error: no free space in ms",
+                SceError::UTILITY_GAMEDATA_INSTALL_EJECT_MS => {
+                    "utility error: ms has been removed."
+                },
+                SceError::UTILITY_GAMEDATA_INSTALL_MS_NOSPACE => {
+                    "utility error: no free space in ms"
+                },
                 SceError::UTILITY_GAMEDATA_INSTALL_MS_PROTECTED => {
                     "utility error: ms is write-protected."
                 },
                 SceError::UTILITY_GAMEDATA_INSTALL_MS_ACCESS => "utility error: ms access error",
                 SceError::UTILITY_GAMEDATA_INSTALL_NO_UMD => "utility error: no umd is inserted.",
-                SceError::UTILITY_GAMEDATA_INSTALL_EJECT_UMD => "utility error: umd has been removed.",
-                SceError::UTILITY_GAMEDATA_INSTALL_LOW_POWER => "utility error: the battery is low.",
+                SceError::UTILITY_GAMEDATA_INSTALL_EJECT_UMD => {
+                    "utility error: umd has been removed."
+                },
+                SceError::UTILITY_GAMEDATA_INSTALL_LOW_POWER => {
+                    "utility error: the battery is low."
+                },
                 SceError::UTILITY_GAMEDATA_INSTALL_PARAM => "utility error: invalid parameter",
                 SceError::UTILITY_GAMEDATA_INSTALL_INTERNAL => "utility error: internal error",
                 SceError::UTILITY_AUTO_CONNECT_INVALID_ARGS => {
@@ -2836,7 +2905,9 @@ impl SceError {
                 SceError::MEMSTICK_MSSTOR_ERR => "memstick storage error: general error",
                 SceError::MEMSTICK_MSSTOR_EEXIST => "memstick storage error: already exist",
                 SceError::MEMSTICK_MSSTOR_EACCESS => "memstick storage error: access violation",
-                SceError::MEMSTICK_MSSTOR_EINVAL => "memstick storage error: invalid parameter or mode",
+                SceError::MEMSTICK_MSSTOR_EINVAL => {
+                    "memstick storage error: invalid parameter or mode"
+                },
                 SceError::MEMSTICK_MSSTOR_ETIMEDOUT => "memstick storage error: timeout",
                 SceError::MEMSTICK_MSSTOR_WRITEPROTECTED => {
                     "memstick storage error: media write protected"
@@ -2847,7 +2918,9 @@ impl SceError {
                 SceError::MEMSTICK_MSSTOR_NOBLOCK => {
                     "memstick storage error: failed to allocate a block"
                 },
-                SceError::MEMSTICK_MSSTOR_INVALID_PARAM => "memstick storage error: parameter invalid",
+                SceError::MEMSTICK_MSSTOR_INVALID_PARAM => {
+                    "memstick storage error: parameter invalid"
+                },
                 SceError::USB_ALREADY => "USB error: already processed",
                 SceError::USB_INVAL => "USB error: invalid argument",
                 SceError::USB_NOSPC => "USB error: no space",
@@ -2924,7 +2997,9 @@ impl SceError {
                 SceError::POWER_NO_BATTERY => "power error: battery not installed",
                 SceError::POWER_DETECTING => "power error: getting battery information",
                 SceError::POWER_CANNOT_LOCK_VMEM => "power error: volatile memory locking failure",
-                SceError::POWER_BAD_PRECONDITION => "power error: conditions when it cannot be used",
+                SceError::POWER_BAD_PRECONDITION => {
+                    "power error: conditions when it cannot be used"
+                },
                 SceError::AUDIOROUTING_AUDIOROUNTING_INVAL => {
                     "audiorouting error: invalid mode argument value"
                 },
@@ -2934,12 +3009,16 @@ impl SceError {
                 },
                 SceError::NETWORK_INVALID_ARG => "network error: invalid argument was specified.",
                 SceError::NETWORK_NO_ENTRY => "network error: no such entry.",
-                SceError::NETWORK_INSUFFICIENT_STACKSIZE => "network error: insufficient stack size.",
+                SceError::NETWORK_INSUFFICIENT_STACKSIZE => {
+                    "network error: insufficient stack size."
+                },
                 SceError::NETWORK_CORE_NOT_TERMINATED => "network core error: not terminated",
                 SceError::NETWORK_CORE_INTERFACE_BUSY => "network core error: interface is busy",
                 SceError::NETWORK_CORE_INVALID_ARG => "network core error: invalid argument",
                 SceError::NETWORK_CORE_THREAD_NOT_FOUND => "network core error: no such thread",
-                SceError::NETWORK_CORE_THREAD_BUSY => "network core error: specified thread is busy",
+                SceError::NETWORK_CORE_THREAD_BUSY => {
+                    "network core error: specified thread is busy"
+                },
                 SceError::NETWORK_CORE_80211_NO_BSS => "network core error: there is no bss",
                 SceError::NETWORK_CORE_80211_NO_AVAIL_BSS => "network core error: no available bss",
                 SceError::NETWORK_INET_NOT_TERMINATED => "network inet error: not terminated",
@@ -2968,7 +3047,9 @@ impl SceError {
                 SceError::NETWORK_POECLIENT_NETWORK => "network error: network error.",
                 SceError::NETWORK_POECLIENT_TERMINATE => "network error: terminate error.",
                 SceError::NETWORK_POECLIENT_NOT_STARTED => "network error: pppoe not started.",
-                SceError::NETWORK_RESOLVER_NOT_TERMINATED => "network resolver error: not terminated",
+                SceError::NETWORK_RESOLVER_NOT_TERMINATED => {
+                    "network resolver error: not terminated"
+                },
                 SceError::NETWORK_RESOLVER_NO_DNS_SERVER => {
                     "network resolver error: dns server is not set"
                 },
@@ -2976,7 +3057,9 @@ impl SceError {
                 SceError::NETWORK_RESOLVER_INVALID_BUFLEN => {
                     "network resolver error: invalid buffer length"
                 },
-                SceError::NETWORK_RESOLVER_INVALID_ID => "network resolver error: invalid resolver ID",
+                SceError::NETWORK_RESOLVER_INVALID_ID => {
+                    "network resolver error: invalid resolver ID"
+                },
                 SceError::NETWORK_RESOLVER_ID_MAX => {
                     "network resolver error: no ID space for new context"
                 },
@@ -3002,14 +3085,18 @@ impl SceError {
                 SceError::NETWORK_RESOLVER_STOPPED => "network resolver error: stopped",
                 SceError::NETWORK_RESOLVER_SOCKET => "network resolver error: socket error",
                 SceError::NETWORK_RESOLVER_TIMEOUT => "network resolver error: timeout",
-                SceError::NETWORK_RESOLVER_NO_RECORD => "network resolver error: no record for query",
+                SceError::NETWORK_RESOLVER_NO_RECORD => {
+                    "network resolver error: no record for query"
+                },
                 SceError::NETWORK_RESOLVER_RES_PACKET_FORMAT => {
                     "network resolver error: dns query packet not recognized by server"
                 },
                 SceError::NETWORK_RESOLVER_RES_SERVER_FAILURE => {
                     "network resolver error: server failure"
                 },
-                SceError::NETWORK_RESOLVER_NO_HOST => "network resolver error: no entry for hostname",
+                SceError::NETWORK_RESOLVER_NO_HOST => {
+                    "network resolver error: no entry for hostname"
+                },
                 SceError::NETWORK_RESOLVER_RES_NOT_IMPLEMENTED => {
                     "network resolver error: query type not supported"
                 },
@@ -3025,8 +3112,12 @@ impl SceError {
                 SceError::NETWORK_RESOLVER_INVALID_MODE => {
                     "network resolver error: api not supported in current blocking mode"
                 },
-                SceError::NETWORK_RESOLVER_NOT_STARTED => "network resolver error: context not started",
-                SceError::NETWORK_DHCP_INVALID_PACKET => "network DHCP error: received invalid packet",
+                SceError::NETWORK_RESOLVER_NOT_STARTED => {
+                    "network resolver error: context not started"
+                },
+                SceError::NETWORK_DHCP_INVALID_PACKET => {
+                    "network DHCP error: received invalid packet"
+                },
                 SceError::NETWORK_DHCP_NO_SERVER => "network DHCP error: there is no server",
                 SceError::NETWORK_DHCP_SENT_DECLINE => "network DHCP error: this error is obsolete",
                 SceError::NETWORK_DHCP_LEASE_TIME => "network DHCP error: lease time expired",
@@ -3061,13 +3152,19 @@ impl SceError {
                 SceError::NETWORK_ADHOC_WOULD_BLOCK => {
                     "network ad-hoc error: would block in non-blocking mode"
                 },
-                SceError::NETWORK_ADHOC_PORT_IN_USE => "network ad-hoc error: specified port is in use",
+                SceError::NETWORK_ADHOC_PORT_IN_USE => {
+                    "network ad-hoc error: specified port is in use"
+                },
                 SceError::NETWORK_ADHOC_NOT_CONNECTED => {
                     "network ad-hoc error: socket is not connected"
                 },
-                SceError::NETWORK_ADHOC_DISCONNECTED => "network ad-hoc error: socket is disconnected",
+                SceError::NETWORK_ADHOC_DISCONNECTED => {
+                    "network ad-hoc error: socket is disconnected"
+                },
                 SceError::NETWORK_ADHOC_NOT_OPENED => "network ad-hoc error: socket is not opened",
-                SceError::NETWORK_ADHOC_NOT_LISTENED => "network ad-hoc error: socket is not listened",
+                SceError::NETWORK_ADHOC_NOT_LISTENED => {
+                    "network ad-hoc error: socket is not listened"
+                },
                 SceError::NETWORK_ADHOC_SOCKET_ID_NOT_AVAIL => {
                     "network ad-hoc error: no socket ID available"
                 },
@@ -3153,7 +3250,9 @@ impl SceError {
                 SceError::NETWORK_ADHOC_MATCHING_ALREADY_ESTABLISHED => {
                     "network ad-hoc error: target already established"
                 },
-                SceError::NETWORK_ADHOC_MATCHING_BUSY => "network ad-hoc error: contexts already exist",
+                SceError::NETWORK_ADHOC_MATCHING_BUSY => {
+                    "network ad-hoc error: contexts already exist"
+                },
                 SceError::NETWORK_ADHOC_MATCHING_ALREADY_INITIALIZED => {
                     "network ad-hoc error: library already initialized"
                 },
@@ -3185,7 +3284,9 @@ impl SceError {
                 SceError::NETWORK_APCTL_NOT_IN_BSS => "network error: not in bss currently",
                 SceError::NETWORK_APCTL_WLAN_SWITCH_OFF => "network error: WLAN switch is off",
                 SceError::NETWORK_APCTL_WLAN_BEACON_LOST => "network error: beacon lost",
-                SceError::NETWORK_APCTL_WLAN_DISASSOCIATION => "network error: disassociated from ap",
+                SceError::NETWORK_APCTL_WLAN_DISASSOCIATION => {
+                    "network error: disassociated from ap"
+                },
                 SceError::NETWORK_APCTL_ID_NOT_FOUND => "network error: specified ID is not found",
                 SceError::NETWORK_APCTL_WLAN_SUSPENDED => "network error: suspended",
                 SceError::NETWORK_APCTL_TIMEOUT => "network error: timeout",
@@ -3193,7 +3294,9 @@ impl SceError {
                 SceError::NETWORK_APCTL_NOT_INITIALIZED => {
                     "network error: library module is not initialized"
                 },
-                SceError::NETWORK_APCTL_STACKSIZE_TOO_SHORT => "network error: stack size too short",
+                SceError::NETWORK_APCTL_STACKSIZE_TOO_SHORT => {
+                    "network error: stack size too short"
+                },
                 SceError::NETWORK_APCTL_HANDLER_MAX => "network error: no space for new handler",
                 SceError::NETWORK_ADHOCCTL_NOT_LEFT_IBSS => "network error: still in ibss",
                 SceError::NETWORK_ADHOCCTL_ALREADY_CONNECTED => {
@@ -3204,7 +3307,9 @@ impl SceError {
                     "network error: invalid argument was specified"
                 },
                 SceError::NETWORK_ADHOCCTL_TIMEOUT => "network error: timeout",
-                SceError::NETWORK_ADHOCCTL_ID_NOT_FOUND => "network error: specified ID is not found",
+                SceError::NETWORK_ADHOCCTL_ID_NOT_FOUND => {
+                    "network error: specified ID is not found"
+                },
                 SceError::NETWORK_ADHOCCTL_ALREADY_INITIALIZED => {
                     "network error: service is already started"
                 },
@@ -3225,7 +3330,9 @@ impl SceError {
                     "network error: cannot join due to channel mismatch"
                 },
                 SceError::NETWORK_ADHOCCTL_HANDLER_MAX => "network error: no space for new handler",
-                SceError::NETWORK_ADHOCCTL_STACKSIZE_TOO_SHORT => "network error: stack size too short",
+                SceError::NETWORK_ADHOCCTL_STACKSIZE_TOO_SHORT => {
+                    "network error: stack size too short"
+                },
                 SceError::NETWORK_ADHOCCTL_INVALID_ALIGNMENT => {
                     "network error: argument alignment not acceptable"
                 },
@@ -3235,7 +3342,9 @@ impl SceError {
                 SceError::NETWORK_WLAN_TRY_JOIN => {
                     "network WLAN error: WLAN device is trying to join network."
                 },
-                SceError::NETWORK_WLAN_SCANNING => "network WLAN error: WLAN device is scanning at now",
+                SceError::NETWORK_WLAN_SCANNING => {
+                    "network WLAN error: WLAN device is scanning at now"
+                },
                 SceError::NETWORK_WLAN_INVALID_PARAMETER => {
                     "network WLAN error: invaild parameter is specified"
                 },
@@ -3249,7 +3358,9 @@ impl SceError {
                 SceError::NETWORK_WLAN_ASSOC_REFUSED => "network WLAN error: not used",
                 SceError::NETWORK_WLAN_ASSOC_FAIL => "network WLAN error: fail to associate.",
                 SceError::NETWORK_WLAN_DISASSOC_FAIL => "network WLAN error: fail to disassociate",
-                SceError::NETWORK_WLAN_JOIN_FAIL => "network WLAN error: fail to join to ibss network",
+                SceError::NETWORK_WLAN_JOIN_FAIL => {
+                    "network WLAN error: fail to join to ibss network"
+                },
                 SceError::NETWORK_WLAN_POWER_OFF => "network WLAN error: WLAN switch is off",
                 SceError::NETWORK_WLAN_INTERNAL_FAIL => {
                     "network WLAN error: something error occurs in the driver"
@@ -3272,8 +3383,12 @@ impl SceError {
                 SceError::NETWORK_WLAN_INVALID_ARG => {
                     "network WLAN error: invalid argument was specified."
                 },
-                SceError::NETWORK_WLAN_NOT_IN_GAMEMODE => "network WLAN error: WLAN is not in gamemode",
-                SceError::NETWORK_WLAN_LEAVE_FAIL => "network WLAN error: fail to leave ibss network",
+                SceError::NETWORK_WLAN_NOT_IN_GAMEMODE => {
+                    "network WLAN error: WLAN is not in gamemode"
+                },
+                SceError::NETWORK_WLAN_LEAVE_FAIL => {
+                    "network WLAN error: fail to leave ibss network"
+                },
                 SceError::NETWORK_WLAN_SUSPENDED => {
                     "network WLAN error: the driver is in suspend state"
                 },
@@ -3281,7 +3396,9 @@ impl SceError {
                 SceError::NETWORK_8021X_AUTH_FAILED => {
                     "network error: received failure packet from authenticator"
                 },
-                SceError::NETWORK_ADHOC_DISCOVER_BUSY => "network error: adhoc_discover module is busy",
+                SceError::NETWORK_ADHOC_DISCOVER_BUSY => {
+                    "network error: adhoc_discover module is busy"
+                },
                 SceError::NETWORK_ADHOC_DISCOVER_INVALID_ARG => {
                     "network error: invalid argument was specified"
                 },
@@ -3291,12 +3408,18 @@ impl SceError {
                 SceError::NETWORK_UPNP_NOT_INITIALIZED => {
                     "network error: upnp module is not initialized"
                 },
-                SceError::NETWORK_UPNP_NOT_TERMINATED => "network error: upnp module is not terminated",
+                SceError::NETWORK_UPNP_NOT_TERMINATED => {
+                    "network error: upnp module is not terminated"
+                },
                 SceError::NETWORK_UPNP_BUSY => "network error: module is busy",
                 SceError::NETWORK_UPNP_NO_MEM => "network error: no memory available",
                 SceError::NETWORK_UPNP_INVALID_ARG => "network error: invalid argument",
-                SceError::NETWORK_UPNP_PREFIX_BUF_TOO_SMALL => "network error: prefix buffer too small",
-                SceError::NETWORK_UPNP_INVALID_ACTION_RESP => "network error: invalid action response",
+                SceError::NETWORK_UPNP_PREFIX_BUF_TOO_SMALL => {
+                    "network error: prefix buffer too small"
+                },
+                SceError::NETWORK_UPNP_INVALID_ACTION_RESP => {
+                    "network error: invalid action response"
+                },
                 SceError::NETWORK_UPNP_ACTION_FAILED => "network error: action failed",
                 SceError::NETWORK_UPNP_BUF_TOO_SMALL => "network error: buffer too small",
                 SceError::NETWORK_UPNP_ACTION_TIMEOUT => "network error: action timeout",
@@ -3312,7 +3435,9 @@ impl SceError {
                 SceError::SAS_ADSR_MODE => "SAS error: invalid adsr mode",
                 SceError::SAS_ADPCM_SIZE => "SAS error: invalid adpcm phoneme data size",
                 SceError::SAS_LOOP_MODE => "SAS error: invalid loop mode specification",
-                SceError::SAS_INVALID_STATE => "SAS error: cannot be executed in current adsr state",
+                SceError::SAS_INVALID_STATE => {
+                    "SAS error: cannot be executed in current adsr state"
+                },
                 SceError::SAS_VOLUME_VAL => "SAS error: invalid volume value",
                 SceError::SAS_ADSR_VAL => "SAS error: invalid adsr or sl value",
                 SceError::SAS_PCM_SIZE => "SAS error: invalid pcm phoneme data size",
@@ -3325,13 +3450,19 @@ impl SceError {
                     "SAS error: effect setting function unavailable in multichannel mode"
                 },
                 SceError::SAS_BUSY => "SAS error: function cannot run while sascore is executing",
-                SceError::SAS_CHANGE_AT3_VOICE => "SAS error: attempted to change atrac3 voice source",
+                SceError::SAS_CHANGE_AT3_VOICE => {
+                    "SAS error: attempted to change atrac3 voice source"
+                },
                 SceError::SAS_NOT_AT3_VOICE => "SAS error: not an atrac3 voice",
-                SceError::SAS_NO_CONCATENATE_SPACE => "SAS error: no state allowing data concatenation",
+                SceError::SAS_NO_CONCATENATE_SPACE => {
+                    "SAS error: no state allowing data concatenation"
+                },
                 SceError::SAS_NOTINIT => "SAS error: not initialized",
                 SceError::SAS_ALRDYINIT => "SAS error: already initialized",
                 SceError::SAS_INVALID_ATRAC3 => "SAS error: unsupported atrac3 format",
-                SceError::SAS_SMALL_ATRAC3_SIZE => "SAS error: atrac3 data too small for concatenation",
+                SceError::SAS_SMALL_ATRAC3_SIZE => {
+                    "SAS error: atrac3 data too small for concatenation"
+                },
                 SceError::HTTP_BEFORE_INIT => "HTTP error: not supported / before initialization",
                 SceError::HTTP_NOT_SUPPORTED => "HTTP error: operation not supported",
                 SceError::HTTP_ALREADY_INITED => "HTTP error: already initialized",
@@ -3358,7 +3489,9 @@ impl SceError {
                 SceError::HTTP_PIPELINE_BEFORE_YOUR_TURN => {
                     "HTTP error: pipeline not ready / out of order"
                 },
-                SceError::HTTP_READ_BY_HEAD_METHOD => "HTTP error: read via head method restriction",
+                SceError::HTTP_READ_BY_HEAD_METHOD => {
+                    "HTTP error: read via head method restriction"
+                },
                 SceError::HTTP_NOT_IN_COM => "HTTP error: not in communication state",
                 SceError::HTTP_NO_CONTENT_LENGTH => "HTTP error: missing content length",
                 SceError::HTTP_CHUNK_ENC => "HTTP error: chunked encoding",
@@ -3388,7 +3521,9 @@ impl SceError {
                 SceError::HTTP_SSL_BEFORE_INIT => {
                     "HTTP error: ssl operation attempted before initialization"
                 },
-                SceError::HTTP_SSL_ALREADY_INITED => "HTTP error: ssl module is already initialized",
+                SceError::HTTP_SSL_ALREADY_INITED => {
+                    "HTTP error: ssl module is already initialized"
+                },
                 SceError::HTTP_SSL_NOT_FOUND => "HTTP error: requested ssl resource not found",
                 SceError::HTTP_SSL_INVALID_VALUE => {
                     "HTTP error: invalid value was specified for ssl operation"
@@ -3424,7 +3559,9 @@ impl SceError {
                 SceError::SOUND_NOTPAUSE => "sound error: not paused",
                 SceError::SOUND_DONTSTOP => "sound error: sound cannot be stopped in current state",
                 SceError::SOUND_ALREADY => "sound error: state already set",
-                SceError::SOUND_SOUNDDATAFULL => "sound error: sound data registration limit exceeded",
+                SceError::SOUND_SOUNDDATAFULL => {
+                    "sound error: sound data registration limit exceeded"
+                },
                 SceError::SOUND_CANTALLOCATEVOICE => "sound error: failed to allocate voice",
                 SceError::SOUND_VOICENUM => "sound error: invalid voice number",
                 SceError::SOUND_RESERVEDVOICE => "sound error: voice not under sndp management",
@@ -3466,8 +3603,12 @@ impl SceError {
                 SceError::CPHIO_GAMEDATA_UNKNOWN_VERSION => {
                     "cphio error: unknown or unsupported version"
                 },
-                SceError::CPHIO_GAMEDATA_SECURE_INSTALL_ID => "cphio error: invalid secure install ID",
-                SceError::CPHIO_GAMEDATA_BROKEN_DATA => "cphio error: corrupted or broken game data",
+                SceError::CPHIO_GAMEDATA_SECURE_INSTALL_ID => {
+                    "cphio error: invalid secure install ID"
+                },
+                SceError::CPHIO_GAMEDATA_BROKEN_DATA => {
+                    "cphio error: corrupted or broken game data"
+                },
                 SceError::NP_ALREADY_INITIALIZED => "NP error: NP module is already initialized",
                 SceError::NP_NOT_INITIALIZED => "NP error: NP module is not initialized",
                 SceError::NP_INVALID_ARGUMENT => "NP error: invalid argument provided",
@@ -3488,9 +3629,13 @@ impl SceError {
                 SceError::NP_AUTH_INVALID_CREDENTIAL => "NP error: invalid credential",
                 SceError::NP_AUTH_INVALID_ENTITLEMENT_ID => "NP error: invalid entitlement ID",
                 SceError::NP_AUTH_INVALID_DATA_LENGTH => "NP error: invalid data length",
-                SceError::NP_AUTH_UNSUPPORTED_TICKET_VERSION => "NP error: unsupported ticket version",
+                SceError::NP_AUTH_UNSUPPORTED_TICKET_VERSION => {
+                    "NP error: unsupported ticket version"
+                },
                 SceError::NP_AUTH_STACKSIZE_TOO_SHORT => "NP error: stack size is too short",
-                SceError::NP_AUTH_TICKET_STATUS_CODE_INVALID => "NP error: invalid ticket status code",
+                SceError::NP_AUTH_TICKET_STATUS_CODE_INVALID => {
+                    "NP error: invalid ticket status code"
+                },
                 SceError::NP_AUTH_TICKET_PARAM_NOT_FOUND => "NP error: ticket parameter not found",
                 SceError::NP_AUTH_INVALID_TICKET_VERSION => "NP error: invalid ticket version",
                 SceError::NP_AUTH_SERVICE_END => "NP error: service has ended",
@@ -3595,7 +3740,9 @@ impl SceError {
                     "NP error: connection handle already exists"
                 },
                 SceError::NP_COMMUNITY_INVALID_TYPE => "NP error: invalid type",
-                SceError::NP_COMMUNITY_TRANSACTION_ALREADY_END => "NP error: transaction already end",
+                SceError::NP_COMMUNITY_TRANSACTION_ALREADY_END => {
+                    "NP error: transaction already end"
+                },
                 SceError::NP_COMMUNITY_INVALID_PARTITION => "NP error: invalid partition",
                 SceError::NP_COMMUNITY_SERVER_BAD_REQUEST => "NP error: bad request",
                 SceError::NP_COMMUNITY_SERVER_INVALID_TICKET => "NP error: invalid ticket",
@@ -3608,7 +3755,9 @@ impl SceError {
                 SceError::NP_COMMUNITY_SERVER_VERSION_NOT_SUPPORTED => {
                     "NP error: version not supported"
                 },
-                SceError::NP_COMMUNITY_SERVER_SERVICE_UNAVAILABLE => "NP error: service unavailable",
+                SceError::NP_COMMUNITY_SERVER_SERVICE_UNAVAILABLE => {
+                    "NP error: service unavailable"
+                },
                 SceError::NP_COMMUNITY_SERVER_PLAYER_BANNED => "NP error: player banned",
                 SceError::NP_COMMUNITY_SERVER_CENSORED => "NP error: censored",
                 SceError::NP_COMMUNITY_SERVER_RANKING_RECORD_FORBIDDEN => {
@@ -3626,7 +3775,9 @@ impl SceError {
                 SceError::NP_COMMUNITY_SERVER_RANKING_TITLE_NOT_FOUND => {
                     "NP error: ranking title not found"
                 },
-                SceError::NP_COMMUNITY_SERVER_BLACKLISTED_USER_ID => "NP error: blacklisted user ID",
+                SceError::NP_COMMUNITY_SERVER_BLACKLISTED_USER_ID => {
+                    "NP error: blacklisted user ID"
+                },
                 SceError::NP_COMMUNITY_SERVER_GAME_RANKING_NOT_FOUND => {
                     "NP error: game ranking not found"
                 },
@@ -3648,7 +3799,9 @@ impl SceError {
                 },
                 SceError::NP_COMMUNITY_SERVER_TOO_LARGE_DATA => "NP error: too large data",
                 SceError::NP_COMMUNITY_SERVER_NO_SUCH_USER_NPID => "NP error: no such user npid",
-                SceError::NP_COMMUNITY_SERVER_INVALID_ENVIRONMENT => "NP error: invalid environment",
+                SceError::NP_COMMUNITY_SERVER_INVALID_ENVIRONMENT => {
+                    "NP error: invalid environment"
+                },
                 SceError::NP_COMMUNITY_SERVER_INVALID_ONLINE_NAME_CHARACTER => {
                     "NP error: invalid online name character"
                 },
@@ -3674,7 +3827,9 @@ impl SceError {
                 SceError::NP_COMMUNITY_SERVER_OVER_THE_GAME_DATA_LIMIT => {
                     "NP error: over the game data limit"
                 },
-                SceError::NP_COMMUNITY_SERVER_SELF_DATA_NOT_FOUND => "NP error: self data not found",
+                SceError::NP_COMMUNITY_SERVER_SELF_DATA_NOT_FOUND => {
+                    "NP error: self data not found"
+                },
                 SceError::NP_COMMUNITY_SERVER_USER_NOT_ASSIGNED => "NP error: user not assigned",
                 SceError::NP_COMMUNITY_SERVER_GAME_DATA_ALREADY_EXISTS => {
                     "NP error: game data already exists"
@@ -3685,14 +3840,18 @@ impl SceError {
                 SceError::NP_COMMUNITY_SERVER_MATCHING_END_OF_SERVICE => {
                     "NP error: matching end of service"
                 },
-                SceError::NP_COMMUNITY_SERVER_MATCHING_MAINTENANCE => "NP error: matching maintenance",
+                SceError::NP_COMMUNITY_SERVER_MATCHING_MAINTENANCE => {
+                    "NP error: matching maintenance"
+                },
                 SceError::NP_COMMUNITY_SERVER_RANKING_BEFORE_SERVICE => {
                     "NP error: ranking before service"
                 },
                 SceError::NP_COMMUNITY_SERVER_RANKING_END_OF_SERVICE => {
                     "NP error: ranking end of service"
                 },
-                SceError::NP_COMMUNITY_SERVER_RANKING_MAINTENANCE => "NP error: ranking maintenance",
+                SceError::NP_COMMUNITY_SERVER_RANKING_MAINTENANCE => {
+                    "NP error: ranking maintenance"
+                },
                 SceError::NP_COMMUNITY_SERVER_NO_SUCH_TITLE => "NP error: no such title",
                 SceError::NP_COMMUNITY_SERVER_UNSPECIFIED => "NP error: unspecified error",
                 SceError::NP_DRM_ARG => "NP error: argument error",
@@ -3726,7 +3885,9 @@ impl SceError {
                 SceError::NP_ROSTER_SERVER_ITEM_NOT_FOUND => "NP error: item not found",
                 SceError::NP_ROSTER_SERVER_RESOURCE_CONSTRAINT => "NP error: resource constraint",
                 SceError::NP_ROSTER_SERVER_SERVICE_UNAVAILABLE => "NP error: service unavailable",
-                SceError::NP_ROSTER_SERVER_NOT_ALLOWED_MAX_EXCEED => "NP error: not allowed max exceed",
+                SceError::NP_ROSTER_SERVER_NOT_ALLOWED_MAX_EXCEED => {
+                    "NP error: not allowed max exceed"
+                },
                 SceError::NP_ROSTER_SERVER_NOT_ALLOWED_BLOCKED_USER => {
                     "NP error: blocked user not allowed"
                 },
@@ -3738,7 +3899,9 @@ impl SceError {
                 SceError::NP_COMMERCE2_INVALID_INDEX => "NP error: invalid index",
                 SceError::NP_COMMERCE2_INVALID_SKUID => "NP error: invalid skuid",
                 SceError::NP_COMMERCE2_INVALID_SKU_NUM => "NP error: invalid sku number",
-                SceError::NP_COMMERCE2_INVALID_MEMORY_CONTAINER => "NP error: invalid memory container",
+                SceError::NP_COMMERCE2_INVALID_MEMORY_CONTAINER => {
+                    "NP error: invalid memory container"
+                },
                 SceError::NP_COMMERCE2_INSUFFICIENT_MEMORY_CONTAINER => {
                     "NP error: insufficient memory container"
                 },
@@ -3748,8 +3911,12 @@ impl SceError {
                 SceError::NP_COMMERCE2_REQ_NOT_FOUND => "NP error: request not found",
                 SceError::NP_COMMERCE2_REQID_NOT_AVAILABLE => "NP error: request ID not available",
                 SceError::NP_COMMERCE2_ABORTED => "NP error: aborted",
-                SceError::NP_COMMERCE2_REQUEST_BUF_TOO_SMALL => "NP error: request buffer too small",
-                SceError::NP_COMMERCE2_RESPONSE_BUF_TOO_SMALL => "NP error: response buffer too small",
+                SceError::NP_COMMERCE2_REQUEST_BUF_TOO_SMALL => {
+                    "NP error: request buffer too small"
+                },
+                SceError::NP_COMMERCE2_RESPONSE_BUF_TOO_SMALL => {
+                    "NP error: response buffer too small"
+                },
                 SceError::NP_COMMERCE2_COULD_NOT_RECV_WHOLE_RESPONSE_DATA => {
                     "NP error: could not receive whole response data"
                 },
@@ -3757,7 +3924,9 @@ impl SceError {
                 SceError::NP_COMMERCE2_UNKNOWN => "NP error: unknown error",
                 SceError::NP_COMMERCE2_SERVER_MAINTENANCE => "NP error: server maintenance",
                 SceError::NP_COMMERCE2_SERVER_UNKNOWN => "NP error: unknown server error",
-                SceError::NP_COMMERCE2_INSUFFICIENT_BUF_SIZE => "NP error: insufficient buffer size",
+                SceError::NP_COMMERCE2_INSUFFICIENT_BUF_SIZE => {
+                    "NP error: insufficient buffer size"
+                },
                 SceError::NP_COMMERCE2_REQ_MAX => "NP error: maximum requests reached",
                 SceError::NP_COMMERCE2_DATA_NOT_FOUND => "NP error: data not found",
                 SceError::NP_COMMERCE2_SERVER_BAD_REQUEST => "NP error: bad request",
@@ -3770,7 +3939,9 @@ impl SceError {
                 SceError::NP_COMMERCE2_SERVER_NOT_ELIGIBILITY => "NP error: not eligible",
                 SceError::NP_COMMERCE2_SERVER_ACCOUNT_SUSPENDED1 => "NP error: account suspended 1",
                 SceError::NP_COMMERCE2_SERVER_ACCOUNT_SUSPENDED2 => "NP error: account suspended 2",
-                SceError::NP_COMMERCE2_SERVER_OVER_SPENDING_LIMIT => "NP error: over spending limit",
+                SceError::NP_COMMERCE2_SERVER_OVER_SPENDING_LIMIT => {
+                    "NP error: over spending limit"
+                },
                 SceError::NP_COMMERCE2_SERVER_EXCEEDS_AGE_LIMIT_IN_BROWSING => {
                     "NP error: exceeds age limit in browsing"
                 },
@@ -3781,7 +3952,9 @@ impl SceError {
                 SceError::NP_MATCHING2_CONTEXT_MAX => "NP error: context maximum reached",
                 SceError::NP_MATCHING2_CONTEXT_ALREADY_EXISTS => "NP error: context already exists",
                 SceError::NP_MATCHING2_CONTEXT_NOT_FOUND => "NP error: context not found",
-                SceError::NP_MATCHING2_CONTEXT_ALREADY_STARTED => "NP error: context already started",
+                SceError::NP_MATCHING2_CONTEXT_ALREADY_STARTED => {
+                    "NP error: context already started"
+                },
                 SceError::NP_MATCHING2_CONTEXT_NOT_STARTED => "NP error: context not started",
                 SceError::NP_MATCHING2_SERVER_NOT_FOUND => "NP error: server not found",
                 SceError::NP_MATCHING2_INVALID_SLOT_NUM => "NP error: invalid slot number",
@@ -3811,7 +3984,9 @@ impl SceError {
                 SceError::NP_MATCHING2_INVALID_WORLD_ID => "NP error: invalid world ID",
                 SceError::NP_MATCHING2_INVALID_ROOM_ID => "NP error: invalid room ID",
                 SceError::NP_MATCHING2_INVALID_MESSAGE_TARGET => "NP error: invalid message target",
-                SceError::NP_MATCHING2_INVALID_BLOCK_KICK_FLAG => "NP error: invalid block/kick flag",
+                SceError::NP_MATCHING2_INVALID_BLOCK_KICK_FLAG => {
+                    "NP error: invalid block/kick flag"
+                },
                 SceError::NP_MATCHING2_INVALID_ATTRIBUTE_ID => "NP error: invalid attribute ID",
                 SceError::NP_MATCHING2_INVALID_SORT_METHOD => "NP error: invalid sort method",
                 SceError::NP_MATCHING2_INVALID_MAX_SLOT => "NP error: invalid max slot",
@@ -3824,7 +3999,9 @@ impl SceError {
                 SceError::NP_MATCHING2_INVALID_ATTRIBUTE_SIZE => "NP error: invalid attribute size",
                 SceError::NP_MATCHING2_INSUFFICIENT_BUFFER => "NP error: insufficient buffer",
                 SceError::NP_MATCHING2_SERVER_BAD_REQUEST => "NP error: bad request",
-                SceError::NP_MATCHING2_SERVER_SERVICE_UNAVAILABLE => "NP error: service unavailable",
+                SceError::NP_MATCHING2_SERVER_SERVICE_UNAVAILABLE => {
+                    "NP error: service unavailable"
+                },
                 SceError::NP_MATCHING2_SERVER_BUSY => "NP error: busy",
                 SceError::NP_MATCHING2_SERVER_END_OF_SERVICE => "NP error: end of service",
                 SceError::NP_MATCHING2_SERVER_INTERNAL_SERVER_ERROR => {
@@ -3839,7 +4016,9 @@ impl SceError {
                 SceError::NP_MATCHING2_SERVER_INVALID_TICKET => "NP error: invalid ticket",
                 SceError::NP_MATCHING2_SERVER_INVALID_SIGNATURE => "NP error: invalid signature",
                 SceError::NP_MATCHING2_SERVER_EXPIRED_TICKET => "NP error: expired ticket",
-                SceError::NP_MATCHING2_SERVER_ENTITLEMENT_REQUIRED => "NP error: entitlement required",
+                SceError::NP_MATCHING2_SERVER_ENTITLEMENT_REQUIRED => {
+                    "NP error: entitlement required"
+                },
                 SceError::NP_MATCHING2_SERVER_NO_SUCH_CONTEXT => "NP error: no such context",
                 SceError::NP_MATCHING2_SERVER_CLOSED => "NP error: closed",
                 SceError::NP_MATCHING2_SERVER_NO_SUCH_TITLE => "NP error: no such title",
@@ -3871,7 +4050,9 @@ impl SceError {
                 SceError::NP_MATCHING2_SERVER_REQUEST_OVERFLOW => "NP error: request overflow",
                 SceError::NP_MATCHING2_SERVER_ALREADY_JOINED => "NP error: already joined",
                 SceError::NP_MATCHING2_SIGNALING_NOT_INITIALIZED => "NP error: not initialized",
-                SceError::NP_MATCHING2_SIGNALING_ALREADY_INITIALIZED => "NP error: already initialized",
+                SceError::NP_MATCHING2_SIGNALING_ALREADY_INITIALIZED => {
+                    "NP error: already initialized"
+                },
                 SceError::NP_MATCHING2_SIGNALING_OUT_OF_MEMORY => "NP error: out of memory",
                 SceError::NP_MATCHING2_SIGNALING_CTXID_NOT_AVAILABLE => {
                     "NP error: context ID not available"
@@ -3889,30 +4070,40 @@ impl SceError {
                 SceError::NP_MATCHING2_SIGNALING_NETINFO_NOT_AVAILABLE => {
                     "NP error: net info not available"
                 },
-                SceError::NP_MATCHING2_SIGNALING_PEER_NOT_RESPONDING => "NP error: peer not responding",
+                SceError::NP_MATCHING2_SIGNALING_PEER_NOT_RESPONDING => {
+                    "NP error: peer not responding"
+                },
                 SceError::NP_MATCHING2_SIGNALING_CONNID_NOT_AVAILABLE => {
                     "NP error: connection ID not available"
                 },
                 SceError::NP_MATCHING2_SIGNALING_CONN_NOT_FOUND => "NP error: connection not found",
                 SceError::NP_MATCHING2_SIGNALING_PEER_UNREACHABLE => "NP error: peer unreachable",
-                SceError::NP_MATCHING2_SIGNALING_TERMINATED_BY_PEER => "NP error: terminated by peer",
+                SceError::NP_MATCHING2_SIGNALING_TERMINATED_BY_PEER => {
+                    "NP error: terminated by peer"
+                },
                 SceError::NP_MATCHING2_SIGNALING_TIMEOUT => "NP error: timeout",
                 SceError::NP_MATCHING2_SIGNALING_CTX_MAX => "NP error: context maximum reached",
                 SceError::NP_MATCHING2_SIGNALING_RESULT_NOT_FOUND => "NP error: result not found",
-                SceError::NP_MATCHING2_SIGNALING_CONN_IN_PROGRESS => "NP error: connection in progress",
+                SceError::NP_MATCHING2_SIGNALING_CONN_IN_PROGRESS => {
+                    "NP error: connection in progress"
+                },
                 SceError::NP_MATCHING2_SIGNALING_INVALID_ARGUMENT => "NP error: invalid argument",
                 SceError::NP_MATCHING2_SIGNALING_OWN_NP_ID => "NP error: own NP ID",
                 SceError::NP_MATCHING2_SIGNALING_TOO_MANY_CONN => "NP error: too many connections",
                 SceError::NP_MATCHING2_SIGNALING_TERMINATED_BY_MYSELF => {
                     "NP error: terminated by myself"
                 },
-                SceError::NP_MATCHING2_SIGNALING_MATCHING2_PEER_NOT_FOUND => "NP error: peer not found",
+                SceError::NP_MATCHING2_SIGNALING_MATCHING2_PEER_NOT_FOUND => {
+                    "NP error: peer not found"
+                },
                 SceError::GAMEUPDATE_NOT_INITIALIZED => "gameupdate error: not initialized",
                 SceError::GAMEUPDATE_ALREADY_INITIALIZED => "gameupdate error: already initialized",
                 SceError::GAMEUPDATE_INVALID_ARG => "gameupdate error: invalid argument",
                 SceError::GAMEUPDATE_HTTP_OUT_OF_MEMORY => "gameupdate error: HTTP out of memory",
                 SceError::GAMEUPDATE_HTTP_LOCAL_ERROR => "gameupdate error: HTTP local error",
-                SceError::GAMEUPDATE_HTTP_CONNECTION_ERROR => "gameupdate error: HTTP connection error",
+                SceError::GAMEUPDATE_HTTP_CONNECTION_ERROR => {
+                    "gameupdate error: HTTP connection error"
+                },
                 SceError::GAMEUPDATE_HTTP_PROXY_ERROR => "gameupdate error: HTTP proxy error",
                 SceError::GAMEUPDATE_HTTP_BAD_RESPONSE => "gameupdate error: HTTP bad response",
                 SceError::GAMEUPDATE_PARSER_FAILED => "gameupdate error: parser failed",
@@ -3968,7 +4159,9 @@ impl SceError {
                 SceError::MPEG_MP4_NO_DATA => "MPEG error: no data",
                 SceError::MPEG_MP4_INSUFFICIENT_STACKSIZE => "MPEG error: insufficient stack size",
                 SceError::MPEG_MP4_AAC_ARG_AACHANDLE_INVALID => "MPEG error: AAC handle invalid",
-                SceError::MPEG_MP4_AAC_RSRC_NOT_INITIALIZED => "MPEG error: resource not initialized",
+                SceError::MPEG_MP4_AAC_RSRC_NOT_INITIALIZED => {
+                    "MPEG error: resource not initialized"
+                },
                 SceError::MPEG_MP4_AAC_NO_MORE_AACHANDLE => "MPEG error: no more AAC handle",
                 SceError::MPEG_MP4_AAC_DECODE => "MPEG error: decode error",
                 SceError::MPEG_MP4_AAC_OUT_OF_MEMORY => "MPEG error: out of memory",
@@ -4088,7 +4281,9 @@ impl SceError {
                 SceError::MP3_ARG_MP3HANDLE_INVALID => "MP3 error: specified MP3 handle is invalid",
                 SceError::MP3_ARG_PTR_INVALID => "MP3 error: specified address is invalid",
                 SceError::MP3_ARG_OUTOFRANGE => "MP3 error: specified value is out of range",
-                SceError::MP3_ARG_NOT_ALIGNED_ADDRESS => "MP3 error: specified address is not aligned",
+                SceError::MP3_ARG_NOT_ALIGNED_ADDRESS => {
+                    "MP3 error: specified address is not aligned"
+                },
                 SceError::MP3_RSRC_RESERVED => "MP3 error: decoding resources were acquired",
                 SceError::MP3_RSRC_NOT_RESERVED => {
                     "MP3 error: decoding resources have not been acquired"
@@ -4107,14 +4302,18 @@ impl SceError {
                 SceError::MP3_DECODE_NEXT_FRAME_HEADER => {
                     "MP3 error: although decoding failed, find subsequent frame"
                 },
-                SceError::MP3_FRAME_NOT_FOUND => "MP3 error: specified MPEG/audio frame is not found",
+                SceError::MP3_FRAME_NOT_FOUND => {
+                    "MP3 error: specified MPEG/audio frame is not found"
+                },
                 SceError::MP3_LOWLEVEL_API_FAIL => "MP3 error: low level api failed",
                 SceError::G729_INSUFFICIENT => {
                     "G729 error: lack of features or capacity shortage (memory or resource)"
                 },
                 SceError::G729_ILLEGALARGUMENT => "G729 error: value(argument) is out of range",
                 SceError::G729_NOTINITIALIZED => "G729 error: initialize is not succeeded",
-                SceError::G729_ALREADYINUSE => "G729 error: memory(or other resources) already in use",
+                SceError::G729_ALREADYINUSE => {
+                    "G729 error: memory(or other resources) already in use"
+                },
                 SceError::G729_GENERIC => "G729 error: generic or other errors",
                 SceError::G729_FEATUREUNAVAILABLE => "G729 error: feature that is not implemented",
                 SceError::AAC_ARG_AACHANDLE_INVALID => "AAC error: specified AAC handle is invalid",
@@ -4138,7 +4337,8 @@ impl SceError {
                 SceError::CODEC_MPEG_AUDIO_ERROR => "codec error: error",
                 SceError::CODEC_MPEG_AUDIO_INVALID_VALUE => "codec error: invalid value",
                 _ => "",
-            }
+            },
+            _ => "",
         }
     }
 }
