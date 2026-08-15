@@ -97,7 +97,7 @@ impl BorrowedFd<'_> {
     }
 
     #[inline]
-    pub fn read_buf(&self, mut cursor: io::BorrowedCursor<'_>) -> io::Result<()> {
+    pub fn read_buf(&self, mut cursor: io::BorrowedCursor<'_, u8>) -> io::Result<()> {
         if sys::is_interrupt_enabled() {
             let res = unsafe {
                 sceIoRead(self.fd, cursor.as_mut().as_mut_ptr().cast(), cursor.capacity())
@@ -293,7 +293,7 @@ impl io::Read for &BorrowedFd<'_> {
     }
 
     #[inline]
-    fn read_buf(&mut self, buf: io::BorrowedCursor<'_>) -> io::Result<()> {
+    fn read_buf(&mut self, buf: io::BorrowedCursor<'_, u8>) -> io::Result<()> {
         (**self).read_buf(buf)
     }
 }

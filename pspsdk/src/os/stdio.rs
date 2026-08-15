@@ -32,7 +32,7 @@ impl io::Read for Stdin {
         }
     }
 
-    fn read_buf(&mut self, buf: io::BorrowedCursor<'_>) -> io::Result<()> {
+    fn read_buf(&mut self, buf: io::BorrowedCursor<'_, u8>) -> io::Result<()> {
         if sys::is_interrupt_enabled() {
             unsafe {
                 ManuallyDrop::new(FileDesc::from_raw_fd(sceKernelStdin().to_inner())).read_buf(buf)

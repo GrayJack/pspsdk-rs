@@ -83,7 +83,7 @@ impl Read for StdinRaw {
         handle_ebadf(self.0.read(buf), || Ok(0))
     }
 
-    fn read_buf(&mut self, buf: io::BorrowedCursor<'_>) -> io::Result<()> {
+    fn read_buf(&mut self, buf: io::BorrowedCursor<'_, u8>) -> io::Result<()> {
         handle_ebadf(self.0.read_buf(buf), || Ok(()))
     }
 
@@ -103,7 +103,7 @@ impl Read for StdinRaw {
         })
     }
 
-    fn read_buf_exact(&mut self, buf: io::BorrowedCursor<'_>) -> io::Result<()> {
+    fn read_buf_exact(&mut self, buf: io::BorrowedCursor<'_, u8>) -> io::Result<()> {
         if buf.capacity() == 0 {
             return Ok(());
         }
@@ -305,7 +305,9 @@ pub fn stdin() -> Stdin {
     Stdin {
         inner: INSTANCE.get_or_init(|| {
             Mutex::new(cfg_select! {
-                feature = "heap-stdio-buffer" => BufReader::with_capacity(STDIN_BUF_SIZE, stdin_raw()),
+                feature = "heap-stdio-buffer" => {
+                    BufReader::with_capacity(STDIN_BUF_SIZE, stdin_raw())
+                },
                 _ => ArrayBufReader::new(stdin_raw()),
             })
         }),
@@ -403,7 +405,7 @@ impl Read for Stdin {
         self.lock().read(buf)
     }
 
-    fn read_buf(&mut self, buf: BorrowedCursor<'_>) -> io::Result<()> {
+    fn read_buf(&mut self, buf: BorrowedCursor<'_, u8>) -> io::Result<()> {
         self.lock().read_buf(buf)
     }
 
@@ -434,7 +436,7 @@ impl Read for &Stdin {
         self.lock().read(buf)
     }
 
-    fn read_buf(&mut self, buf: BorrowedCursor<'_>) -> io::Result<()> {
+    fn read_buf(&mut self, buf: BorrowedCursor<'_, u8>) -> io::Result<()> {
         self.lock().read_buf(buf)
     }
 
@@ -480,7 +482,7 @@ impl Read for StdinLock<'_> {
         self.inner.read(buf)
     }
 
-    fn read_buf(&mut self, buf: BorrowedCursor<'_>) -> io::Result<()> {
+    fn read_buf(&mut self, buf: BorrowedCursor<'_, u8>) -> io::Result<()> {
         self.inner.read_buf(buf)
     }
 
@@ -612,11 +614,14 @@ static STDOUT: OnceLock<ReentrantLock<RefCell<ArrayLineWriter<StdoutRaw, LINE_BU
 #[must_use]
 pub fn stdout() -> Stdout {
     Stdout {
-        inner: STDOUT
-            .get_or_init(|| cfg_select! {
-                feature = "heap-stdio-buffer" => ReentrantLock::new(RefCell::new(LineWriter::with_capacity(LINE_BUF_SIZE, stdout_raw()))),
+        inner: STDOUT.get_or_init(|| {
+            cfg_select! {
+                feature = "heap-stdio-buffer" => ReentrantLock::new(RefCell::new(
+                    LineWriter::with_capacity(LINE_BUF_SIZE, stdout_raw()),
+                )),
                 _ => ReentrantLock::new(RefCell::new(ArrayLineWriter::new(stdout_raw()))),
-            }),
+            }
+        }),
     }
 }
 
@@ -629,7 +634,9 @@ pub fn cleanup() {
     let stdout = STDOUT.get_or_init(|| {
         initialized = true;
         cfg_select! {
-            feature = "heap-stdio-buffer" => ReentrantLock::new(RefCell::new(LineWriter::with_capacity(LINE_BUF_SIZE, stdout_raw()))),
+            feature = "heap-stdio-buffer" => ReentrantLock::new(RefCell::new(
+                LineWriter::with_capacity(LINE_BUF_SIZE, stdout_raw()),
+            )),
             _ => ReentrantLock::new(RefCell::new(ArrayLineWriter::new(stdout_raw()))),
         }
     });
