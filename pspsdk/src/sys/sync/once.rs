@@ -74,6 +74,14 @@ impl Once {
     }
 
     #[inline]
+    pub const fn new_complete() -> Once {
+        Once {
+            state: AtomicU32::new(COMPLETE),
+            event_flag_id: AtomicU32::new(UNINIT_FLAG),
+        }
+    }
+
+    #[inline]
     pub fn is_completed(&self) -> bool {
         self.state.load(Ordering::Acquire) == COMPLETE
     }

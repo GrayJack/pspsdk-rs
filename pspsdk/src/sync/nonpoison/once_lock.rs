@@ -148,6 +148,33 @@ impl<T> OnceLock<T> {
         }
     }
 
+    /// Creates a new initialized cell.
+    ///
+    /// This is equivalent to `OnceLock::from(value)`, but can be used in
+    /// const contexts, unlike the `From` implementation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pspsdk::sync::OnceLock;
+    ///
+    /// static CELL: OnceLock<i32> = OnceLock::new_init(1);
+    ///
+    /// assert_eq!(CELL.get(), Some(&1));
+    ///
+    /// // Already initialized, so this closure never runs.
+    /// assert_eq!(CELL.get_or_init(|| panic!("Kaboom!")), &1);
+    /// ```
+    #[inline]
+    #[must_use]
+    pub const fn new_init(init_value: T) -> OnceLock<T> {
+        OnceLock {
+            once: Once::new_complete(),
+            value: UnsafeCell::new(MaybeUninit::new(init_value)),
+            _marker: PhantomData,
+        }
+    }
+
     /// Gets the reference to the underlying value.
     ///
     /// Returns `None` if the cell is empty, or being initialized. This
