@@ -148,7 +148,7 @@ impl<T: SceResultOk> SceResult<T> {
     pub fn into_result(self) -> Result<T, SceError> {
         match self.as_inner() {
             0..=0x7FFFFFFF => unsafe {
-                T::handle_ok_value(self.as_inner()).ok_or_else(|| SceError::INVALID_VALUE)
+                T::handle_ok_value(self.as_inner()).ok_or(SceError::INVALID_VALUE)
             },
             0x80000001..=0xFFFFFFFF => {
                 Err(unsafe { SceError::from_raw_unchecked(self.as_inner()) })
@@ -327,7 +327,7 @@ impl<T: SceResultOk> SceResult64<T> {
     pub fn into_result(self) -> Result<T, SceError> {
         match self.as_inner() {
             0..=0xFFFFFFFF_7FFFFFFF => unsafe {
-                T::handle_ok_value64(self.as_inner()).ok_or_else(|| SceError::INVALID_VALUE)
+                T::handle_ok_value64(self.as_inner()).ok_or(SceError::INVALID_VALUE)
             },
             0xFFFFFFFF_80000001..=0xFFFFFFFF_FFFFFFFF => {
                 // Only lower bits

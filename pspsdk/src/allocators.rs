@@ -27,18 +27,19 @@ pub use crate::sys::mem::{MemoryBlockKind, MemoryPartitionId};
 #[global_allocator]
 static GLOBAL_ALLOC: SystemAlloc = SystemAlloc;
 
-const DEFAULT_PARTITION_ID: MemoryPartitionId = cfg_select! {
-    all(prx, feature = "kernel") => MemoryPartitionId::MainKernel,
-    _ => MemoryPartitionId::MainUser
-};
+const DEFAULT_PARTITION_ID: MemoryPartitionId =
+    cfg_select! {
+        all(prx, feature = "kernel") => MemoryPartitionId::MainKernel,
+        _ => MemoryPartitionId::MainUser,
+    };
 
 const DEFAULT_VPL_SIZE: usize = cfg_select! {
     // 2 KB
     all(prx, feature = "kernel") => 2048,
     // 16 KB
-    all(prx, not(feature = "kernel")) => 16*1024,
+    all(prx, not(feature = "kernel")) => 16 * 1024,
     // 64 KB
-    _ => 64*1024,
+    _ => 64 * 1024,
 };
 
 /// An general allocator for the PSP OS.

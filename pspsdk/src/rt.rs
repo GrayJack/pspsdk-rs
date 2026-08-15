@@ -150,14 +150,14 @@ pub(crate) fn cleanup() {
 
     static CLEANUP: Once = Once::new();
     CLEANUP.call_once(|| unsafe {
+        if let Some(f) = custom_cleanup() {
+            f();
+        }
+
         // Flush stdout and disable buffering.
         crate::io::cleanup();
         // SAFETY: Only called once during runtime cleanup.
         sys::cleanup();
-
-        if let Some(f) = custom_cleanup() {
-            f();
-        }
     });
 }
 

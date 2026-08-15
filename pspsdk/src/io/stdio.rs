@@ -634,9 +634,9 @@ pub fn cleanup() {
     let stdout = STDOUT.get_or_init(|| {
         initialized = true;
         cfg_select! {
-            feature = "heap-stdio-buffer" => ReentrantLock::new(RefCell::new(
-                LineWriter::with_capacity(LINE_BUF_SIZE, stdout_raw()),
-            )),
+            feature = "heap-stdio-buffer" => {
+                ReentrantLock::new(RefCell::new(LineWriter::with_capacity(0, stdout_raw())))
+            },
             _ => ReentrantLock::new(RefCell::new(ArrayLineWriter::new(stdout_raw()))),
         }
     });

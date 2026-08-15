@@ -34,7 +34,7 @@ pub(crate) fn print(args: core::fmt::Arguments) {
                 let _ = out.write_fmt(args);
             }
         },
-        _ => {}
+        _ => {},
     }
 }
 
