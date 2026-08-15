@@ -27,8 +27,8 @@ use crate::{
     },
 };
 
-const UNINIT: u32 = u32::MAX;
-const INITIALIZING: u32 = u32::MAX - 1;
+const UNINIT: u32 = 0;
+const INITIALIZING: u32 = u32::MAX;
 
 /// A raw mutex based on [`sys::thread`](crate::sys::thread) mutex API.
 ///
@@ -57,7 +57,7 @@ impl Mutex {
         };
 
         let res = sceKernelTryLockMutex(id, 1);
-        res.into_result().is_ok()
+        res.is_ok()
     }
 
     #[inline]
@@ -65,12 +65,12 @@ impl Mutex {
     pub fn lock(&self) {
         let id = self.get_id().unwrap_or_else(|| panic!("failed to init mutex"));
 
-        if is_interrupt_enabled() {
-            let res = sceKernelLockMutex(id, 1, None);
+        debug_assert!(is_interrupt_enabled(), "raw mutex requires interrupts enabled");
 
-            if res.is_err() {
-                panic!("failed to lock mutex: {:#X}", res.as_inner());
-            }
+        let res = sceKernelLockMutex(id, 1, None);
+
+        if res.is_err() {
+            panic!("failed to lock mutex: {:#X}", res.as_inner());
         }
     }
 
@@ -226,7 +226,7 @@ impl ReentrantMutex {
         };
 
         let res = sceKernelTryLockMutex(id, 1);
-        res.into_result().is_ok()
+        res.is_ok()
     }
 
     #[inline]
@@ -234,11 +234,11 @@ impl ReentrantMutex {
     pub fn lock(&self) {
         let id = self.get_id().unwrap_or_else(|| panic!("failed to init mutex"));
 
-        if is_interrupt_enabled() {
-            let res = sceKernelLockMutex(id, 1, None);
-            if res.is_err() {
-                panic!("failed to lock mutex: {:#X}", res.as_inner());
-            }
+        debug_assert!(is_interrupt_enabled(), "raw mutex requires interrupts enabled");
+
+        let res = sceKernelLockMutex(id, 1, None);
+        if res.is_err() {
+            panic!("failed to lock mutex: {:#X}", res.as_inner());
         }
     }
 
@@ -401,14 +401,14 @@ impl LwMutex {
     pub fn lock(&self) {
         let work_area = self.get_work_area().unwrap_or_else(|| panic!("failed to init lwmutex"));
 
-        if is_interrupt_enabled() {
-            let res = cfg_select! {
-                pbp => sceKernelLockLwMutex(work_area, 1, None),
-                _ => _sceKernelLockLwMutex(work_area, 1, None),
-            };
-            if res.is_err() {
-                panic!("failed to lock lwmutex: {:#X}", res.as_inner());
-            }
+        debug_assert!(is_interrupt_enabled(), "raw mutex requires interrupts enabled");
+
+        let res = cfg_select! {
+            pbp => sceKernelLockLwMutex(work_area, 1, None),
+            _ => _sceKernelLockLwMutex(work_area, 1, None),
+        };
+        if res.is_err() {
+            panic!("failed to lock lwmutex: {:#X}", res.as_inner());
         }
     }
 
@@ -480,7 +480,7 @@ impl LwMutex {
                         }
                     }
                 },
-                INITIALIZING => core::hint::spin_loop(),
+                INITIALIZING => crate::sys::spin_loop(),
                 _ => {
                     let work_area = self.work_area.load(Ordering::Acquire);
                     debug_assert!(!work_area.is_null());
@@ -597,11 +597,12 @@ impl SemaMutex {
     pub fn lock(&self) {
         let id = self.get_id().unwrap_or_else(|| panic!("failed to init mutex"));
 
-        if is_interrupt_enabled() {
-            let res = sceKernelWaitSema(id, 1, None);
-            if res.is_err() {
-                panic!("failed to lock mutex: {:#X}", res.as_inner());
-            }
+        debug_assert!(is_interrupt_enabled(), "raw mutex requires interrupts enabled");
+
+        let res = sceKernelWaitSema(id, 1, None);
+
+        if res.is_err() {
+            panic!("failed to lock mutex: {:#X}", res.as_inner());
         }
     }
 
@@ -611,7 +612,8 @@ impl SemaMutex {
             return false;
         };
 
-        sceKernelPollSema(id, 1).into_result().is_ok()
+        let res = sceKernelPollSema(id, 1);
+        res.is_ok()
     }
 
     #[inline]
@@ -641,7 +643,7 @@ impl SemaMutex {
             return;
         };
 
-        let _ = sceKernelSignalSema(id, 1);
+        let _res = sceKernelSignalSema(id, 1);
     }
 }
 
@@ -650,28 +652,25 @@ impl SemaMutex {
         let mut i = 0;
         while i < 0x10 {
             i += 1;
-            match self.sema.load(Ordering::Acquire) {
-                UNINIT => {
-                    if self
-                        .sema
-                        .compare_exchange(UNINIT, INITIALIZING, Ordering::AcqRel, Ordering::Acquire)
-                        .is_ok()
-                    {
-                        match self.create_id() {
-                            Ok(id) => return Some(id),
-                            Err(_) => continue,
-                        }
-                    }
+            match self.sema.compare_exchange(
+                UNINIT,
+                INITIALIZING,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            ) {
+                Ok(_) => match self.create_id() {
+                    Some(id) => return Some(id),
+                    None => continue,
                 },
-                INITIALIZING => core::hint::spin_loop(),
-                raw => return Some(unsafe { SemaId::from_raw_unchecked(raw) }),
+                Err(INITIALIZING) => crate::sys::spin_loop(),
+                Err(raw) => return Some(unsafe { SemaId::from_raw_unchecked(raw) }),
             }
         }
         None
     }
 
     #[cold]
-    fn create_id(&self) -> Result<SemaId, SceError> {
+    fn create_id(&self) -> Option<SemaId> {
         let created = unsafe {
             sceKernelCreateSema(
                 c"SDK_SEMA_MUTEX".as_ptr().cast(),
@@ -682,15 +681,12 @@ impl SemaMutex {
             )
         };
 
-        match created.into_result() {
-            Ok(id) => {
-                self.sema.store(id.to_inner(), Ordering::Release);
-                Ok(id)
-            },
-            Err(err) => {
-                self.sema.store(UNINIT, Ordering::Release);
-                Err(err)
-            },
+        if let Some(id) = created.clone().ok() {
+            self.sema.store(id.to_inner(), Ordering::Release);
+            Some(id)
+        } else {
+            self.sema.store(UNINIT, Ordering::Release);
+            None
         }
     }
 }
@@ -698,10 +694,16 @@ impl SemaMutex {
 impl Drop for SemaMutex {
     fn drop(&mut self) {
         let raw = self.sema.load(Ordering::Relaxed);
+
+        // With &mut self, concurrent initialization should be impossible.
+        debug_assert_ne!(raw, INITIALIZING, "attempt to drop mutex while initializing");
+
         if raw != UNINIT && raw != INITIALIZING {
-            let id = unsafe { SemaId::from_raw_unchecked(raw) };
+            let id = unsafe { mem::transmute::<u32, SemaId>(raw) };
             let res = sceKernelDeleteSema(id);
-            debug_assert!(res.is_ok(), "failed to delete semaphore mutex: {:#X}", res.as_inner());
+
+            // Keep Drop non-panicking in release, but catch issues in debug.
+            debug_assert!(res.is_err(), "failed to delete semaphore mutex: {:#X}", res.as_inner());
         }
     }
 }
