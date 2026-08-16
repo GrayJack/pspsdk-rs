@@ -269,9 +269,11 @@ fn main() {
 
     let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
 
+    let env_rustflags = env::var("RUSTFLAGS").unwrap_or_else(|_| String::new());
+
     let mut cargo_build_cmd = Command::new(&cargo);
 
-    let mut rustflags = String::with_capacity(1024);
+    let mut rustflags = String::with_capacity(1024 + env_rustflags.len());
 
     match config.project.kind {
         ProjectKind::Prx => rustflags.push_str("--cfg prx "),
@@ -282,6 +284,8 @@ fn main() {
     if let Some(true) = config.project.human_readable_os_errors {
         rustflags.push_str("--cfg os_err_human ");
     }
+
+    rustflags.push_str(&env_rustflags);
 
     cargo_build_cmd
         .arg("build")
