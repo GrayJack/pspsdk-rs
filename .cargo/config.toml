@@ -1,4 +1,5 @@
 [build]
+rustflags = ["-Zthreads=8"]
 rustdocflags = [
     "-Zunstable-options",
     "--show-type-layout",

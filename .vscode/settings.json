@@ -12,13 +12,27 @@
         // "pboot"
     ],
     "rust-analyzer.cargo.features": [
-        "kernel"
+        "kernel",
+        // "heap-stdio-buffer",
     ],
     "rust-analyzer.cargo.target": "mipsel-sony-psp",
     "rust-analyzer.cfg.setTest": false,
     "rust-analyzer.check.features": [
-        "kernel"
+        "kernel",
+        // "heap-stdio-buffer",
     ],
     "rust-analyzer.imports.preferNoStd": true,
-    "rust-analyzer.rustc.source": "discover"
+    "rust-analyzer.rustc.source": "discover",
+    // "rust-analyzer.cargo.extraEnv": {
+    //     "PSPSDK_TARGET_FW": "6.60",
+    // },
+    // "rust-analyzer.check.extraEnv": {
+    //     "PSPSDK_TARGET_FW": "6.60",
+    // }
+    "rust-analyzer.cargo.extraArgs": [
+        "-Zbuild-std=core,alloc,compiler_builtins,panic_unwind,panic_abort"
+    ],
+    "rust-analyzer.check.extraArgs": [
+        "-Zbuild-std=core,alloc,compiler_builtins,panic_unwind,panic_abort"
+    ],
 }

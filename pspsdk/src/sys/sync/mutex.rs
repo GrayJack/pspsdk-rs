@@ -1,31 +1,43 @@
+#![allow(unused, reason = "PSP FW version")]
+
 use core::{
-    mem, ptr,
-    sync::atomic::{AtomicBool, AtomicPtr, AtomicU32, Ordering},
+    cell::UnsafeCell,
+    mem,
+    sync::atomic::{AtomicBool, AtomicU32, Ordering},
     time::Duration,
 };
-
-use alloc::boxed::Box;
 
 #[allow(unused_imports, reason = "Context compilation")]
 use crate::{
     allocators::PartitionAlloc,
-    psp_fw_select,
+    psp_fw_cfg, psp_fw_select,
     sync::{RawMutex, RawMutexTimed},
     sys::{
         is_interrupt_enabled,
         mem::MemoryPartitionId,
         thread::{
-            _sceKernelLockLwMutex, _sceKernelTryLockLwMutex, _sceKernelUnlockLwMutex,
-            sceKernelCreateLwMutex, sceKernelCreateMutex, sceKernelCreateSema,
-            sceKernelDeleteLwMutex, sceKernelDeleteMutex, sceKernelDeleteSema,
-            sceKernelLockLwMutex, sceKernelLockMutex, sceKernelPollSema, sceKernelSignalSema,
-            sceKernelTryLockLwMutex, sceKernelTryLockMutex, sceKernelUnlockLwMutex,
-            sceKernelUnlockMutex, sceKernelWaitSema, LwMutexWorkArea, MutexAttributes, MutexId,
-            SemaId, SemaphoreAttributes,
+            sceKernelCreateSema, sceKernelDeleteSema, sceKernelPollSema, sceKernelSignalSema,
+            sceKernelWaitSema, LwMutexWorkArea, MutexAttributes, MutexId, SemaId,
+            SemaphoreAttributes,
         },
         SceError,
     },
 };
+
+#[psp_fw_cfg(270..)]
+use crate::sys::thread::{
+    sceKernelCreateMutex, sceKernelDeleteMutex, sceKernelLockMutex, sceKernelTryLockMutex,
+    sceKernelUnlockMutex,
+};
+
+#[psp_fw_cfg(395..)]
+#[allow(unused_imports, reason = "Context compilation")]
+use crate::sys::thread::{
+    _sceKernelLockLwMutex, _sceKernelTryLockLwMutex, _sceKernelUnlockLwMutex,
+    sceKernelCreateLwMutex, sceKernelDeleteLwMutex, sceKernelLockLwMutex, sceKernelTryLockLwMutex,
+    sceKernelUnlockLwMutex,
+};
+
 
 const UNINIT: u32 = 0;
 const INITIALIZING: u32 = u32::MAX;
@@ -49,7 +61,10 @@ impl Mutex {
             id: AtomicU32::new(UNINIT),
         }
     }
+}
 
+#[psp_fw_cfg(270..)]
+impl Mutex {
     #[inline]
     pub fn try_lock(&self) -> bool {
         let Some(id) = self.get_id() else {
@@ -105,6 +120,7 @@ impl Mutex {
     }
 }
 
+#[psp_fw_cfg(270..)]
 impl Mutex {
     #[inline(never)]
     fn get_id(&self) -> Option<MutexId> {
@@ -159,6 +175,7 @@ impl Mutex {
     }
 }
 
+#[psp_fw_cfg(270..)]
 impl Drop for Mutex {
     fn drop(&mut self) {
         let raw_id = self.id.load(Ordering::Relaxed);
@@ -177,6 +194,7 @@ impl Drop for Mutex {
 }
 
 impl crate::private::Sealed for Mutex {}
+#[psp_fw_cfg(270..)]
 impl RawMutex for Mutex {
     const NEW: Self = Self::new();
 
@@ -196,6 +214,7 @@ impl RawMutex for Mutex {
     }
 }
 
+#[psp_fw_cfg(270..)]
 impl RawMutexTimed for Mutex {
     #[inline]
     fn try_lock_for(&self, timeout: Duration) -> bool {
@@ -218,7 +237,10 @@ impl ReentrantMutex {
             id: AtomicU32::new(UNINIT),
         }
     }
+}
 
+#[psp_fw_cfg(270..)]
+impl ReentrantMutex {
     #[inline]
     pub fn try_lock(&self) -> bool {
         let Some(id) = self.get_id() else {
@@ -272,6 +294,7 @@ impl ReentrantMutex {
     }
 }
 
+#[psp_fw_cfg(270..)]
 impl ReentrantMutex {
     #[inline(never)]
     fn get_id(&self) -> Option<MutexId> {
@@ -329,6 +352,7 @@ impl ReentrantMutex {
     }
 }
 
+#[psp_fw_cfg(270..)]
 impl Drop for ReentrantMutex {
     fn drop(&mut self) {
         let raw_id = self.id.load(Ordering::Relaxed);
@@ -347,6 +371,7 @@ impl Drop for ReentrantMutex {
 }
 
 impl crate::private::Sealed for ReentrantMutex {}
+#[psp_fw_cfg(270..)]
 impl RawMutex for ReentrantMutex {
     const NEW: Self = Self::new();
 
@@ -366,6 +391,7 @@ impl RawMutex for ReentrantMutex {
     }
 }
 
+#[psp_fw_cfg(270..)]
 impl RawMutexTimed for ReentrantMutex {
     #[inline]
     fn try_lock_for(&self, timeout: Duration) -> bool {
@@ -385,17 +411,20 @@ impl RawMutexTimed for ReentrantMutex {
 /// (always available, i.e. since 1.00).
 pub struct LwMutex {
     state: AtomicU32,
-    work_area: AtomicPtr<LwMutexWorkArea>,
+    work_area: UnsafeCell<LwMutexWorkArea>,
 }
 
 impl LwMutex {
     pub const fn new() -> Self {
         Self {
             state: AtomicU32::new(UNINIT),
-            work_area: AtomicPtr::new(ptr::null_mut()),
+            work_area: UnsafeCell::new(LwMutexWorkArea::default_new()),
         }
     }
+}
 
+#[psp_fw_cfg(395..)]
+impl LwMutex {
     #[inline]
     #[track_caller]
     pub fn lock(&self) {
@@ -462,6 +491,7 @@ impl LwMutex {
     }
 }
 
+#[psp_fw_cfg(395..)]
 impl LwMutex {
     fn get_work_area(&self) -> Option<&mut LwMutexWorkArea> {
         let mut i = 0;
@@ -475,17 +505,14 @@ impl LwMutex {
                         .is_ok()
                     {
                         match self.create_work_area() {
-                            Ok(wa) => return Some(wa),
+                            Ok(_) => return Some(unsafe { &mut *self.work_area.get() }),
                             Err(_) => continue,
                         }
                     }
                 },
                 INITIALIZING => crate::sys::spin_loop(),
                 _ => {
-                    let work_area = self.work_area.load(Ordering::Acquire);
-                    debug_assert!(!work_area.is_null());
-                    let work_area = unsafe { work_area.as_mut_unchecked() };
-                    return Some(work_area);
+                    return Some(unsafe { &mut *self.work_area.get() });
                 },
             }
         }
@@ -493,19 +520,10 @@ impl LwMutex {
     }
 
     #[cold]
-    fn create_work_area(&self) -> Result<&mut LwMutexWorkArea, SceError> {
-        let work_area = Box::new_in(
-            LwMutexWorkArea::default_new(),
-            PartitionAlloc::new(MemoryPartitionId::MainUser),
-        );
-
-        let (work_area, _) = Box::into_raw_with_allocator(work_area);
-
-        self.work_area.store(work_area, Ordering::Release);
-
+    fn create_work_area(&self) -> Result<(), SceError> {
         let created = unsafe {
             sceKernelCreateLwMutex(
-                work_area,
+                self.work_area.get(),
                 c"SDK_LW_MUTEX".as_ptr().cast(),
                 MutexAttributes::default(),
                 0,
@@ -515,34 +533,22 @@ impl LwMutex {
 
         match created.into_result() {
             Ok(()) => {
-                self.state.store(0, Ordering::Release);
-                Ok(unsafe { &mut *work_area })
+                self.state.store(1, Ordering::Release);
+                Ok(())
             },
-            Err(err) => {
-                self.state.store(UNINIT, Ordering::Release);
-                // drop box
-                let _box = unsafe {
-                    Box::from_raw_in(work_area, PartitionAlloc::new(MemoryPartitionId::MainUser))
-                };
-
-                drop(_box);
-                self.work_area.store(ptr::null_mut(), Ordering::Release);
-                Err(err)
-            },
+            Err(err) => Err(err),
         }
     }
 }
 
+#[psp_fw_cfg(395..)]
 impl Drop for LwMutex {
     fn drop(&mut self) {
         let state = self.state.load(Ordering::Relaxed);
-        let work_area = self.work_area.load(Ordering::Relaxed);
-        if state != UNINIT && state != INITIALIZING && !work_area.is_null() {
-            let mut work_area = unsafe {
-                Box::from_raw_in(work_area, PartitionAlloc::new(MemoryPartitionId::MainUser))
-            };
-            let res = sceKernelDeleteLwMutex(work_area.as_mut());
+        if state != UNINIT && state != INITIALIZING {
+            let res = sceKernelDeleteLwMutex(self.work_area.get_mut());
 
+            self.state.store(UNINIT, Ordering::Release);
             // Keep Drop non-panicking in release, but catch issues in debug.
             debug_assert!(res.is_ok(), "failed to delete mutex: {:#X}", res.as_inner());
         }
@@ -550,6 +556,7 @@ impl Drop for LwMutex {
 }
 
 impl crate::private::Sealed for LwMutex {}
+#[psp_fw_cfg(395..)]
 impl RawMutex for LwMutex {
     const NEW: Self = Self::new();
 
@@ -569,6 +576,7 @@ impl RawMutex for LwMutex {
     }
 }
 
+#[psp_fw_cfg(395..)]
 impl RawMutexTimed for LwMutex {
     #[inline]
     fn try_lock_for(&self, timeout: Duration) -> bool {

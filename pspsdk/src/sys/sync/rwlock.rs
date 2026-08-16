@@ -1,3 +1,5 @@
+#![allow(unused, reason = "PSP FW version")]
+
 use core::{
     cell::UnsafeCell,
     sync::atomic::{AtomicUsize, Ordering},
@@ -5,6 +7,7 @@ use core::{
 };
 
 use crate::{
+    psp_fw_cfg,
     sync::{RawRwLock, RawRwLockTimed},
     sys::sync::{Condvar, LwMutex, Mutex, SemaMutex},
 };
@@ -43,7 +46,10 @@ impl RwLock {
             }),
         }
     }
+}
 
+#[psp_fw_cfg(270..)]
+impl RwLock {
     #[inline]
     fn read(&self) {
         self.lock.lock();
@@ -243,6 +249,7 @@ impl RwLock {
 unsafe impl Sync for RwLock {}
 
 impl crate::private::Sealed for RwLock {}
+#[psp_fw_cfg(270..)]
 impl RawRwLock for RwLock {
     const NEW: Self = Self::new();
 
@@ -283,6 +290,7 @@ impl RawRwLock for RwLock {
     }
 }
 
+#[psp_fw_cfg(270..)]
 impl RawRwLockTimed for RwLock {
     #[inline]
     fn try_read_for(&self, timeout: Duration) -> bool {
@@ -326,7 +334,10 @@ impl LwRwLock {
             }),
         }
     }
+}
 
+#[psp_fw_cfg(395..)]
+impl LwRwLock {
     #[inline]
     fn read(&self) {
         self.lock.lock();
@@ -526,6 +537,7 @@ impl LwRwLock {
 unsafe impl Sync for LwRwLock {}
 
 impl crate::private::Sealed for LwRwLock {}
+#[psp_fw_cfg(395..)]
 impl RawRwLock for LwRwLock {
     const NEW: Self = Self::new();
 
@@ -566,6 +578,7 @@ impl RawRwLock for LwRwLock {
     }
 }
 
+#[psp_fw_cfg(395..)]
 impl RawRwLockTimed for LwRwLock {
     #[inline]
     fn try_read_for(&self, timeout: Duration) -> bool {

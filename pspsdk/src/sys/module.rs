@@ -5,6 +5,7 @@ use core::{ffi::c_void, num::NonZero};
 use bitflag_attr::bitflag;
 use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
+#[allow(unused_imports, reason = "PSP FW version")]
 use crate::{
     allocators::MemoryPartitionId,
     sys::{

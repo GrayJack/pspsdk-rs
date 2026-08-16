@@ -9,8 +9,12 @@ use crate::sys::{
     SceSize, SceUid,
 };
 
+#[psp_fw_cfg(570..)]
+pub use crate::sys::usersystemlib::sceKernelGetTlsAddr;
+
+#[psp_fw_cfg(395..)]
 pub use crate::sys::usersystemlib::{
-    sceKernelGetTlsAddr, sceKernelLockLwMutex, sceKernelLockLwMutexCB, sceKernelReferLwMutexStatus,
+    sceKernelLockLwMutex, sceKernelLockLwMutexCB, sceKernelReferLwMutexStatus,
     sceKernelTryLockLwMutex, sceKernelUnlockLwMutex,
 };
 

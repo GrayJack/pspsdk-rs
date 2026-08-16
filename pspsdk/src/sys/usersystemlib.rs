@@ -1,9 +1,11 @@
 //! The `usersustemlib.prx` exported functions.
 
+#[allow(unused_imports, reason = "PSP FW version")]
 use core::ffi::c_void;
 
 use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
+#[allow(unused_imports, reason = "PSP FW version")]
 use crate::sys::{
     thread::{LwMutexInfo, LwMutexWorkArea, ThreadId, TlsPoolId},
     SceResult, SceSize,

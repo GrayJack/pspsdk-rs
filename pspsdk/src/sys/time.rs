@@ -6,6 +6,7 @@ mod non_stub;
 pub(crate) use non_stub::{Instant, SystemTime, UNIX_EPOCH};
 use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
+#[allow(unused_imports, reason = "PSP FW version")]
 use crate::sys::{thread::CallbackId, SceIntoOkValue, SceResult, SceResultOk};
 
 /// The 64-bit system clock type.
