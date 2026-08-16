@@ -603,6 +603,14 @@ fn panic_with_hook(
         crate::process::abort();
     }
 
+
+    let tid = crate::sys::thread::sceKernelGetThreadId();
+    if tid.is_ok() {
+        rtprintpanic!("thread {} panicked at {location}:\n{payload}\n", tid.as_inner());
+    } else {
+        rtprintpanic!("panicked at {location}:\n{payload}\n");
+    }
+
     // Indicate that we have finished executing the panic hook. After this point
     // it is fine if there is a panic while executing destructors, as long as it
     // it contained within a `catch_unwind`.
@@ -671,16 +679,14 @@ pub fn resume_unwind(payload: Box<dyn Any + Send>) -> ! {
 #[cfg(not(panic = "immediate-abort"))]
 #[cfg(not(feature = "std"))]
 fn rust_panic(msg: &mut dyn PanicPayload) -> ! {
-    let code = unsafe { __rust_start_panic(msg) };
-
-    rtabort!("failed to initiate panic, error {code}")
-}
-
-#[cfg_attr(not(test), rustc_std_internal_symbol)]
-#[cfg(panic = "immediate-abort")]
-#[cfg(not(feature = "std"))]
-fn rust_panic(_: &mut dyn PanicPayload) -> ! {
-    crate::process::abort();
+    cfg_select! {
+        panic = "unwind" => {
+            let code = unsafe { __rust_start_panic(msg) };
+            rtabort!("failed to initiate panic, error {code}")
+        },
+        panic = "abort" => crate::process::abort(),
+        panic = "immediate-abort" => crate::process::abort(),
+    };
 }
 
 pub(crate) struct AssertUnwindSafe<T>(pub T);

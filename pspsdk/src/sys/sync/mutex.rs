@@ -711,7 +711,7 @@ impl Drop for SemaMutex {
             let res = sceKernelDeleteSema(id);
 
             // Keep Drop non-panicking in release, but catch issues in debug.
-            debug_assert!(res.is_err(), "failed to delete semaphore mutex: {:#X}", res.as_inner());
+            debug_assert!(res.is_ok(), "failed to delete semaphore mutex: {:#X}", res.as_inner());
         }
     }
 }

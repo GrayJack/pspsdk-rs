@@ -20,10 +20,8 @@
     sync_unsafe_cell,
     slice_ptr_get
 )]
-#![cfg_attr(
-    all(feature = "non-stub-code", not(panic = "immediate-abort")),
-    feature(panic_unwind)
-)]
+#![cfg_attr(all(feature = "non-stub-code", panic = "unwind"), feature(panic_unwind))]
+#![cfg_attr(all(feature = "non-stub-code", panic = "abort"), feature(panic_abort))]
 #![cfg_attr(doc, feature(doc_cfg))]
 // docs.rs needs this
 #![cfg_attr(doc, feature(c_variadic))]
@@ -31,7 +29,9 @@
 
 #[cfg(feature = "non-stub-code")]
 extern crate alloc;
-#[cfg(all(feature = "non-stub-code", not(panic = "immediate-abort")))]
+#[cfg(all(feature = "non-stub-code", panic = "abort"))]
+extern crate panic_abort;
+#[cfg(all(feature = "non-stub-code", panic = "unwind"))]
 extern crate panic_unwind;
 #[cfg(all(feature = "std", feature = "non-stub-code", not(target_os = "psp")))]
 extern crate std;
@@ -59,7 +59,7 @@ pub mod io;
 #[cfg(feature = "non-stub-code")]
 pub mod os;
 #[cfg(feature = "non-stub-code")]
-#[path = "panic.rs"]
+// #[path = "panic.rs"]
 pub mod panicking;
 #[cfg(feature = "non-stub-code")]
 pub mod sync;

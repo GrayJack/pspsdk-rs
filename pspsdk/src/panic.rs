@@ -186,10 +186,17 @@ fn rust_panic_with_hook(
 
     // payload.get(); // populate the payload's string
 
-    let message: &str = payload.as_str().unwrap_or_default();
-    rtprintpanic!(
-        "panicked at {location}:\n{message}\nthread panicked while processing panic. aborting.\n"
-    );
+    let tid = crate::sys::thread::sceKernelGetThreadId();
+    if tid.is_ok() {
+        rtprintpanic!("thread {} panicked at {location}:\n{payload}\n", tid.as_inner());
+    } else {
+        rtprintpanic!("panicked at {location}:\n{payload}\n");
+    }
+
+    // let message: &str = payload.as_str().unwrap_or_default();
+    // rtprintpanic!(
+    //     "panicked at {location}:\n{message}\nthread panicked while processing panic. aborting.\n"
+    // );
 
     if panics > 1 {
         // If a thread panics while it's already unwinding then we
