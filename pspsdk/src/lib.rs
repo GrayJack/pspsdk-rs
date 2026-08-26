@@ -16,7 +16,6 @@
     negative_impls,
     try_trait_v2,
     try_trait_v2_residual,
-    never_type,
     sync_unsafe_cell,
     slice_ptr_get
 )]
@@ -103,7 +102,7 @@ mod private {
     impl<T> Sealed for *mut T {}
     impl<T> Sealed for &T {}
     impl<T> Sealed for &mut T {}
-    impl Sealed for core::convert::Infallible {}
+    // impl Sealed for core::convert::Infallible {}
     impl Sealed for ! {}
 
     /// Types that can work on volatile operation.

@@ -657,11 +657,6 @@ unsafe impl SceIntoOkValue for ! {
         0
     }
 }
-unsafe impl SceResultOk for core::convert::Infallible {
-    unsafe fn handle_ok_value(_: u32) -> Option<Self> {
-        None
-    }
-}
 unsafe impl SceResultOk for SceUid {
     unsafe fn handle_ok_value(ok_value: u32) -> Option<Self> {
         debug_assert!(ok_value <= 0x7FFFFFFF);
