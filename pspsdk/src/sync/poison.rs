@@ -138,7 +138,7 @@ impl Flag {
                     self.failed.store(true, Ordering::Relaxed);
                 }
             },
-            _ => {}
+            _ => {},
         }
     }
 
