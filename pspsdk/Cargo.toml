@@ -16,7 +16,7 @@ crate-type = ["lib", "staticlib"]
 
 [dependencies]
 bitflag-attr = { version = "0.14.0" }
-io_core = { version = "0.5.1", features = ["alloc", "nightly"] }
+io_core = { version = "0.5.2", features = ["alloc", "nightly"] }
 pspsdk-macros = { path = "../pspsdk-macros", version = "0.0.1", features = [] }
 
 [features]
