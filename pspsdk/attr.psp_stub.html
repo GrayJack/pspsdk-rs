@@ -1,0 +1,50 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Creates a PSP stub library from a `extern &#34;C&#34;` block."><title>psp_stub in pspsdk - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-203241e4.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="pspsdk" data-themes="" data-resource-suffix="" data-rustdoc-version="1.100.0-nightly (67eda617e 2026-09-10)" data-channel="nightly" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc attr"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">psp_stub</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../pspsdk/index.html">pspsdk</a><span class="version">0.0.2</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">psp_<wbr>stub</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#macro-parameters" title="Macro parameters">Macro parameters</a></li><li><a href="#extern-c-block-items-attributes" title="Extern “C” block items attributes">Extern “C” block items attributes</a></li><li><a href="#examples" title="Examples">Examples</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate pspsdk</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">pspsdk</a></div><h1>Attribute Macro <span class="attr">psp_<wbr>stub</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"></span></div><pre class="rust item-decl"><code>#[psp_stub]</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Creates a PSP stub library from a <code>extern "C"</code> block.</p>
+<h2 id="macro-parameters"><a class="doc-anchor" href="#macro-parameters">§</a>Macro parameters</h2>
+<ul>
+<li><code>libname</code>: The name of the library to create stubs.</li>
+<li><code>flags</code>: The library flags. It can be a integer literal or a expression of <code>LibFlags</code>.</li>
+<li><code>version</code>: Optional. A tuple with a major and minor version of the stub library. If not set,
+it defaults to <code>(0, 0)</code>.</li>
+</ul>
+<h2 id="extern-c-block-items-attributes"><a class="doc-anchor" href="#extern-c-block-items-attributes">§</a>Extern “C” block items attributes</h2>
+<ul>
+<li><code>nid</code>: An attribute that specifies the NID of the extern item. If an item lacks it, it derives
+the NID value from a hash method from the item name.</li>
+<li><code>eabi</code>: Specifies for function items with 5 or more parameters to generate a function that
+uses the MIPS eabi calling convention. If not used, such functions default to use the <code>o32</code>
+MIPS calling convention which may not work depending on many factors.
+<ul>
+<li><code>i5</code>: Function with 5 parameters (up to 32 bit in size) using eabi calling convention.</li>
+<li><code>i6</code>: Function with 6 parameters (up to 32 bit in size) using eabi calling convention.</li>
+<li><code>i7</code>: Function with 7 parameters (up to 32 bit in size) using eabi calling convention.</li>
+<li><code>i8</code>: Function with 8 parameters (up to 32 bit in size) using eabi calling convention.</li>
+<li><code>i_ii_i_ri</code>: Function with the parameters in the shape of <code>(32bit, 64bit, 32bit) -&gt; 32bit</code>
+using eabi calling convention.</li>
+<li><code>i_ii_i_rii</code>: Function with the parameters in the shape of <code>(32bit, 64bit, 32bit) -&gt; 64bit</code>
+using eabi calling convention.</li>
+</ul>
+</li>
+</ul>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[pspsdk::psp_stub(libname = <span class="string">"LibraryName"</span>, flags = <span class="number">0x0001</span>, version = (<span class="number">1</span>, <span class="number">0</span>))]
+</span><span class="kw">unsafe extern </span><span class="string">"C" </span>{
+    <span class="comment">// The NID will be automatically decided by hash.
+    </span><span class="kw">unsafe fn </span>stub_function();
+
+    <span class="comment">// The NID can also be specified.
+    </span><span class="attr">#[nid(<span class="number">0xDEADCAFE</span>)]
+    </span><span class="kw">safe fn </span>another_function(arg: i32) -&gt; i32;
+}</code></pre></div>
+<p>Specifying eabi usage:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[pspsdk::psp_stub(libname = <span class="string">"LibraryName"</span>, flags = <span class="number">0x0001</span>)]
+</span><span class="kw">unsafe extern </span><span class="string">"C" </span>{
+    <span class="attr">#[eabi(i6)]
+    </span><span class="kw">unsafe fn </span>stub_function(a1: i32, a2: <span class="kw-2">*mut </span>u8, a3: u8, a4: u16, a5: bool, a6: usize);
+}</code></pre></div>
+<p>Using <code>LibFlags</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[pspsdk::psp_stub(libname = <span class="string">"LibraryName"</span>, flags = LibFlags::AutoExport.union(LibFlags::WeakImport), version = (<span class="number">1</span>, <span class="number">0</span>))]
+</span><span class="kw">unsafe extern </span><span class="string">"C" </span>{
+    <span class="kw">unsafe fn </span>stub_function();
+}</code></pre></div></div></details></section></div></main></body></html>

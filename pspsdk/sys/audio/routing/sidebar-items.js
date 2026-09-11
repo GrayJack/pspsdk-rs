@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["AudioRoutingMode","AudioRoutingVolumeMode"],"fn":["sceAudioRoutingGetMode","sceAudioRoutingGetVolumeMode","sceAudioRoutingSetMode","sceAudioRoutingSetVolumeMode"]};
