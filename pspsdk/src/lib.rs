@@ -318,8 +318,8 @@ pub fn enable_home_button() {
         let id = sys::thread::sceKernelCreateThread(
             &b"exit_thread\0"[0],
             exit_thread,
-            32,
-            0x1000,
+            0x11,
+            0xFA0,
             ThreadAttributes::empty(),
             None,
         )
