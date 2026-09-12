@@ -9,7 +9,7 @@ use crate::{
         is_interrupt_enabled,
         sync::SemaMutex,
         thread::{
-            sceKernelCreateSema, sceKernelDeleteSema, sceKernelSignalSema, sceKernelWaitSema,
+            sceKernelCreateSema, sceKernelDeleteSema, sceKernelSignalSema, sceKernelWaitSemaCB,
             SemaId, SemaphoreAttributes,
         },
         SceError,
@@ -116,7 +116,7 @@ impl Condvar {
 
         if is_interrupt_enabled() {
             let mut timeout = timeout.map(|d| d.as_micros().min(u128::from(u32::MAX)) as u32);
-            let res = sceKernelWaitSema(queue, 1, timeout.as_mut());
+            let res = sceKernelWaitSemaCB(queue, 1, timeout.as_mut());
 
             match res.into_result() {
                 Ok(()) => {

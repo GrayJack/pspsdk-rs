@@ -6,7 +6,7 @@ use core::{
 
 use crate::sys::{
     thread::{
-        sceKernelCreateEventFlag, sceKernelSetEventFlag, sceKernelWaitEventFlag,
+        sceKernelCreateEventFlag, sceKernelSetEventFlag, sceKernelWaitEventFlagCB,
         EventFlagAttributes, EventFlagId, EventFlagWaitKinds,
     },
     SceError,
@@ -40,7 +40,7 @@ impl Parker {
         };
 
         let mut out_bits = 0;
-        let _res = sceKernelWaitEventFlag(
+        let _res = sceKernelWaitEventFlagCB(
             id,
             PARK_BIT,
             EventFlagWaitKinds::Or | EventFlagWaitKinds::ClearPat,
@@ -58,7 +58,7 @@ impl Parker {
         let mut out_bits = 0;
         let mut timeout = u32::try_from(micros).unwrap_or(u32::MAX);
         let timeout2 = Some(&mut timeout);
-        let _res = sceKernelWaitEventFlag(
+        let _res = sceKernelWaitEventFlagCB(
             id,
             PARK_BIT,
             EventFlagWaitKinds::Or | EventFlagWaitKinds::ClearPat,
@@ -96,7 +96,7 @@ impl Parker {
                         }
                     }
                 },
-                INITIALIZING => core::hint::spin_loop(),
+                INITIALIZING => crate::sys::spin_loop(),
                 raw => return Some(unsafe { EventFlagId::from_raw_unchecked(raw) }),
             }
         }

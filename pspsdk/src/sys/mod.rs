@@ -969,7 +969,7 @@ pub fn is_interrupt_enabled() -> bool {
 #[cfg(all(target_os = "psp", feature = "non-stub-code"))]
 pub fn spin_loop() {
     if is_interrupt_enabled() {
-        let _ = thread::sceKernelDelayThread(1000);
+        let _ = thread::sceKernelDelayThreadCB(1000);
     } else {
         core::hint::spin_loop();
     }

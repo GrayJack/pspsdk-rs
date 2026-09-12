@@ -12,7 +12,7 @@ use pspsdk::sys::{
 pspsdk::module_info!("HelloWorldExampBare", 1, 1);
 
 fn psp_main() {
-    pspsdk::enable_home_button();
+    // pspsdk::enable_home_button();
     pspsdk::dprintln!("Hello PSP from rust!");
     pspsdk::println!("Hello PSP from rust!");
 }
@@ -21,6 +21,9 @@ fn psp_main() {
 extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
     extern "C" fn psp_main_thread(argc: usize, argv: *mut c_void) -> SceResult<u32> {
         let _res = pspsdk::call_main!(psp_main, argc, argv);
+
+        // Use this to wait manual exit once main is complete
+        let _ = pspsdk::sys::thread::sceKernelSleepThreadCB();
 
         // Use this to auto-exit once main is complete
         // pspsdk::process::exit(_res as i32);
@@ -36,7 +39,9 @@ extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
 
     if module_info.0.attributes.contains(ModuleAttributes::Kernel) {
         // Make sure kernel modules has the kernel memory address
-        main_func = unsafe { core::mem::transmute((main_func as usize) | 0x80000000) };
+        main_func = unsafe {
+            core::mem::transmute::<usize, ThreadEntryFn>((main_func as usize) | 0x80000000)
+        };
     }
 
     let thread_attr = ThreadAttributes::main_default();
@@ -45,7 +50,9 @@ extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
         ThreadAttributes::UserMode | ThreadAttributes::UsbWlanMode | ThreadAttributes::VshMode,
     ) {
         // Make sure user threads does not have the kernel memory address
-        main_func = unsafe { core::mem::transmute((main_func as usize) & 0x7FFFFFFF) };
+        main_func = unsafe {
+            core::mem::transmute::<usize, ThreadEntryFn>((main_func as usize) & 0x7FFFFFFF)
+        };
     }
 
     unsafe {

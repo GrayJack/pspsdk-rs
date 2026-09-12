@@ -18,7 +18,7 @@ use crate::{
         mem::MemoryPartitionId,
         thread::{
             sceKernelCreateSema, sceKernelDeleteSema, sceKernelPollSema, sceKernelSignalSema,
-            sceKernelWaitSema, LwMutexWorkArea, MutexAttributes, MutexId, SemaId,
+            sceKernelWaitSemaCB, LwMutexWorkArea, MutexAttributes, MutexId, SemaId,
             SemaphoreAttributes,
         },
         SceError,
@@ -27,16 +27,16 @@ use crate::{
 
 #[psp_fw_cfg(270..)]
 use crate::sys::thread::{
-    sceKernelCreateMutex, sceKernelDeleteMutex, sceKernelLockMutex, sceKernelTryLockMutex,
+    sceKernelCreateMutex, sceKernelDeleteMutex, sceKernelLockMutexCB, sceKernelTryLockMutex,
     sceKernelUnlockMutex,
 };
 
 #[psp_fw_cfg(395..)]
 #[allow(unused_imports, reason = "Context compilation")]
 use crate::sys::thread::{
-    _sceKernelLockLwMutex, _sceKernelTryLockLwMutex, _sceKernelUnlockLwMutex,
-    sceKernelCreateLwMutex, sceKernelDeleteLwMutex, sceKernelLockLwMutex, sceKernelTryLockLwMutex,
-    sceKernelUnlockLwMutex,
+    _sceKernelLockLwMutexCB, _sceKernelTryLockLwMutex, _sceKernelUnlockLwMutex,
+    sceKernelCreateLwMutex, sceKernelDeleteLwMutex, sceKernelLockLwMutexCB,
+    sceKernelTryLockLwMutex, sceKernelUnlockLwMutex,
 };
 
 
@@ -83,7 +83,7 @@ impl Mutex {
 
         debug_assert!(is_interrupt_enabled(), "raw mutex requires interrupts enabled");
 
-        let res = sceKernelLockMutex(id, 1, None);
+        let res = sceKernelLockMutexCB(id, 1, None);
 
         if res.is_err() {
             panic!("failed to lock mutex: {:#X}", res.as_inner());
@@ -99,7 +99,7 @@ impl Mutex {
         if is_interrupt_enabled() {
             let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-            let res = sceKernelLockMutex(id, 1, Some(&mut timeout));
+            let res = sceKernelLockMutexCB(id, 1, Some(&mut timeout));
 
             match res.into_result() {
                 Ok(_) => true,
@@ -259,7 +259,7 @@ impl ReentrantMutex {
 
         debug_assert!(is_interrupt_enabled(), "raw mutex requires interrupts enabled");
 
-        let res = sceKernelLockMutex(id, 1, None);
+        let res = sceKernelLockMutexCB(id, 1, None);
         if res.is_err() {
             panic!("failed to lock mutex: {:#X}", res.as_inner());
         }
@@ -274,7 +274,7 @@ impl ReentrantMutex {
         if is_interrupt_enabled() {
             let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-            let res = sceKernelLockMutex(id, 1, Some(&mut timeout));
+            let res = sceKernelLockMutexCB(id, 1, Some(&mut timeout));
             match res.into_result() {
                 Ok(_) => true,
                 Err(SceError::KERNEL_WAIT_TIMEOUT) => false,
@@ -437,8 +437,8 @@ impl LwMutex {
 
         let res = unsafe {
             cfg_select! {
-                pbp => sceKernelLockLwMutex(work_area, 1, None),
-                _ => _sceKernelLockLwMutex(work_area, 1, None),
+                pbp => sceKernelLockLwMutexCB(work_area, 1, None),
+                _ => _sceKernelLockLwMutexCB(work_area, 1, None),
             }
         };
         if res.is_err() {
@@ -471,8 +471,8 @@ impl LwMutex {
 
             let res = unsafe {
                 cfg_select! {
-                    pbp => sceKernelLockLwMutex(work_area, 1, Some(&mut timeout)),
-                    _ => _sceKernelLockLwMutex(work_area, 1, Some(&mut timeout)),
+                    pbp => sceKernelLockLwMutexCB(work_area, 1, Some(&mut timeout)),
+                    _ => _sceKernelLockLwMutexCB(work_area, 1, Some(&mut timeout)),
                 }
             };
 
@@ -664,7 +664,7 @@ impl SemaMutex {
 
         debug_assert!(is_interrupt_enabled(), "raw mutex requires interrupts enabled");
 
-        let res = sceKernelWaitSema(id, 1, None);
+        let res = sceKernelWaitSemaCB(id, 1, None);
 
         if res.is_err() {
             panic!("failed to lock mutex: {:#X}", res.as_inner());
@@ -690,7 +690,7 @@ impl SemaMutex {
         if is_interrupt_enabled() {
             let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-            let res = sceKernelWaitSema(id, 1, Some(&mut timeout));
+            let res = sceKernelWaitSemaCB(id, 1, Some(&mut timeout));
 
             match res.into_result() {
                 Ok(_) => true,

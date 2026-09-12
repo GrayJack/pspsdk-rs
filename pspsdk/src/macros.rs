@@ -424,7 +424,9 @@ macro_rules! _start {
     ($psp_main:expr, $argc:expr, $argv:expr) => {{
         let res = $crate::psp_start($psp_main, $argc, (&raw const $argv).cast());
 
-        pspsdk::process::exit(res as i32);
+        let _ = $crate::sys::thread::sceKernelSleepThreadCB();
+
+        $crate::process::exit(res as i32);
         $crate::sys::SceResult::new(0)
     }};
 }

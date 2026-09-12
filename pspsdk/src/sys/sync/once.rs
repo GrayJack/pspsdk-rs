@@ -9,7 +9,7 @@ use crate::{
         is_interrupt_enabled,
         thread::{
             sceKernelClearEventFlag, sceKernelCreateEventFlag, sceKernelDeleteEventFlag,
-            sceKernelSetEventFlag, sceKernelWaitEventFlag, EventFlagAttributes, EventFlagId,
+            sceKernelSetEventFlag, sceKernelWaitEventFlagCB, EventFlagAttributes, EventFlagId,
             EventFlagWaitKinds,
         },
         SceError,
@@ -125,7 +125,7 @@ impl Once {
                 POISONED => return,
                 _ => {
                     if is_interrupt_enabled() {
-                        let _ = sceKernelWaitEventFlag(
+                        let _ = sceKernelWaitEventFlagCB(
                             flag,
                             wait_mask,
                             EventFlagWaitKinds::Or,
@@ -194,7 +194,7 @@ impl Once {
 
                     if is_interrupt_enabled() {
                         let mut matched_bits = 0;
-                        let _ = sceKernelWaitEventFlag(
+                        let _ = sceKernelWaitEventFlagCB(
                             flag,
                             EVENT_COMPLETE | EVENT_POISONED,
                             EventFlagWaitKinds::Or,
