@@ -2,11 +2,12 @@
 
 use core::{
     cell::UnsafeCell,
-    mem,
-    sync::atomic::{AtomicBool, AtomicU32, Ordering},
+    mem, ptr,
+    sync::atomic::{AtomicBool, AtomicPtr, AtomicU32, Ordering},
     time::Duration,
 };
 
+use crate::allocators::MemoryBlockKind;
 #[allow(unused_imports, reason = "Context compilation")]
 use crate::{
     allocators::PartitionAlloc,
@@ -411,14 +412,16 @@ impl RawMutexTimed for ReentrantMutex {
 /// (always available, i.e. since 1.00).
 pub struct LwMutex {
     state: AtomicU32,
-    work_area: UnsafeCell<LwMutexWorkArea>,
+    block_id: AtomicU32,
+    work_area: AtomicPtr<LwMutexWorkArea>,
 }
 
 impl LwMutex {
     pub const fn new() -> Self {
         Self {
             state: AtomicU32::new(UNINIT),
-            work_area: UnsafeCell::new(LwMutexWorkArea::default_new()),
+            work_area: AtomicPtr::new(ptr::null_mut()),
+            block_id: AtomicU32::new(UNINIT),
         }
     }
 }
@@ -432,9 +435,11 @@ impl LwMutex {
 
         debug_assert!(is_interrupt_enabled(), "raw mutex requires interrupts enabled");
 
-        let res = cfg_select! {
-            pbp => sceKernelLockLwMutex(work_area, 1, None),
-            _ => _sceKernelLockLwMutex(work_area, 1, None),
+        let res = unsafe {
+            cfg_select! {
+                pbp => sceKernelLockLwMutex(work_area, 1, None),
+                _ => _sceKernelLockLwMutex(work_area, 1, None),
+            }
         };
         if res.is_err() {
             panic!("failed to lock lwmutex: {:#X}", res.as_inner());
@@ -447,9 +452,11 @@ impl LwMutex {
             return false;
         };
 
-        cfg_select! {
-            pbp => sceKernelTryLockLwMutex(work_area, 1).into_result().is_ok(),
-            _ => _sceKernelTryLockLwMutex(work_area, 1).into_result().is_ok(),
+        unsafe {
+            cfg_select! {
+                pbp => sceKernelTryLockLwMutex(work_area, 1).into_result().is_ok(),
+                _ => _sceKernelTryLockLwMutex(work_area, 1).into_result().is_ok(),
+            }
         }
     }
 
@@ -462,9 +469,11 @@ impl LwMutex {
         if is_interrupt_enabled() {
             let mut timeout = u32::try_from(timeout.as_micros()).unwrap_or(u32::MAX);
 
-            let res = cfg_select! {
-                pbp => sceKernelLockLwMutex(work_area, 1, Some(&mut timeout)),
-                _ => _sceKernelLockLwMutex(work_area, 1, Some(&mut timeout)),
+            let res = unsafe {
+                cfg_select! {
+                    pbp => sceKernelLockLwMutex(work_area, 1, Some(&mut timeout)),
+                    _ => _sceKernelLockLwMutex(work_area, 1, Some(&mut timeout)),
+                }
             };
 
             match res.into_result() {
@@ -483,17 +492,18 @@ impl LwMutex {
             return;
         };
 
-
-        let _ = cfg_select! {
-            pbp => sceKernelUnlockLwMutex(work_area, 1),
-            _ => _sceKernelUnlockLwMutex(work_area, 1),
-        };
+        unsafe {
+            let _ = cfg_select! {
+                pbp => sceKernelUnlockLwMutex(work_area, 1),
+                _ => _sceKernelUnlockLwMutex(work_area, 1),
+            };
+        }
     }
 }
 
 #[psp_fw_cfg(395..)]
 impl LwMutex {
-    fn get_work_area(&self) -> Option<&mut LwMutexWorkArea> {
+    fn get_work_area(&self) -> Option<*mut LwMutexWorkArea> {
         let mut i = 0;
         while i < 0x10 {
             i += 1;
@@ -505,15 +515,17 @@ impl LwMutex {
                         .is_ok()
                     {
                         match self.create_work_area() {
-                            Ok(_) => return Some(unsafe { &mut *self.work_area.get() }),
-                            Err(_) => continue,
+                            Ok(_) => return Some(self.work_area.load(Ordering::Acquire)),
+                            Err(_err) => {
+                                crate::eprintln!("Failed to create work area: {_err}");
+                                self.state.store(UNINIT, Ordering::Release);
+                                continue;
+                            },
                         }
                     }
                 },
                 INITIALIZING => crate::sys::spin_loop(),
-                _ => {
-                    return Some(unsafe { &mut *self.work_area.get() });
-                },
+                _ => return Some(self.work_area.load(Ordering::Acquire)),
             }
         }
         None
@@ -521,37 +533,82 @@ impl LwMutex {
 
     #[cold]
     fn create_work_area(&self) -> Result<(), SceError> {
-        let created = unsafe {
-            sceKernelCreateLwMutex(
-                self.work_area.get(),
-                c"SDK_LW_MUTEX".as_ptr().cast(),
-                MutexAttributes::default(),
-                0,
-                None,
-            )
-        };
+        let work_area = self.work_area.load(Ordering::Acquire);
+        if work_area.is_null() {
+            let layout = core::alloc::Layout::new::<LwMutexWorkArea>();
+            let block = unsafe {
+                crate::sys::mem::sceKernelAllocPartitionMemory(
+                    MemoryPartitionId::MainUser,
+                    c"SDK_LW_MUTEX_MEM".as_ptr().cast(),
+                    MemoryBlockKind::LowAligned,
+                    layout.size(),
+                    layout.align(),
+                )
+            };
 
-        match created.into_result() {
-            Ok(()) => {
-                self.state.store(1, Ordering::Release);
-                Ok(())
-            },
-            Err(err) => Err(err),
+            let id = block.into_result()?;
+
+            let ptr =
+                unsafe { crate::sys::mem::sceKernelGetBlockHeadAddr(id).cast::<LwMutexWorkArea>() };
+            if ptr.is_null() {
+                unsafe { crate::sys::mem::sceKernelFreePartitionMemory(id) };
+                return Err(SceError::NO_MEMORY);
+            }
+
+            unsafe { ptr.write_volatile(LwMutexWorkArea::default_new()) };
+
+            let created = unsafe {
+                sceKernelCreateLwMutex(
+                    ptr,
+                    c"SDK_LW_MUTEX".as_ptr().cast(),
+                    MutexAttributes::default(),
+                    0,
+                    None,
+                )
+            };
+
+            match created.into_result() {
+                Ok(()) => {
+                    self.block_id.store(id.to_inner(), Ordering::Release);
+                    self.work_area.store(ptr, Ordering::Release);
+                    self.state.store(1, Ordering::Release);
+
+                    return Ok(());
+                },
+                Err(err) => {
+                    unsafe { crate::sys::mem::sceKernelFreePartitionMemory(id) };
+                    return Err(err);
+                },
+            }
         }
+
+        Err(unsafe { SceError::from_raw_unchecked(u32::MAX) })
     }
 }
 
 #[psp_fw_cfg(395..)]
 impl Drop for LwMutex {
     fn drop(&mut self) {
-        let state = self.state.load(Ordering::Relaxed);
-        if state != UNINIT && state != INITIALIZING {
-            let res = sceKernelDeleteLwMutex(self.work_area.get_mut());
+        if self.state.load(Ordering::Relaxed) != 1 {
+            return;
+        }
 
-            self.state.store(UNINIT, Ordering::Release);
-            // Keep Drop non-panicking in release, but catch issues in debug.
+        let block_id = self.block_id.load(Ordering::Acquire);
+        let work_area = self.work_area.load(Ordering::Acquire);
+
+        if !work_area.is_null() {
+            let res = unsafe { sceKernelDeleteLwMutex(work_area) };
             debug_assert!(res.is_ok(), "failed to delete mutex: {:#X}", res.as_inner());
         }
+
+        if block_id != UNINIT {
+            let block = unsafe { crate::sys::mem::MemoryBlockId::from_raw_unchecked(block_id) };
+            let _ = unsafe { crate::sys::mem::sceKernelFreePartitionMemory(block) };
+        }
+
+        self.state.store(UNINIT, Ordering::Release);
+        self.block_id.store(UNINIT, Ordering::Release);
+        self.work_area.store(ptr::null_mut(), Ordering::Release);
     }
 }
 

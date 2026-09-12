@@ -519,27 +519,49 @@ macro_rules! default_module_start {
 
             let (argc, mut argv) = unsafe { $crate::module_start_init(argc_bytes, argp.cast()) };
 
+            let mut main_func: $crate::sys::thread::ThreadEntryFn = main_thread;
+
+            if module_info
+                .0
+                .attributes
+                .contains($crate::sys::module::ModuleAttributes::Kernel)
+            {
+                // Make sure kernel modules has the kernel memory address
+                main_func = unsafe { core::mem::transmute((main_func as usize) | 0x80000000) };
+            }
+
+            let thread_attr = $crate::sys::thread::ThreadAttributes::main_default();
+
+            if thread_attr.contains(
+                $crate::sys::thread::ThreadAttributes::UserMode
+                    | $crate::sys::thread::ThreadAttributes::UsbWlanMode
+                    | $crate::sys::thread::ThreadAttributes::VshMode,
+            ) {
+                // Make sure user threads does not have the kernel memory address
+                main_func = unsafe { core::mem::transmute((main_func as usize) & 0x7FFFFFFF) };
+            }
+
             unsafe {
                 let Ok(id) = $crate::sys::thread::sceKernelCreateThread(
                     c"main_thread".as_ptr().cast(),
-                    main_thread,
+                    main_func,
                     // default priority of 32.
                     32,
                     // 256kb stack
                     256 * 1024,
-                    $crate::sys::thread::ThreadAttributes::main_default(),
+                    thread_attr,
                     None,
                 )
                 .into_result() else {
                     return -1;
                 };
 
-                let Ok(()) =
-                    $crate::sys::thread::sceKernelStartThread(id, argc, argv.as_mut_ptr().cast())
-                        .into_result()
-                else {
+                let res =
+                    $crate::sys::thread::sceKernelStartThread(id, argc, argv.as_mut_ptr().cast());
+
+                if res.is_err() {
                     return -1;
-                };
+                }
             }
 
             0

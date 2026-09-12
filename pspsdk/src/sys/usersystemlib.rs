@@ -65,8 +65,8 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 3.95.
     #[psp_fw_cfg(395..)]
     #[nid(0xBEA46419)]
-    pub safe fn sceKernelLockLwMutex(
-        work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
+    pub unsafe fn sceKernelLockLwMutex(
+        work_area: *mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
     /// Locks a lightweight mutex a number of times, but service any callbacks as
@@ -89,8 +89,8 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 3.95.
     #[psp_fw_cfg(395..)]
     #[nid(0x1FC64E09)]
-    pub safe fn sceKernelLockLwMutexCB(
-        work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
+    pub unsafe fn sceKernelLockLwMutexCB(
+        work_area: *mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
     /// Tries to lock a lightweight mutex a number of times.
@@ -110,8 +110,8 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 3.95.
     #[psp_fw_cfg(395..)]
     #[nid(0xDC692EE3)]
-    pub safe fn sceKernelTryLockLwMutex(
-        work_area: &mut LwMutexWorkArea, lock_count: u32,
+    pub unsafe fn sceKernelTryLockLwMutex(
+        work_area: *mut LwMutexWorkArea, lock_count: u32,
     ) -> SceResult<()>;
 
     /// Unlocks a mutex a number of times.
@@ -131,8 +131,8 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 3.95.
     #[psp_fw_cfg(395..)]
     #[nid(0x15B6446B)]
-    pub safe fn sceKernelUnlockLwMutex(
-        work_area: &mut LwMutexWorkArea, unlock_count: u32,
+    pub unsafe fn sceKernelUnlockLwMutex(
+        work_area: *mut LwMutexWorkArea, unlock_count: u32,
     ) -> SceResult<()>;
 
     /// Gets the current state of a lightweight mutex.
@@ -152,8 +152,8 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 3.95.
     #[psp_fw_cfg(395..)]
     #[nid(0xC1734599)]
-    pub safe fn sceKernelReferLwMutexStatus(
-        work_area: &mut LwMutexWorkArea, info: &mut LwMutexInfo,
+    pub unsafe fn sceKernelReferLwMutexStatus(
+        work_area: *mut LwMutexWorkArea, info: &mut LwMutexInfo,
     ) -> SceResult<()>;
 
     /// Gets the thread UID of the calling thread.

@@ -25,7 +25,7 @@ pub(crate) fn print(args: core::fmt::Arguments) {
     cfg_select! {
         not(panic = "immediate-abort") => {
             if cfg!(pbp) {
-                crate::io::printing::_dprint(args);
+                crate::io::printing::_dprint_panic(args);
             }
 
             if let Some(mut out) = crate::os::stdio::panic_output() {

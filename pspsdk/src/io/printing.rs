@@ -258,6 +258,21 @@ pub fn _dprint(arguments: core::fmt::Arguments<'_>) {
     {
         let chars = CHARS.lock();
         let chars = unsafe { &mut *chars.get() };
+        if let Err(e) = chars.write_fmt(arguments) {
+            panic!("failed printing to debug screen: {e}");
+        }
+    }
+
+    update();
+}
+
+#[doc(hidden)]
+pub fn _dprint_panic(arguments: core::fmt::Arguments<'_>) {
+    use fmt::Write;
+
+    {
+        let chars = CHARS.data_ptr();
+        let chars = unsafe { &mut *(*chars).get() };
         if let Err(_e) = chars.write_fmt(arguments) {
             // panic!("failed printing to debug screen: {e}");
         }

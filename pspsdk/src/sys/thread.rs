@@ -2077,7 +2077,7 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 3.95.
     #[psp_fw_cfg(395..)]
     #[nid(0x60107536)]
-    pub safe fn sceKernelDeleteLwMutex(work_area: &mut LwMutexWorkArea) -> SceResult<()>;
+    pub unsafe fn sceKernelDeleteLwMutex(work_area: *mut LwMutexWorkArea) -> SceResult<()>;
 
     /// Locks a lightweight mutex a number of times.
     ///
@@ -2098,8 +2098,8 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 3.95.
     #[psp_fw_cfg(395..)]
     #[nid(0x7CFF8CF3)]
-    pub safe fn _sceKernelLockLwMutex(
-        work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
+    pub unsafe fn _sceKernelLockLwMutex(
+        work_area: *mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
     /// Locks a lightweight mutex a number of times, but service any callbacks as
@@ -2122,8 +2122,8 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 3.95.
     #[psp_fw_cfg(395..)]
     #[nid(0x31327F19)]
-    pub safe fn _sceKernelLockLwMutexCB(
-        work_area: &mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
+    pub unsafe fn _sceKernelLockLwMutexCB(
+        work_area: *mut LwMutexWorkArea, lock_count: u32, timeout: Option<&mut u32>,
     ) -> SceResult<()>;
 
     /// Tries to lock a lightweight mutex a number of times.
@@ -2143,8 +2143,8 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 3.95.
     #[psp_fw_cfg(395..)]
     #[nid(0x71040D5C)]
-    pub safe fn _sceKernelTryLockLwMutex(
-        work_area: &mut LwMutexWorkArea, lock_count: u32,
+    pub unsafe fn _sceKernelTryLockLwMutex(
+        work_area: *mut LwMutexWorkArea, lock_count: u32,
     ) -> SceResult<()>;
 
     /// Unlocks a mutex a number of times.
@@ -2164,8 +2164,8 @@ unsafe extern "C" {
     /// This API was introduced on PSP firmware version 3.95.
     #[psp_fw_cfg(395..)]
     #[nid(0xBEED3A47)]
-    pub safe fn _sceKernelUnlockLwMutex(
-        work_area: &mut LwMutexWorkArea, unlock_count: u32,
+    pub unsafe fn _sceKernelUnlockLwMutex(
+        work_area: *mut LwMutexWorkArea, unlock_count: u32,
     ) -> SceResult<()>;
 
     /// Gets the current state of a lightweight mutex by its UID.

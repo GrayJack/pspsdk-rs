@@ -6,7 +6,10 @@
 //! and should be considered as private implementation details for the
 //! time being.
 
-use core::cell::SyncUnsafeCell;
+use core::{
+    cell::SyncUnsafeCell,
+    sync::atomic::{AtomicU32, Ordering},
+};
 
 use crate::{
     panicking,
@@ -92,12 +95,17 @@ pub unsafe fn init_cwd(arg0: *mut u8) {
     }
 }
 
-pub(crate) static MAIN_THREAD_ID: SyncUnsafeCell<Option<ThreadId>> = SyncUnsafeCell::new(None);
+pub(crate) static MAIN_THREAD_ID: AtomicU32 = AtomicU32::new(0);
 pub(crate) static CUSTOM_CLEANUP: SyncUnsafeCell<Option<fn()>> = SyncUnsafeCell::new(None);
 
 pub(crate) fn main_thread_id() -> Option<ThreadId> {
-    let id = unsafe { &*MAIN_THREAD_ID.get() };
-    *id
+    let id = MAIN_THREAD_ID.load(Ordering::Acquire);
+
+    if id == 0 {
+        None
+    } else {
+        ThreadId::from_raw(id)
+    }
 }
 
 pub(crate) fn custom_cleanup() -> Option<fn()> {
@@ -129,16 +137,11 @@ pub(crate) unsafe fn init(_argc: usize, argv: *const *mut u8) {
     let main_thread_id = sys::thread::sceKernelGetThreadId().into_result();
 
     if let Ok(id) = main_thread_id {
-        unsafe { MAIN_THREAD_ID.get().write_volatile(Some(id)) };
+        MAIN_THREAD_ID.store(id.to_inner(), Ordering::Release);
     }
 
     unsafe {
         init_cwd(*argv);
-    }
-
-    // Enable
-    if cfg!(pbp) {
-        crate::enable_home_button();
     }
 }
 

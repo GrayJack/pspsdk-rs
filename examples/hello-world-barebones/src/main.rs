@@ -4,13 +4,15 @@
 use core::ffi::c_void;
 
 use pspsdk::sys::{
-    thread::{sceKernelCreateThread, sceKernelStartThread, ThreadAttributes},
+    module::ModuleAttributes,
+    thread::{sceKernelCreateThread, sceKernelStartThread, ThreadAttributes, ThreadEntryFn},
     SceResult,
 };
 
 pspsdk::module_info!("HelloWorldExampBare", 1, 1);
 
 fn psp_main() {
+    pspsdk::enable_home_button();
     pspsdk::dprintln!("Hello PSP from rust!");
     pspsdk::println!("Hello PSP from rust!");
 }
@@ -30,13 +32,29 @@ extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
 
     let (argc, mut argv) = unsafe { pspsdk::module_start_init(argc_bytes, argp) };
 
+    let mut main_func: ThreadEntryFn = psp_main_thread;
+
+    if module_info.0.attributes.contains(ModuleAttributes::Kernel) {
+        // Make sure kernel modules has the kernel memory address
+        main_func = unsafe { core::mem::transmute((main_func as usize) | 0x80000000) };
+    }
+
+    let thread_attr = ThreadAttributes::main_default();
+
+    if thread_attr.contains(
+        ThreadAttributes::UserMode | ThreadAttributes::UsbWlanMode | ThreadAttributes::VshMode,
+    ) {
+        // Make sure user threads does not have the kernel memory address
+        main_func = unsafe { core::mem::transmute((main_func as usize) & 0x7FFFFFFF) };
+    }
+
     unsafe {
         let Ok(id) = sceKernelCreateThread(
             c"main_thread".as_ptr().cast(),
-            psp_main_thread,
+            main_func,
             32,
             256 * 1024,
-            ThreadAttributes::UserMode | ThreadAttributes::UseVFPU,
+            thread_attr,
             None,
         )
         .inspect_err(|err| pspsdk::eprintln!("Create {:#X}", err.to_inner()))
@@ -44,12 +62,12 @@ extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
             return -1;
         };
 
-        let Ok(()) = sceKernelStartThread(id, argc, argv.as_mut_ptr().cast())
-            .inspect_err(|err| pspsdk::eprintln!("Start {:#X}", err.to_inner()))
-            .into_result()
-        else {
+        let res = sceKernelStartThread(id, argc, argv.as_mut_ptr().cast())
+            .inspect_err(|err| pspsdk::eprintln!("Start {:#X}", err.to_inner()));
+
+        if res.is_err() {
             return -1;
-        };
+        }
     }
     0
 }

@@ -282,53 +282,27 @@ unsafe extern "C" {
 #[cfg(feature = "non-stub-code")]
 pub fn enable_home_button() {
     use core::{ffi::c_void, ptr};
-    use sys::thread::ThreadAttributes;
 
-    unsafe {
-        unsafe extern "C" fn exit_thread(_args: usize, _argp: *mut c_void) -> SceResult<u32> {
-            #[allow(unreachable_code)]
-            unsafe extern "C" fn exit_callback(
-                _arg1: u32, _arg2: u32, _arg: *mut c_void,
-            ) -> CallbackTermState {
-                crate::rt::cleanup();
-                process::exit_main(0);
-                CallbackTermState::NormalTermination
-            }
-
-            let res = unsafe {
-                sys::thread::sceKernelCreateCallback(
-                    c"exit_callback".as_ptr().cast(),
-                    exit_callback,
-                    ptr::null_mut(),
-                )
-            };
-
-            let raw_res = res.as_inner();
-            let Ok(id) = res.into_result() else {
-                return SceResult::new(raw_res);
-            };
-
-            let _res = sys::loadexec::sceKernelRegisterExitCallback(id);
-            let _res = sys::thread::sceKernelSleepThreadCB();
-
-            SceResult::new(0)
-        }
-
-        // Enable the home button.
-        let id = sys::thread::sceKernelCreateThread(
-            &b"exit_thread\0"[0],
-            exit_thread,
-            0x11,
-            0xFA0,
-            ThreadAttributes::empty(),
-            None,
-        )
-        .into_result();
-
-        let Ok(id) = id else {
-            return;
-        };
-
-        let _res = sys::thread::sceKernelStartThread(id, 0, ptr::null_mut());
+    #[allow(unreachable_code)]
+    unsafe extern "C" fn exit_callback(
+        _arg1: u32, _arg2: u32, _arg: *mut c_void,
+    ) -> CallbackTermState {
+        crate::rt::cleanup();
+        process::exit_main(0);
+        CallbackTermState::NormalTermination
     }
+
+    let res = unsafe {
+        sys::thread::sceKernelCreateCallback(
+            c"exit_callback".as_ptr().cast(),
+            exit_callback,
+            ptr::null_mut(),
+        )
+    };
+
+    let Ok(id) = res.into_result() else {
+        return;
+    };
+
+    let _res = sys::loadexec::sceKernelRegisterExitCallback(id);
 }
