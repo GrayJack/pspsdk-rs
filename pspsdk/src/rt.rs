@@ -144,7 +144,7 @@ pub(crate) unsafe fn init(_argc: usize, argv: *const *mut u8) {
         init_cwd(*argv);
     }
 
-    if cfg!(pbp) {
+    if cfg!(all(pbp, default_exit_cb)) {
         crate::enable_home_button();
     }
 }

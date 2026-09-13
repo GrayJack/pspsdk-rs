@@ -1,6 +1,6 @@
 use std::env;
 
-const ALLOWED_CFGS: &[&str] = &["pbp", "eboot", "pboot", "prx", "os_err_human"];
+const ALLOWED_CFGS: &[&str] = &["pbp", "eboot", "pboot", "prx", "os_err_human", "default_exit_cb"];
 
 const PSPSDK_TARGET_FW: Option<&str> = std::option_env!("PSPSDK_TARGET_FW");
 

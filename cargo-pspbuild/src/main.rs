@@ -54,6 +54,19 @@ enum ProjectKind {
     Pboot,
 }
 
+#[derive(serde_derive::Deserialize, Default, PartialEq, Eq, Clone, Copy)]
+enum ExitCallback {
+    /// SDK default.
+    #[default]
+    #[serde(alias = "Default")]
+    #[serde(alias = "default")]
+    Default,
+    /// Manual setup. The user must set the exit callback themselves.
+    #[serde(alias = "Manual")]
+    #[serde(alias = "manual")]
+    Manual,
+}
+
 #[derive(serde_derive::Deserialize, Default, Clone)]
 struct PbpConfig {
     /// Title shown in the XMB menu.
@@ -137,6 +150,9 @@ struct PbpConfig {
 
     /// Used by the firmware updater to denote the firmware version it updates to.
     updater_version: Option<String>,
+
+    /// Used to control wether to auto-register exit callback.
+    exit_callback: Option<ExitCallback>,
 }
 
 #[derive(Ord, PartialOrd, PartialEq, Eq, Debug)]
@@ -285,6 +301,13 @@ fn main() {
         rustflags.push_str("--cfg os_err_human ");
     }
 
+    if let Some(ref pbp) = config.project.pbp {
+        match pbp.exit_callback.unwrap_or_default() {
+            ExitCallback::Default => rustflags.push_str("--cfg default_exit_cb "),
+            ExitCallback::Manual => {},
+        }
+    }
+
     rustflags.push_str(&env_rustflags);
 
     cargo_build_cmd
@@ -296,7 +319,7 @@ fn main() {
         .arg("mipsel-sony-psp")
         .arg("--message-format=json-render-diagnostics")
         .args(args)
-        .env("RUSTFLAGS", rustflags)
+        .env("RUSTFLAGS", &rustflags)
         .stdout(Stdio::piped());
 
     if let Some(target_fw) = config.project.target_fw.clone() {
@@ -314,11 +337,7 @@ fn main() {
             .arg("-Z")
             .arg(build_std_flag)
             .arg("-Zbuild-std-features=optimize_for_size")
-            .env("RUSTFLAGS", match config.project.kind {
-                ProjectKind::Prx => "--cfg prx",
-                ProjectKind::Eboot => "--cfg eboot --cfg pbp",
-                ProjectKind::Pboot => "--cfg pboot --cfg pbp",
-            })
+            .env("RUSTFLAGS", rustflags)
             .stderr(Stdio::inherit());
 
         if let Some(target_fw) = config.project.target_fw {
