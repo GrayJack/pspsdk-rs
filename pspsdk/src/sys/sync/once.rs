@@ -12,7 +12,6 @@ use crate::{
             sceKernelSetEventFlag, sceKernelWaitEventFlagCB, EventFlagAttributes, EventFlagId,
             EventFlagWaitKinds,
         },
-        SceError,
     },
 };
 
@@ -231,8 +230,8 @@ impl Once {
                         .is_ok()
                     {
                         match self.create_event_flag() {
-                            Ok(id) => return Some(id),
-                            Err(_) => continue,
+                            Some(id) => return Some(id),
+                            None => continue,
                         }
                     }
                 },
@@ -244,7 +243,7 @@ impl Once {
     }
 
     #[cold]
-    fn create_event_flag(&self) -> Result<EventFlagId, SceError> {
+    fn create_event_flag(&self) -> Option<EventFlagId> {
         let created = unsafe {
             sceKernelCreateEventFlag(
                 c"SDK_ONCE".as_ptr().cast(),
@@ -254,14 +253,14 @@ impl Once {
             )
         };
 
-        match created.into_result() {
-            Ok(id) => {
+        match created.ok() {
+            Some(id) => {
                 self.event_flag_id.store(id.to_inner(), Ordering::Release);
-                Ok(id)
+                Some(id)
             },
-            Err(err) => {
+            None => {
                 self.event_flag_id.store(UNINIT_FLAG, Ordering::Release);
-                Err(err)
+                None
             },
         }
     }

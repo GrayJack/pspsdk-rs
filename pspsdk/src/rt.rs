@@ -134,14 +134,18 @@ pub(crate) unsafe fn init(_argc: usize, argv: *const *mut u8) {
     // call it here too.
     crate::set_psp_os_functions();
 
-    let main_thread_id = sys::thread::sceKernelGetThreadId().into_result();
+    let main_thread_id = sys::thread::sceKernelGetThreadId().ok();
 
-    if let Ok(id) = main_thread_id {
+    if let Some(id) = main_thread_id {
         MAIN_THREAD_ID.store(id.to_inner(), Ordering::Release);
     }
 
     unsafe {
         init_cwd(*argv);
+    }
+
+    if cfg!(pbp) {
+        crate::enable_home_button();
     }
 }
 
@@ -175,6 +179,10 @@ fn handle_rt_panic<T>(e: alloc::boxed::Box<dyn core::any::Any + Send>) -> T {
 fn psp_start_internal(
     main: &(dyn Fn() -> i32 + Sync + core::panic::RefUnwindSafe), argc: usize, argv: *const *mut u8,
 ) -> isize {
+    // For now, init won't panic, so calling outside on c
+    // SAFETY: Only called once during runtime initialization.
+    unsafe { init(argc, argv) };
+
     // Guard against the code called by this function from unwinding outside of the Rust-controlled
     // code, which is UB. This is a requirement imposed by a combination of how the
     // `#[lang="start"]` attribute is implemented as well as by the implementation of the panicking
@@ -189,9 +197,6 @@ fn psp_start_internal(
     // We use `catch_unwind` with `handle_rt_panic` instead of `abort_unwind` to make the error in
     // case of a panic a bit nicer.
     panicking::catch_unwind(move || {
-        // SAFETY: Only called once during runtime initialization.
-        unsafe { init(argc, argv) };
-
         let ret_code = panicking::catch_unwind(main).unwrap_or_else(move |payload| {
             use crate::sys::SceError;
 

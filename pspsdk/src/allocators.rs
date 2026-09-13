@@ -74,8 +74,8 @@ unsafe impl GlobalAlloc for SystemAlloc {
             )
         };
 
-        match res.into_result() {
-            Ok(id) => {
+        match res.ok() {
+            Some(id) => {
                 let mut ptr: *mut u8 = sceKernelGetBlockHeadAddr(id).cast();
 
                 if ptr.is_null() {
@@ -93,7 +93,7 @@ unsafe impl GlobalAlloc for SystemAlloc {
                     ptr.wrapping_add(align_padding)
                 }
             },
-            Err(_) => ptr::null_mut(),
+            None => ptr::null_mut(),
         }
     }
 
@@ -131,8 +131,8 @@ unsafe impl Allocator for SystemAlloc {
                     )
                 };
 
-                match res.into_result() {
-                    Ok(id) => {
+                match res.ok() {
+                    Some(id) => {
                         let mut ptr: *mut u8 = sceKernelGetBlockHeadAddr(id).cast();
 
                         if ptr.is_null() {
@@ -154,7 +154,7 @@ unsafe impl Allocator for SystemAlloc {
                             Ok(NonNull::slice_from_raw_parts(ptr, size))
                         }
                     },
-                    Err(_) => Err(AllocError),
+                    None => Err(AllocError),
                 }
             },
         }
@@ -188,8 +188,8 @@ unsafe impl GlobalAlloc for PartitionAlloc {
             )
         };
 
-        match res.into_result() {
-            Ok(id) => {
+        match res.ok() {
+            Some(id) => {
                 let mut ptr: *mut u8 = sceKernelGetBlockHeadAddr(id).cast();
 
                 if ptr.is_null() {
@@ -207,7 +207,7 @@ unsafe impl GlobalAlloc for PartitionAlloc {
                     ptr.wrapping_add(align_padding)
                 }
             },
-            Err(_) => ptr::null_mut(),
+            None => ptr::null_mut(),
         }
     }
 
@@ -245,8 +245,8 @@ unsafe impl Allocator for PartitionAlloc {
                     )
                 };
 
-                match res.into_result() {
-                    Ok(id) => {
+                match res.ok() {
+                    Some(id) => {
                         let mut ptr: *mut u8 = sceKernelGetBlockHeadAddr(id).cast();
 
                         if ptr.is_null() {
@@ -268,7 +268,7 @@ unsafe impl Allocator for PartitionAlloc {
                             Ok(NonNull::slice_from_raw_parts(ptr, size))
                         }
                     },
-                    Err(_) => Err(AllocError),
+                    None => Err(AllocError),
                 }
             },
         }

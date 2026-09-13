@@ -327,8 +327,8 @@ pub fn exit(code: i32) -> ! {
     let main_thread_id = crate::rt::main_thread_id();
 
     if let Some(main_thread_id) = main_thread_id {
-        let thread_id = sys::thread::sceKernelGetThreadId().into_result();
-        if let Ok(curr_thread_id) = thread_id
+        let thread_id = sys::thread::sceKernelGetThreadId().ok();
+        if let Some(curr_thread_id) = thread_id
             && curr_thread_id == main_thread_id
         {
             exit_main(code)

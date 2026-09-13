@@ -136,8 +136,8 @@ impl Mutex {
                         .is_ok()
                     {
                         match self.create_id() {
-                            Ok(id) => return Some(id),
-                            Err(_err) => {
+                            Some(id) => return Some(id),
+                            None => {
                                 continue;
                             },
                         }
@@ -158,19 +158,19 @@ impl Mutex {
 
     /// Creates the mutex and store its UID.
     #[cold]
-    fn create_id(&self) -> Result<MutexId, SceError> {
+    fn create_id(&self) -> Option<MutexId> {
         let created = unsafe {
             sceKernelCreateMutex(c"SDK_MUTEX".as_ptr().cast(), MutexAttributes::default(), 0, None)
         };
 
-        match created.into_result() {
-            Ok(id) => {
+        match created.ok() {
+            Some(id) => {
                 self.id.store(id.to_inner(), Ordering::Release);
-                Ok(id)
+                Some(id)
             },
-            Err(err) => {
+            None => {
                 self.id.store(UNINIT, Ordering::Release);
-                Err(err)
+                None
             },
         }
     }
@@ -310,8 +310,8 @@ impl ReentrantMutex {
                         .is_ok()
                     {
                         match self.create_id() {
-                            Ok(id) => return Some(id),
-                            Err(_) => continue,
+                            Some(id) => return Some(id),
+                            None => continue,
                         }
                     }
                 },
@@ -330,7 +330,7 @@ impl ReentrantMutex {
 
     /// Creates the mutex and store its UID.
     #[cold]
-    fn create_id(&self) -> Result<MutexId, SceError> {
+    fn create_id(&self) -> Option<MutexId> {
         let created = unsafe {
             sceKernelCreateMutex(
                 c"SDK_REENT_MUTEX".as_ptr().cast(),
@@ -340,14 +340,14 @@ impl ReentrantMutex {
             )
         };
 
-        match created.into_result() {
-            Ok(id) => {
+        match created.ok() {
+            Some(id) => {
                 self.id.store(id.to_inner(), Ordering::Release);
-                Ok(id)
+                Some(id)
             },
-            Err(err) => {
+            None => {
                 self.id.store(UNINIT, Ordering::Release);
-                Err(err)
+                None
             },
         }
     }
@@ -454,8 +454,8 @@ impl LwMutex {
 
         unsafe {
             cfg_select! {
-                pbp => sceKernelTryLockLwMutex(work_area, 1).into_result().is_ok(),
-                _ => _sceKernelTryLockLwMutex(work_area, 1).into_result().is_ok(),
+                pbp => sceKernelTryLockLwMutex(work_area, 1).is_ok(),
+                _ => _sceKernelTryLockLwMutex(work_area, 1).is_ok(),
             }
         }
     }

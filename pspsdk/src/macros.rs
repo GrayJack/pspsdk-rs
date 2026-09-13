@@ -544,7 +544,7 @@ macro_rules! default_module_start {
             }
 
             unsafe {
-                let Ok(id) = $crate::sys::thread::sceKernelCreateThread(
+                let Some(id) = $crate::sys::thread::sceKernelCreateThread(
                     c"main_thread".as_ptr().cast(),
                     main_func,
                     // default priority of 32.
@@ -554,7 +554,7 @@ macro_rules! default_module_start {
                     thread_attr,
                     None,
                 )
-                .into_result() else {
+                .ok() else {
                     return -1;
                 };
 

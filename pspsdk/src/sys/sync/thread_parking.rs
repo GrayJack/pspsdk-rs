@@ -4,12 +4,9 @@ use core::{
     time::Duration,
 };
 
-use crate::sys::{
-    thread::{
-        sceKernelCreateEventFlag, sceKernelSetEventFlag, sceKernelWaitEventFlagCB,
-        EventFlagAttributes, EventFlagId, EventFlagWaitKinds,
-    },
-    SceError,
+use crate::sys::thread::{
+    sceKernelCreateEventFlag, sceKernelSetEventFlag, sceKernelWaitEventFlagCB, EventFlagAttributes,
+    EventFlagId, EventFlagWaitKinds,
 };
 
 const UNINIT: u32 = u32::MAX;
@@ -91,8 +88,8 @@ impl Parker {
                         .is_ok()
                     {
                         match self.create_ev_flag() {
-                            Ok(id) => return Some(id),
-                            Err(_) => continue,
+                            Some(id) => return Some(id),
+                            None => continue,
                         }
                     }
                 },
@@ -105,7 +102,7 @@ impl Parker {
     }
 
     #[cold]
-    fn create_ev_flag(&self) -> Result<EventFlagId, SceError> {
+    fn create_ev_flag(&self) -> Option<EventFlagId> {
         let created = unsafe {
             sceKernelCreateEventFlag(
                 c"SDK_ONCE".as_ptr().cast(),
@@ -115,14 +112,14 @@ impl Parker {
             )
         };
 
-        match created.into_result() {
-            Ok(id) => {
+        match created.ok() {
+            Some(id) => {
                 self.ev_flag.store(id.to_inner(), Ordering::Release);
-                Ok(id)
+                Some(id)
             },
-            Err(err) => {
+            None => {
                 self.ev_flag.store(UNINIT, Ordering::Release);
-                Err(err)
+                None
             },
         }
     }
@@ -132,7 +129,7 @@ unsafe impl Send for Parker {}
 unsafe impl Sync for Parker {}
 
 #[cold]
-fn create_ev_flag() -> Result<EventFlagId, SceError> {
+fn create_ev_flag() -> Option<EventFlagId> {
     unsafe {
         sceKernelCreateEventFlag(
             c"SDK_PARKER".as_ptr().cast(),
@@ -140,6 +137,6 @@ fn create_ev_flag() -> Result<EventFlagId, SceError> {
             0,
             None,
         )
-        .into_result()
+        .ok()
     }
 }

@@ -340,7 +340,7 @@ impl<T: ?Sized, M: RawMutex> Drop for ReentrantLockGuard<'_, T, M> {
 pub(crate) fn current_thread_id() -> ThreadId {
     cfg_select! {
         target_os = "psp" => sceKernelGetThreadId()
-            .into_result()
+            .ok()
             .expect("wrong context for `sceKernelGetThreadId`"),
         _ => {
             unimplemented!("Not a PSP OS")

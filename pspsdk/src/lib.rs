@@ -38,7 +38,7 @@ extern crate std;
 // Re-export proc-macros
 pub use pspsdk_macros::{export, exports, psp_fw, psp_fw_cfg, psp_fw_select, psp_stub};
 
-use crate::sys::{thread::CallbackTermState, SceResult};
+use crate::sys::thread::CallbackTermState;
 
 pub mod sys;
 
@@ -300,7 +300,7 @@ pub fn enable_home_button() {
         )
     };
 
-    let Ok(id) = res.into_result() else {
+    let Some(id) = res.ok() else {
         return;
     };
 

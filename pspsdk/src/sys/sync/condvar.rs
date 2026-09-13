@@ -166,8 +166,8 @@ impl Condvar {
                         .is_ok()
                     {
                         match self.create_queue() {
-                            Ok(id) => return Some(id),
-                            Err(_) => continue,
+                            Some(id) => return Some(id),
+                            None => continue,
                         }
                     }
                 },
@@ -179,7 +179,7 @@ impl Condvar {
     }
 
     #[cold]
-    fn create_queue(&self) -> Result<SemaId, SceError> {
+    fn create_queue(&self) -> Option<SemaId> {
         let created = unsafe {
             sceKernelCreateSema(
                 c"SDK_CONDVAR_QUEUE".as_ptr().cast(),
@@ -190,14 +190,14 @@ impl Condvar {
             )
         };
 
-        match created.into_result() {
-            Ok(id) => {
+        match created.ok() {
+            Some(id) => {
                 self.queue.store(id.to_inner(), Ordering::Release);
-                Ok(id)
+                Some(id)
             },
-            Err(err) => {
+            None => {
                 self.queue.store(UNINIT, Ordering::Release);
-                Err(err)
+                None
             },
         }
     }

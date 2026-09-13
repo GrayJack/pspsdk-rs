@@ -56,7 +56,7 @@ extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
     }
 
     unsafe {
-        let Ok(id) = sceKernelCreateThread(
+        let Some(id) = sceKernelCreateThread(
             c"main_thread".as_ptr().cast(),
             main_func,
             32,
@@ -65,7 +65,7 @@ extern "C" fn module_start(argc_bytes: usize, argp: *mut c_void) -> isize {
             None,
         )
         .inspect_err(|err| pspsdk::eprintln!("Create {:#X}", err.to_inner()))
-        .into_result() else {
+        .ok() else {
             return -1;
         };
 

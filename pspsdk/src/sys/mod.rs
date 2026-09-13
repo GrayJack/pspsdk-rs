@@ -205,7 +205,10 @@ impl<T: SceResultOk> SceResult<T> {
     where
         F: FnOnce(T) -> U,
     {
-        self.into_result().map_or(default, f)
+        match self.ok() {
+            Some(v) => f(v),
+            None => default,
+        }
     }
 
     /// Maps a `SceResult<T>` to `U` by applying fallback function `default` to
@@ -231,9 +234,9 @@ impl<T: SceResultOk> SceResult<T> {
         F: FnOnce(T) -> U,
         U: Default,
     {
-        match self.into_result() {
-            Ok(t) => f(t),
-            Err(_) => U::default(),
+        match self.ok() {
+            Some(t) => f(t),
+            None => U::default(),
         }
     }
 
