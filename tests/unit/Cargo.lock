@@ -74,9 +74,9 @@ dependencies = [
 
 [[package]]
 name = "hybrid-array"
-version = "0.4.14"
+version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "707114b52a152fa7bdb290cd7cd5912d9467273b6d74e21b8d81aca1f8533f6b"
+checksum = "27f864f10dfb56725ce5ce5472bc52252c8f93a4ab86327122cebf62c5f59a17"
 dependencies = [
  "typenum",
 ]
@@ -110,41 +110,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "psp-barebones-hello-world-example"
-version = "0.1.0"
-dependencies = [
- "pspsdk",
-]
-
-[[package]]
-name = "psp-hello-world-example"
-version = "0.1.0"
-dependencies = [
- "pspsdk",
-]
-
-[[package]]
-name = "psp-prx-barebones"
-version = "0.1.0"
-dependencies = [
- "pspsdk",
-]
-
-[[package]]
-name = "psp-testing-mutex"
-version = "0.1.0"
-dependencies = [
- "pspsdk",
-]
-
-[[package]]
-name = "psp-time-example"
-version = "0.1.0"
-dependencies = [
- "pspsdk",
 ]
 
 [[package]]
@@ -195,9 +160,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "3.0.4"
+version = "3.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6275cddf4610d1775e6d1fe9469b2e77d0f39fd98fb7450901b821e0c53649f"
+checksum = "12df2e0110f65b775f769bb17ef989067a1d931b2eb822bd4346631eeada89f9"
 dependencies = [
  "proc-macro2",
  "quote",

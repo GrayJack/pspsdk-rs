@@ -17,7 +17,8 @@
     try_trait_v2,
     try_trait_v2_residual,
     sync_unsafe_cell,
-    slice_ptr_get
+    slice_ptr_get,
+    duration_constants
 )]
 #![cfg_attr(all(feature = "non-stub-code", panic = "unwind"), feature(panic_unwind))]
 #![cfg_attr(all(feature = "non-stub-code", panic = "abort"), feature(panic_abort))]
@@ -51,6 +52,10 @@ pub mod power;
 // Mixed modules (part STD-like and part custom).
 #[cfg(feature = "non-stub-code")]
 pub mod process;
+
+// Test runner
+#[cfg(feature = "non-stub-code")]
+pub mod testrt;
 
 // STD-like modules
 #[cfg(feature = "non-stub-code")]

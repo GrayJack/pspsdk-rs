@@ -1,7 +1,7 @@
 # cargo-features = ["panic-immediate-abort"]
 
 [workspace]
-members = ["pspsdk-macros", "pspsdk", "examples/*"]
+members = ["pspsdk-macros", "pspsdk", "examples/*", "tests/unit"]
 exclude = ["cargo-pspbuild"]
 resolver = "2"
 

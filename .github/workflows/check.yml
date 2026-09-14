@@ -43,3 +43,32 @@ jobs:
       run: cargo check --target=mipsel-sony-psp --features=kernel -Zbuild-std=core,alloc,compiler_builtins,panic_unwind,panic_abort
     - name: Check Examples (release with unwind)
       run: ./examples/run_all.sh
+    - name: Build tests
+      run: cargo pspbuild --manifest-path=./tests/unit/Cargo.toml
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v7
+      with:
+        name: psp-ci-test
+        path: target/mipsel-sony-psp/debug/pspsdk-unit-tests.EBOOT.PBP
+
+  run-tests:
+    needs: check
+    runs-on: ubuntu-latest
+    container: rustpsp/ppsspp-headless:latest
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: psp-ci-test
+      - name: Run Tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          /ppsspp/build-sdl/PPSSPPHeadless --graphics=software ./pspsdk-unit-tests.EBOOT.PBP --timeout=10 -r .
+          cat psp_output_file.log
+          if [ "$(tail -n 1 psp_output_file.log)" = "FINAL_SUCCESS" ]; then
+              echo Test passed
+          else
+              echo Test failed
+              exit 1
+          fi
