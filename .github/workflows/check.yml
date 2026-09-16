@@ -44,7 +44,10 @@ jobs:
     - name: Check Examples (release with unwind)
       run: ./examples/run_all.sh
     - name: Build tests
-      run: cargo pspbuild --manifest-path=./tests/unit/Cargo.toml
+      run: |
+        cd tests/unit/
+        cargo pspbuild --target-dir=../../target/
+        cd ../..
     - name: Upload Artifacts
       uses: actions/upload-artifact@v7
       with:
