@@ -33,6 +33,11 @@ struct PspProject {
     /// Enable human readable error messages.
     #[serde(alias = "human-readable-os-errors")]
     human_readable_os_errors: Option<bool>,
+    /// Extra rustflags to pass to compiler
+    #[serde(alias = "rust-flags")]
+    #[serde(alias = "rust_flags")]
+    #[serde(alias = "rustflags")]
+    rustflags: Option<String>,
     /// EBOOT/PBOOT configuration.
     pbp: Option<PbpConfig>,
 }
@@ -308,6 +313,11 @@ fn main() {
         }
     }
 
+    if let Some(flags) = config.project.rustflags {
+        rustflags.push_str(&flags);
+        rustflags.push(' ');
+    }
+
     rustflags.push_str(&env_rustflags);
 
     cargo_build_cmd
@@ -315,7 +325,9 @@ fn main() {
         .arg("-Z")
         .arg(build_std_flag)
         .arg("-Zbuild-std-features=optimize_for_size")
+        // .arg("-Zjson-target-spec")
         .arg("--target")
+        // .arg("psp2.json")
         .arg("mipsel-sony-psp")
         .arg("--message-format=json-render-diagnostics")
         .args(args)
