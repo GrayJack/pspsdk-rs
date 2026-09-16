@@ -342,16 +342,13 @@ fn main() {
         .arg("-Z")
         .arg(build_std_flag)
         .arg("-Zbuild-std-features=optimize_for_size")
-        // .arg("-Zjson-target-spec")
         .arg("--target")
-        // .arg("psp2.json")
         .arg("mipsel-sony-psp")
         .arg("--message-format=json-render-diagnostics")
         .args(args)
         .env("RUSTFLAGS", &rustflags)
         .stdout(Stdio::piped());
 
-    dbg!(&cargo_build_cmd);
     if let Some(target_fw) = config.project.target_fw.clone() {
         cargo_build_cmd.env("PSPSDK_TARGET_FW", target_fw);
     }

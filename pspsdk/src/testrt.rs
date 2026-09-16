@@ -1,4 +1,4 @@
-use core::{ffi::CStr, fmt::Arguments, panic::UnwindSafe, time::Duration};
+use core::{ffi::CStr, fmt::Arguments, panic::UnwindSafe};
 
 use alloc::{format, string::String, vec::Vec};
 
