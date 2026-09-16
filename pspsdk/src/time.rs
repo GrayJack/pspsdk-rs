@@ -392,6 +392,10 @@ impl Instant {
     pub fn checked_sub(&self, duration: Duration) -> Option<Instant> {
         self.0.checked_sub_duration(&duration).map(Instant)
     }
+
+    fn saturating_sub(&self, duration: Duration) -> Instant {
+        Instant(self.0.saturating_sub_duration(&duration))
+    }
 }
 
 impl Add<Duration> for Instant {
@@ -416,8 +420,9 @@ impl Sub<Duration> for Instant {
     type Output = Instant;
 
     fn sub(self, other: Duration) -> Instant {
-        self.checked_sub(other)
-            .expect("overflow when subtracting duration from instant")
+        self.saturating_sub(other)
+        // self.checked_sub(other)
+        //     .expect("overflow when subtracting duration from instant")
     }
 }
 
