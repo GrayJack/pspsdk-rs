@@ -17,7 +17,8 @@ mod time;
 fn psp_main() {
     let test_groups = [sync::test_group, time::test_group];
 
-    let mut runner = TestRunner::file_runner();
+    let mut runner = TestRunner::file_runner(c"host0:psp_output_file.log");
+    // let mut runner = TestRunner::stdout_runner();
 
     runner.start_run();
 

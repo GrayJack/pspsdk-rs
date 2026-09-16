@@ -67,10 +67,14 @@ impl Instant {
     }
 
     pub fn checked_add_duration(&self, other: &Duration) -> Option<Self> {
-        self.0.checked_add(*other).map(Self)
+        Some(Instant(self.0.checked_add(*other)?))
     }
 
     pub fn checked_sub_duration(&self, other: &Duration) -> Option<Self> {
-        self.0.checked_sub(*other).map(Self)
+        Some(Instant(self.0.checked_sub(*other)?))
+    }
+
+    pub fn saturating_sub_duration(&self, other: &Duration) -> Self {
+        Instant(self.0.saturating_sub(*other))
     }
 }

@@ -337,9 +337,12 @@ pub fn exit(code: i32) -> ! {
 
     loop {
         if !crate::process::is_interrupt_enabled() {
-            core::intrinsics::abort();
+            crate::sys::spin_loop();
+            continue;
         }
         let _ = sys::thread::sceKernelExitDeleteThread(code.cast_unsigned());
+        // loops if fail
+        crate::sys::spin_loop();
     }
 }
 
@@ -415,7 +418,8 @@ pub fn abort() -> ! {
 
     loop {
         if !crate::process::is_interrupt_enabled() {
-            core::intrinsics::abort();
+            crate::sys::spin_loop();
+            continue;
         }
         cfg_select! {
             prx => {
@@ -433,7 +437,10 @@ pub fn abort() -> ! {
             all(pbp, not(feature = "kernel")) => {
                 let _ = crate::sys::loadexec::sceKernelExitGameWithStatus(0xDEADCAFE);
             },
-            _ => core::intrinsics::abort(),
+            _ => {
+                crate::sys::spin_loop();
+                continue;
+            },
         }
     }
 }
@@ -442,7 +449,8 @@ pub fn abort() -> ! {
 pub(crate) fn exit_main(status: i32) -> ! {
     loop {
         if !crate::process::is_interrupt_enabled() {
-            core::intrinsics::abort();
+            crate::sys::spin_loop();
+            continue;
         }
         cfg_select! {
             prx => {
@@ -464,5 +472,8 @@ pub(crate) fn exit_main(status: i32) -> ! {
                 let _ = sys::thread::sceKernelExitDeleteThread(status.cast_unsigned());
             },
         }
+
+        // loops if fail
+        crate::sys::spin_loop();
     }
 }

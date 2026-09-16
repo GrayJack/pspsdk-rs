@@ -18,7 +18,8 @@
     try_trait_v2_residual,
     sync_unsafe_cell,
     slice_ptr_get,
-    duration_constants
+    duration_constants,
+    panic_can_unwind
 )]
 #![cfg_attr(all(feature = "non-stub-code", panic = "unwind"), feature(panic_unwind))]
 #![cfg_attr(all(feature = "non-stub-code", panic = "abort"), feature(panic_abort))]
@@ -63,8 +64,12 @@ pub mod io;
 #[cfg(feature = "non-stub-code")]
 pub mod os;
 #[cfg(feature = "non-stub-code")]
-// #[path = "panic.rs"]
+pub mod panic;
+#[cfg(feature = "non-stub-code")]
+// #[path = "panic_other.rs"]
 pub mod panicking;
+#[cfg(all(feature = "non-stub-code", not(feature = "std")))]
+mod personality;
 #[cfg(feature = "non-stub-code")]
 pub mod sync;
 #[cfg(feature = "non-stub-code")]

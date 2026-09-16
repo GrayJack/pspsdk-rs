@@ -144,7 +144,7 @@ pub(crate) unsafe fn init(_argc: usize, argv: *const *mut u8) {
         init_cwd(*argv);
     }
 
-    if cfg!(all(pbp, default_exit_cb)) {
+    if cfg!(pbp) && cfg!(default_exit_cb) {
         crate::enable_home_button();
     }
 }
@@ -181,6 +181,8 @@ fn psp_start_internal(
 ) -> isize {
     // For now, init won't panic, so calling outside on c
     // SAFETY: Only called once during runtime initialization.
+
+    use crate::panic;
     unsafe { init(argc, argv) };
 
     // Guard against the code called by this function from unwinding outside of the Rust-controlled
@@ -196,13 +198,13 @@ fn psp_start_internal(
     //
     // We use `catch_unwind` with `handle_rt_panic` instead of `abort_unwind` to make the error in
     // case of a panic a bit nicer.
-    panicking::catch_unwind(move || {
-        let ret_code = panicking::catch_unwind(main).unwrap_or_else(move |payload| {
+    panic::catch_unwind(move || {
+        let ret_code = panic::catch_unwind(main).unwrap_or_else(move |payload| {
             use crate::sys::SceError;
 
             // Carefully dispose of the panic payload.
             let payload = panicking::AssertUnwindSafe(payload);
-            panicking::catch_unwind(move || drop({ payload }.0)).unwrap_or_else(move |e| {
+            panic::catch_unwind(move || drop({ payload }.0)).unwrap_or_else(move |e| {
                 core::mem::forget(e); // do *not* drop the 2nd payload
                 crate::rtabort!("drop of the panic payload panicked");
             });

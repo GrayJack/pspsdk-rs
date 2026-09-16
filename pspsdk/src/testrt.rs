@@ -1,10 +1,11 @@
-use core::fmt::Arguments;
+use core::{ffi::CStr, fmt::Arguments, panic::UnwindSafe, time::Duration};
 
 use alloc::{format, string::String, vec::Vec};
 
 use crate::{
     io::Write,
     os::fd::{FileDesc, FromRawFd},
+    panic,
     process::{ExitCode, Termination},
     sys::{
         self,
@@ -43,8 +44,8 @@ impl<'a> TestRunner<'a> {
         }
     }
 
-    pub fn file_runner() -> Self {
-        let fd = get_test_output_file();
+    pub fn file_runner(filepath: &CStr) -> Self {
+        let fd = get_test_output_file(filepath);
         Self {
             mode: TestRunnerMode::File(fd),
             failure: false,
@@ -78,13 +79,15 @@ impl<'a> TestRunner<'a> {
     pub fn run_test<R, F>(&mut self, testcase_name: &'a str, f: F)
     where
         R: Termination + 'static,
-        F: FnOnce() -> R,
+        F: FnOnce() -> R + UnwindSafe,
     {
-        let res = crate::panicking::catch_unwind(f);
+        let res = panic::catch_unwind(f);
         match res {
             Ok(r) => {
                 let report = r.report();
-                if report != ExitCode::SUCCESS {
+                if report == ExitCode::SUCCESS {
+                    self.pass(testcase_name, "ok");
+                } else {
                     self.failure = true;
                     self.failures.push(testcase_name);
                     self.write_args(format_args!(
@@ -224,10 +227,10 @@ impl<'a> TestRunner<'a> {
                 write_to_psp_output_fd(fd, args);
             },
             TestRunnerMode::Screen => {
-                crate::dprintln!("{}", args);
+                crate::dprint!("{}", args);
             },
             TestRunnerMode::Stdout => {
-                crate::println!("{}", args);
+                crate::print!("{}", args);
             },
         }
     }
@@ -238,12 +241,7 @@ impl<'a> TestRunner<'a> {
                 drop(fd);
                 quit_game();
             },
-            TestRunnerMode::Screen => loop {
-                crate::sys::spin_loop()
-            },
-            TestRunnerMode::Stdout => loop {
-                crate::sys::spin_loop()
-            },
+            TestRunnerMode::Screen | TestRunnerMode::Stdout => sleep(),
         }
     }
 }
@@ -267,11 +265,11 @@ fn get_test_output_pipe() -> FileDesc {
     }
 }
 
-fn get_test_output_file() -> FileDesc {
+fn get_test_output_file(filepath: &CStr) -> FileDesc {
     unsafe {
         let fd = sys::io::sceIoOpen(
-            psp_filename(OUTPUT_FIFO),
-            FileFlags::AppendMode | FileFlags::WriteOnly,
+            filepath.as_ptr().cast(),
+            FileFlags::AppendMode | FileFlags::WriteOnly | FileFlags::CreateFile,
             Mode::from(0o777),
         )
         .into_result();
@@ -284,13 +282,17 @@ fn get_test_output_file() -> FileDesc {
 }
 
 fn psp_filename(filename: &str) -> *const u8 {
-    format!("host0:/{}\0", filename).as_bytes().as_ptr()
+    format!("ms0:/PSP/GAME/ATEST/{}\0", filename).as_bytes().as_ptr()
 }
 
 fn write_to_psp_output_fd(mut fd: &FileDesc, args: Arguments) {
     let _res = (&mut fd).write_fmt(args);
 }
 
+fn sleep() {
+    let _ = crate::sys::thread::sceKernelSleepThreadCB();
+}
+
 fn quit_game() {
-    crate::process::exit_main(0);
+    crate::process::exit(0);
 }

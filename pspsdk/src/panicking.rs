@@ -16,7 +16,7 @@ use core::{
 
 use alloc::{boxed::Box, panicking::PanicPayload, string::String};
 
-use crate::{process, rtabort, rtprintpanic};
+use crate::{panic::PanicHookInfo, process, rtabort, rtprintpanic};
 
 #[cfg(not(feature = "std"))]
 pub(crate) fn print(args: core::fmt::Arguments) {
@@ -59,17 +59,14 @@ fn panic(info: &PanicInfo) -> ! {
 //
 // One day this may look a little less ad-hoc with the compiler helping out to
 // hook up these functions, but it is not this day!
-#[allow(improper_ctypes)]
-unsafe extern "C" {
-    #[rustc_std_internal_symbol]
-    fn __rust_panic_cleanup(payload: *mut u8) -> *mut (dyn Any + Send + 'static);
-}
-
 unsafe extern "Rust" {
+    #[rustc_std_internal_symbol]
+    fn __rust_panic_cleanup(payload: *mut u8) -> Box<dyn Any + Send + 'static>;
+
     /// `PanicPayload` lazily performs allocation only when needed (this avoids
     /// allocations when using the "abort" panic runtime).
     #[rustc_std_internal_symbol]
-    fn __rust_start_panic(payload: &mut dyn PanicPayload) -> u32;
+    safe fn __rust_start_panic(payload: &mut dyn PanicPayload) -> u32;
 }
 
 /// This function is called by the panic runtime if FFI code catches a Rust
@@ -88,6 +85,44 @@ extern "C" fn __rust_drop_panic() -> ! {
 #[rustc_std_internal_symbol]
 extern "C" fn __rust_foreign_exception() -> ! {
     rtabort!("Rust cannot catch foreign exceptions")
+}
+
+/// The default panic handler.
+fn default_hook(info: &PanicHookInfo<'_>) {
+    // The current implementation always returns `Some`.
+    let location = info.location().unwrap();
+
+    let msg = payload_as_str(info.payload());
+
+    let write = || {
+        // Use a lock to prevent mixed output in multithreading context.
+        // Some platforms also require it when printing a backtrace, like `SymFromAddr` on Windows.
+        // let mut lock = backtrace::lock();
+
+        let tid = crate::sys::thread::sceKernelGetThreadId().ok();
+        if let Some(tid) = tid {
+            let mut tinfo = crate::sys::thread::ThreadInfo::default();
+            let res = crate::sys::thread::sceKernelReferThreadStatus(tid, &mut tinfo);
+
+            if res.is_ok() {
+                let thread_name = str::from_utf8(&tinfo.name).unwrap_or("<unnamed>");
+                rtprintpanic!(
+                    "thread `{}` ({}) panicked at {location}:\n{msg}\n",
+                    thread_name,
+                    tid.to_inner()
+                );
+            } else {
+                rtprintpanic!(
+                    "thread <unnamed> ({}) panicked at {location}:\n{msg}\n",
+                    tid.to_inner()
+                );
+            }
+        } else {
+            rtprintpanic!("panicked at {location}:\n{msg}\n");
+        }
+    };
+
+    write();
 }
 
 #[doc(hidden)]
@@ -133,7 +168,7 @@ pub mod panic_count {
 #[cfg(not(test))]
 #[cfg(not(panic = "immediate-abort"))]
 pub mod panic_count {
-    use core::sync::atomic::{AtomicUsize, Ordering};
+    use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
     const ALWAYS_ABORT_FLAG: usize = 1 << (usize::BITS - 1);
 
@@ -151,6 +186,7 @@ pub mod panic_count {
     // }
     // TODO: Make this thread local
     // static LOCAL_PANIC_COUNT: Cell<(usize, bool)> = const { Cell::new((0, false)) };
+    static IN_PANIC_HOOK: AtomicBool = AtomicBool::new(false);
 
     // Sum of panic counts from all threads. The purpose of this is to have
     // a fast path in `count_is_zero` (which is used by `panicking`). In any particular
@@ -185,12 +221,19 @@ pub mod panic_count {
     // This also updates thread-local state to keep track of whether a panic
     // hook is currently executing.
     #[must_use = "MustAbort may not be ignored"]
-    pub fn increase(_run_panic_hook: bool) -> Option<MustAbort> {
+    pub fn increase(run_panic_hook: bool) -> Option<MustAbort> {
         let global_count = GLOBAL_PANIC_COUNT.fetch_add(1, Ordering::Relaxed);
         if global_count & ALWAYS_ABORT_FLAG != 0 {
             // Do *not* access thread-local state, we might be after a `fork`.
             return Some(MustAbort::AlwaysAbort);
         }
+
+
+        let in_panic_hook = IN_PANIC_HOOK.load(Ordering::Relaxed);
+        if in_panic_hook {
+            return Some(MustAbort::PanicInHook);
+        }
+        IN_PANIC_HOOK.store(run_panic_hook, Ordering::Relaxed);
 
         None
 
@@ -205,6 +248,7 @@ pub mod panic_count {
     }
 
     pub fn finished_panic_hook() {
+        IN_PANIC_HOOK.store(false, Ordering::Relaxed);
         // LOCAL_PANIC_COUNT.with(|c| {
         //     let (count, _) = c.get();
         //     c.set((count, false));
@@ -213,6 +257,7 @@ pub mod panic_count {
 
     pub fn decrease() {
         GLOBAL_PANIC_COUNT.fetch_sub(1, Ordering::Relaxed);
+        IN_PANIC_HOOK.store(false, Ordering::Relaxed);
         // LOCAL_PANIC_COUNT.with(|c| {
         //     let (count, _) = c.get();
         //     c.set((count - 1, false));
@@ -266,14 +311,14 @@ pub use std::panic::catch_unwind;
 /// Invoke a closure, capturing the cause of an unwinding panic if one occurs.
 #[cfg(not(feature = "std"))]
 #[cfg(panic = "immediate-abort")]
-pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>> {
+pub unsafe fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>> {
     Ok(f())
 }
 
 /// Invoke a closure, capturing the cause of an unwinding panic if one occurs.
 #[cfg(not(feature = "std"))]
 #[cfg(not(panic = "immediate-abort"))]
-pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>> {
+pub unsafe fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>> {
     union Data<F, R> {
         f: ManuallyDrop<F>,
         r: ManuallyDrop<R>,
@@ -334,7 +379,7 @@ pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>>
         // the panic handler `__rust_panic_cleanup`. As such we can only
         // assume it returns the correct thing for `Box::from_raw` to work
         // without undefined behavior.
-        let obj = unsafe { Box::from_raw(__rust_panic_cleanup(payload)) };
+        let obj = unsafe { __rust_panic_cleanup(payload) };
         panic_count::decrease();
         obj
     }
@@ -379,6 +424,18 @@ pub fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>>
 #[inline]
 pub fn panicking() -> bool {
     !panic_count::count_is_zero()
+}
+
+pub fn __rust_end_short_backtrace<F, T>(f: F) -> T
+where
+    F: FnOnce() -> T,
+{
+    let result = f();
+
+    // prevent this frame from being tail-call optimized away
+    core::hint::black_box(());
+
+    result
 }
 
 /// Entry point of panics from the core crate (`panic_impl` lang item).
@@ -447,45 +504,23 @@ pub fn panic_handler(info: &core::panic::PanicInfo<'_>) -> ! {
 
     let loc = info.location().unwrap(); // The current implementation always returns Some
     let msg = info.message();
-    // crate::sys::backtrace::__rust_end_short_backtrace(move || {
-    //     if let Some(s) = msg.as_str() {
-    //         panic_with_hook(
-    //             &mut StaticStrPayload(s),
-    //             loc,
-    //             info.can_unwind(),
-    //             info.force_no_backtrace(),
-    //         );
-    //     } else {
-    //         panic_with_hook(
-    //             &mut FormatStringPayload {
-    //                 inner: &msg,
-    //                 string: None,
-    //             },
-    //             loc,
-    //             info.can_unwind(),
-    //             info.force_no_backtrace(),
-    //         );
-    //     }
-    // })
 
-    if let Some(s) = msg.as_str() {
-        panic_with_hook(
-            &mut StaticStrPayload(s),
-            loc,
-            true,  // info.can_unwind(),
-            false, // info.force_no_backtrace(),
-        );
-    } else {
-        panic_with_hook(
-            &mut FormatStringPayload {
-                inner: &msg,
-                string: None,
-            },
-            loc,
-            true,  // info.can_unwind(),
-            false, // info.force_no_backtrace(),
-        );
-    }
+    // crate::sys::backtrace::__rust_end_short_backtrace(move || {
+    __rust_end_short_backtrace(move || {
+        if let Some(s) = msg.as_str() {
+            panic_with_hook(&mut StaticStrPayload(s), loc, info.can_unwind(), false);
+        } else {
+            panic_with_hook(
+                &mut FormatStringPayload {
+                    inner: &msg,
+                    string: None,
+                },
+                loc,
+                info.can_unwind(),
+                false,
+            );
+        }
+    })
 }
 
 /// This is the entry point of panicking for the non-format-string variants of
@@ -539,24 +574,16 @@ pub fn begin_panic<M: Any + Send>(msg: M) -> ! {
 
     let loc = Location::caller();
     // crate::sys::backtrace::__rust_end_short_backtrace(move || {
-    //     panic_with_hook(
-    //         &mut Payload { inner: Some(msg) },
-    //         loc,
-    //         // can_unwind
-    //         true,
-    //         // force_no_backtrace
-    //         false,
-    //     )
-    // })
-
-    panic_with_hook(
-        &mut Payload { inner: Some(msg) },
-        loc,
-        // can_unwind
-        true,
-        // force_no_backtrace
-        false,
-    )
+    __rust_end_short_backtrace(move || {
+        panic_with_hook(
+            &mut Payload { inner: Some(msg) },
+            loc,
+            // can_unwind
+            true,
+            // force_no_backtrace
+            false,
+        )
+    })
 }
 
 fn payload_as_str(payload: &dyn Any) -> &str {
@@ -602,13 +629,7 @@ fn panic_with_hook(
         crate::process::abort();
     }
 
-
-    let tid = crate::sys::thread::sceKernelGetThreadId();
-    if tid.is_ok() {
-        rtprintpanic!("thread {} panicked at {location}:\n{payload}\n", tid.as_inner());
-    } else {
-        rtprintpanic!("panicked at {location}:\n{payload}\n");
-    }
+    default_hook(&PanicHookInfo::new(location, payload.get(), can_unwind, false));
 
     // Indicate that we have finished executing the panic hook. After this point
     // it is fine if there is a panic while executing destructors, as long as it
@@ -677,6 +698,7 @@ pub fn resume_unwind(payload: Box<dyn Any + Send>) -> ! {
 #[cfg_attr(not(test), rustc_std_internal_symbol)]
 #[cfg(not(panic = "immediate-abort"))]
 #[cfg(not(feature = "std"))]
+#[allow(unused)]
 fn rust_panic(msg: &mut dyn PanicPayload) -> ! {
     cfg_select! {
         panic = "unwind" => {
@@ -694,9 +716,9 @@ impl<T> core::panic::UnwindSafe for AssertUnwindSafe<T> {}
 // TODO: EH personality was moved from the panic_unwind crate to std in
 // https://github.com/rust-lang/rust/pull/92845. This no-op implementation
 // should be replaced with the version from std when using no_std.
-#[cfg(not(feature = "std"))]
-#[lang = "eh_personality"]
-unsafe extern "C" fn rust_eh_personality() {}
+// #[cfg(not(feature = "std"))]
+// #[lang = "eh_personality"]
+// unsafe extern "C" fn rust_eh_personality() {}
 
 #[cfg_attr(panic = "unwind", link(name = "unwind", kind = "static"))]
 unsafe extern "C" {}
