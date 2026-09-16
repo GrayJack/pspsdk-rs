@@ -297,20 +297,37 @@ fn main() {
     let mut rustflags = String::with_capacity(1024 + env_rustflags.len());
 
     match config.project.kind {
-        ProjectKind::Prx => rustflags.push_str("--cfg prx "),
+        ProjectKind::Prx => {
+            rustflags.push_str("--cfg prx ");
+            if let Some(ref pbp) = config.project.pbp {
+                match pbp.exit_callback.unwrap_or_default() {
+                    ExitCallback::Default => rustflags.push_str("--cfg default_exit_cb "),
+                    ExitCallback::Manual => {},
+                }
+            } else {
+                rustflags.push_str("--cfg default_exit_cb ");
+            }
+        },
         ProjectKind::Eboot => rustflags.push_str("--cfg eboot --cfg pbp "),
         ProjectKind::Pboot => rustflags.push_str("--cfg pboot --cfg pbp "),
     };
 
+    match config.project.kind {
+        ProjectKind::Eboot | ProjectKind::Pboot => {
+            if let Some(ref pbp) = config.project.pbp {
+                match pbp.exit_callback.unwrap_or_default() {
+                    ExitCallback::Default => rustflags.push_str("--cfg default_exit_cb "),
+                    ExitCallback::Manual => {},
+                }
+            } else {
+                rustflags.push_str("--cfg default_exit_cb ");
+            }
+        },
+        _ => {},
+    };
+
     if let Some(true) = config.project.human_readable_os_errors {
         rustflags.push_str("--cfg os_err_human ");
-    }
-
-    if let Some(ref pbp) = config.project.pbp {
-        match pbp.exit_callback.unwrap_or_default() {
-            ExitCallback::Default => rustflags.push_str("--cfg default_exit_cb "),
-            ExitCallback::Manual => {},
-        }
     }
 
     if let Some(flags) = config.project.rustflags {
@@ -334,6 +351,7 @@ fn main() {
         .env("RUSTFLAGS", &rustflags)
         .stdout(Stdio::piped());
 
+    dbg!(&cargo_build_cmd);
     if let Some(target_fw) = config.project.target_fw.clone() {
         cargo_build_cmd.env("PSPSDK_TARGET_FW", target_fw);
     }
