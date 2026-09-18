@@ -57,7 +57,7 @@ jobs:
   run-tests:
     needs: check
     runs-on: ubuntu-latest
-    container: rustpsp/ppsspp-headless:latest
+    container: grayjack1/ppsspp-headless:latest
     steps:
       - name: Download Artifact
         uses: actions/download-artifact@v8
@@ -67,7 +67,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          /ppsspp/build-sdl/PPSSPPHeadless --graphics=software ./pspsdk-unit-tests.EBOOT.PBP --timeout=10 -r .
+          /ppsspp/build-sdl/PPSSPPHeadless --graphics=software ./pspsdk-unit-tests.EBOOT.PBP --timeout=10 -r . > psp_output_file.log
           cat psp_output_file.log
           if [ "$(tail -n 1 psp_output_file.log)" = "FINAL_SUCCESS" ]; then
               echo Test passed
