@@ -17,25 +17,25 @@ macro_rules! assert_almost_eq {
 }
 
 pub fn test_group(tr: &mut TestRunner) {
-    tr.run_test("time::instant_monotonic", instant_monotonic);
-    tr.run_test("time::instant_elapsed", instant_elapsed);
-    tr.run_test("time::instant_math", instant_math);
-    tr.run_test("time::instant_math_is_associative", instant_math_is_associative);
-    tr.run_test("time::instant_duration_since_saturates", instant_duration_since_saturates);
-    tr.run_test(
+    tr.test("time::instant_monotonic", instant_monotonic);
+    tr.test("time::instant_elapsed", instant_elapsed);
+    tr.test("time::instant_math", instant_math);
+    tr.test("time::instant_math_is_associative", instant_math_is_associative);
+    tr.test("time::instant_duration_since_saturates", instant_duration_since_saturates);
+    tr.test(
         "time::instant_saturating_duration_since_nopanic",
         instant_saturating_duration_since_nopanic,
     );
-    tr.run_test(
+    tr.test(
         "time::instant_checked_duration_since_nopanic",
         instant_checked_duration_since_nopanic,
     );
-    tr.run_test("time::system_time_math", system_time_math);
-    tr.run_test("time::system_time_elapsed", system_time_elapsed);
-    tr.run_test("time::since_epoch", since_epoch);
-    tr.run_test("time::big_math", big_math);
-    tr.run_test("time::system_time_max_min", system_time_max_min);
-    tr.run_test("time::system_time_saturating", system_time_saturating);
+    tr.test("time::system_time_math", system_time_math);
+    tr.test("time::system_time_elapsed", system_time_elapsed);
+    tr.test("time::since_epoch", since_epoch);
+    tr.test("time::big_math", big_math);
+    tr.test("time::system_time_max_min", system_time_max_min);
+    tr.test("time::system_time_saturating", system_time_saturating);
 }
 
 // #[test]

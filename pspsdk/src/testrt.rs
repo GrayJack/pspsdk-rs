@@ -76,7 +76,7 @@ impl<'a> TestRunner<'a> {
         f(self)
     }
 
-    pub fn run_test<R, F>(&mut self, testcase_name: &'a str, f: F)
+    pub fn test<R, F>(&mut self, testcase_name: &'a str, f: F)
     where
         R: Termination + 'static,
         F: FnOnce() -> R + UnwindSafe,
@@ -113,6 +113,24 @@ impl<'a> TestRunner<'a> {
         }
     }
 
+    pub fn should_panic<R, F>(&mut self, testcase_name: &'a str, f: F)
+    where
+        R: Termination + 'static,
+        F: FnOnce() -> R + UnwindSafe,
+    {
+        let res = panic::catch_unwind(f);
+        match res {
+            Ok(_) => {
+                self.failure = true;
+                self.failures.push(testcase_name);
+                self.write_args(format_args!("[FAIL]: ({testcase_name}): does not panicked\n",));
+            },
+            Err(_) => {
+                self.pass(testcase_name, "ok");
+            },
+        }
+    }
+
     pub fn start_run(&self) {
         self.write_args(format_args!("\n\n{}\n", STARTING_TOKEN));
     }
@@ -125,86 +143,6 @@ impl<'a> TestRunner<'a> {
             self.write_args(format_args!("{}\n", SUCCESS_TOKEN));
         }
         self.quit();
-    }
-
-    pub fn check_fns_do_not_panic(&self, tests: &[(&str, &dyn Fn())]) {
-        for (testcase_name, f) in tests {
-            f();
-            self.pass(testcase_name, "");
-        }
-    }
-
-    pub fn check<T>(&mut self, testcase_name: &'a str, l: T, r: T)
-    where
-        T: core::fmt::Debug + PartialEq,
-    {
-        if l == r {
-            self.pass(testcase_name, &format!("{:?} == {:?}", l, r));
-        } else {
-            self.fail(testcase_name, &format!("{:?} != {:?}", l, r));
-        }
-    }
-
-    pub fn check_true(&mut self, testcase_name: &'a str, pred: bool) {
-        if pred {
-            self.pass(testcase_name, "True.");
-        } else {
-            self.fail(testcase_name, "False!");
-        }
-    }
-
-    pub fn check_large_collection<T>(&mut self, testcase_name: &'a str, l: &[T], r: &[T])
-    where
-        T: core::fmt::Debug + PartialEq + Eq,
-    {
-        if l.iter().eq(r.iter()) {
-            self.pass(testcase_name, "Equal!");
-        } else {
-            if l.len() != r.len() {
-                self.dbg(testcase_name, &format!("Lengths differ! {} != {}", l.len(), r.len()));
-            }
-
-            for (i, (li, ri)) in l.iter().zip(r.iter()).enumerate() {
-                if li != ri {
-                    self.dbg(testcase_name, &format!("Differ on item {}: {:?} != {:?}", i, li, ri));
-                    break;
-                }
-            }
-
-            self.fail(testcase_name, "Collections were not equal!");
-        }
-    }
-
-    pub fn check_silent<T>(&mut self, testcase_name: &'a str, l: T, r: T)
-    where
-        T: core::fmt::Debug + PartialEq,
-    {
-        if l == r {
-            self.pass(testcase_name, "Equal.");
-        } else {
-            self.fail(testcase_name, "Not equal!");
-        }
-    }
-
-    pub fn check_list<T>(&mut self, val_pairs: &[(&'a str, T, T)])
-    where
-        T: core::fmt::Debug + PartialEq,
-    {
-        for (testcase_name, l, r) in val_pairs {
-            self.check(testcase_name, l, r)
-        }
-    }
-
-    pub fn _check_return_values<T>(&mut self, val_pairs: &[(&'a str, &dyn Fn() -> T, T)])
-    where
-        T: core::fmt::Debug + PartialEq + Eq + Clone,
-    {
-        self.check_list(
-            &val_pairs
-                .iter()
-                .map(|(testcase_name, f, v)| (*testcase_name, f(), v.clone()))
-                .collect::<Vec<(&str, T, T)>>(),
-        )
     }
 
     pub fn pass(&self, testcase_name: &str, msg: &str) {
