@@ -1063,3 +1063,63 @@ where
 {
     unsafe { core::ptr::with_exposed_provenance_mut::<T>(addr).read_volatile() }
 }
+
+/// Gets the TLS address for the calling thread.
+///
+/// This is more of a lower level primitive, and although doesn't cause memory safety concerns, it
+/// may be easier to cause logic bugs if not used properly.
+#[inline(always)]
+#[cfg(feature = "non-stub-code")]
+pub fn get_tls_addr(id: thread::TlsPoolId) -> Option<*mut core::ffi::c_void> {
+    pspsdk_macros::psp_fw_select! {
+        570.. => {
+            cfg_select! {
+                pbp => {
+                    let res = usersystemlib::sceKernelGetTlsAddr(id);
+                    if res.is_null() {
+                        None
+                    } else {
+                        Some(res)
+                    }
+                },
+                all(prx, not(feature = "kernel")) => {
+                    use core::mem::MaybeUninit;
+                    let k0 = crate::sys::get_k0();
+                    let intr = crate::sys::get_current_interrupt_status();
+                    let tmp = unsafe { *((0xC4 + k0 as usize) as *const u32) };
+
+                    if k0 != 0 && intr != 0 && tmp == 0 {
+                        let tlspool_id = id.tls_addr(k0);
+
+                        match tlspool_id {
+                            Some(tlspool_id) => Some(tlspool_id as *mut _),
+                            None => {
+                                let mut ptr = MaybeUninit::uninit();
+                                let res = unsafe {
+                                    crate::sys::thread::_sceKernelAllocateTlspl(id, ptr.as_mut_ptr(), 0)
+                                };
+
+                                if res.is_ok() {
+                                    let ptr = unsafe { ptr.assume_init() };
+                                    Some(ptr)
+                                } else {
+                                    None
+                                }
+                            },
+                        }
+                    } else {
+                        None
+                    }
+                },
+                _ => {
+                    let _ = id;
+                    None
+                },
+            }
+        },
+        _ => {
+            let _ = id;
+            None
+        }
+    }
+}
