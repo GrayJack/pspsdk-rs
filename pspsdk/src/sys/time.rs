@@ -4,6 +4,7 @@
 mod non_stub;
 #[cfg(feature = "non-stub-code")]
 pub(crate) use non_stub::{Instant, SystemTime, UNIX_EPOCH};
+
 use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
 #[allow(unused_imports, reason = "PSP FW version")]

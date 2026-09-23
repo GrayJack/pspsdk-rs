@@ -18,6 +18,13 @@ pub use crate::sys::usersystemlib::{
     sceKernelTryLockLwMutex, sceKernelUnlockLwMutex,
 };
 
+#[cfg(feature = "non-stub-code")]
+mod non_stub;
+#[cfg(feature = "non-stub-code")]
+pub use non_stub::{
+    available_parallelism, current_os_id, set_name, sleep, sleep_until, yield_now, Thread,
+};
+
 /// The thread UID, created with [`sceKernelCreateThread`].
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -6335,6 +6342,17 @@ impl TlsPoolId {
         // SAFETY: pattern types are always legal values of their base type
         // (Not using `.0` because that has perf regressions.)
         unsafe { core::mem::transmute(self) }
+    }
+
+    pub(crate) fn tls_addr(&self, k0: u32) -> Option<usize> {
+        let addr =
+            unsafe { *(((((self.to_inner() << 0x19) >> 0x1C) + 0x10) * 4 + k0) as *mut *mut ()) };
+
+        if addr.is_null() {
+            None
+        } else {
+            Some(addr.addr())
+        }
     }
 }
 

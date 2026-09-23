@@ -19,7 +19,9 @@
     sync_unsafe_cell,
     slice_ptr_get,
     duration_constants,
-    panic_can_unwind
+    panic_can_unwind,
+    get_mut_unchecked,
+    ptr_cast_slice
 )]
 #![cfg_attr(all(feature = "non-stub-code", panic = "unwind"), feature(panic_unwind))]
 #![cfg_attr(all(feature = "non-stub-code", panic = "abort"), feature(panic_abort))]
@@ -72,6 +74,8 @@ pub mod panicking;
 mod personality;
 #[cfg(feature = "non-stub-code")]
 pub mod sync;
+#[cfg(feature = "non-stub-code")]
+pub mod thread;
 #[cfg(feature = "non-stub-code")]
 pub mod time;
 
