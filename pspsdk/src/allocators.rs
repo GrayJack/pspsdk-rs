@@ -401,6 +401,228 @@ unsafe impl GlobalAlloc for GlobalVariablePoolAlloc {
     }
 }
 
+/// The default memory allocator provided by the operating system.
+///
+/// This is based on `malloc` on Unix platforms and `HeapAlloc` on Windows,
+/// plus related functions. However, it is not valid to mix use of the backing
+/// system allocator with `System`, as this implementation may include extra
+/// work, such as to serve alignment requests greater than the alignment
+/// provided directly by the backing system allocator.
+///
+/// This type implements the [`GlobalAlloc`] trait. Currently the default
+/// global allocator is unspecified. Libraries, however, like `cdylib`s and
+/// `staticlib`s are guaranteed to use the [`System`] by default and as such
+/// work as if they had this definition:
+///
+/// ```rust
+/// use pspsdk::alloc::System;
+///
+/// #[global_allocator]
+/// static A: System = System;
+///
+/// fn main() {
+///     let a = Box::new(4); // Allocates from the system allocator.
+///     println!("{a}");
+/// }
+/// ```
+///
+/// You can also define your own wrapper around `System` if you'd like, such as
+/// keeping track of the number of all bytes allocated:
+///
+/// ```rust
+/// use core::{
+///     alloc::{GlobalAlloc, Layout},
+///     sync::atomic::{AtomicUsize, Ordering::Relaxed},
+/// };
+///
+/// use pspsdk::alloc::System;
+///
+/// struct Counter;
+///
+/// static ALLOCATED: AtomicUsize = AtomicUsize::new(0);
+///
+/// unsafe impl GlobalAlloc for Counter {
+///     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+///         let ret = unsafe { System.alloc(layout) };
+///         if !ret.is_null() {
+///             ALLOCATED.fetch_add(layout.size(), Relaxed);
+///         }
+///         ret
+///     }
+///
+///     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+///         unsafe {
+///             System.dealloc(ptr, layout);
+///         }
+///         ALLOCATED.fetch_sub(layout.size(), Relaxed);
+///     }
+/// }
+///
+/// #[global_allocator]
+/// static A: Counter = Counter;
+///
+/// fn main() {
+///     println!("allocated bytes before main: {}", ALLOCATED.load(Relaxed));
+/// }
+/// ```
+///
+/// It can also be used directly to allocate memory independently of whatever
+/// global allocator has been selected for a Rust program. For example if a Rust
+/// program opts in to using jemalloc as the global allocator, `System` will
+/// still allocate memory using `malloc` and `HeapAlloc`.
+#[derive(Copy, Debug, Clone, Default)]
+// #[derive_const(Clone, Default)]
+pub struct System;
+
+unsafe impl core::alloc::AllocatorClone for System {}
+unsafe impl core::alloc::StaticAllocator for System {}
+
+impl System {
+    #[inline]
+    fn alloc_impl(&self, layout: Layout, zeroed: bool) -> Result<NonNull<[u8]>, AllocError> {
+        match layout.size() {
+            0 => Ok(layout.dangling_ptr().cast_slice(0)),
+            // SAFETY: `layout` is non-zero in size,
+            size => unsafe {
+                let raw_ptr = if zeroed {
+                    SystemAlloc.alloc_zeroed(layout)
+                } else {
+                    SystemAlloc.alloc(layout)
+                };
+                let ptr = NonNull::new(raw_ptr).ok_or(AllocError)?;
+                Ok(ptr.cast_slice(size))
+            },
+        }
+    }
+
+    // SAFETY: Same as `Allocator::grow`
+    #[inline]
+    unsafe fn grow_impl(
+        &self, ptr: NonNull<u8>, old_layout: Layout, new_layout: Layout, zeroed: bool,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        debug_assert!(
+            new_layout.size() >= old_layout.size(),
+            "`new_layout.size()` must be greater than or equal to `old_layout.size()`"
+        );
+
+        match old_layout.size() {
+            0 => self.alloc_impl(new_layout, zeroed),
+
+            // SAFETY: `new_size` is non-zero as `new_size` is greater than or equal to `old_size`
+            // as required by safety conditions and the `old_size == 0` case was handled in the
+            // previous match arm. Other conditions must be upheld by the caller
+            old_size if old_layout.align() == new_layout.align() => unsafe {
+                let new_size = new_layout.size();
+
+                // `realloc` probably checks for `new_size >= old_layout.size()` or something
+                // similar.
+                core::hint::assert_unchecked(new_size >= old_layout.size());
+
+                let raw_ptr = SystemAlloc.realloc(ptr.as_ptr(), old_layout, new_size);
+                let ptr = NonNull::new(raw_ptr).ok_or(AllocError)?;
+                if zeroed {
+                    raw_ptr.add(old_size).write_bytes(0, new_size - old_size);
+                }
+                Ok(ptr.cast_slice(new_size))
+            },
+
+            // SAFETY: because `new_layout.size()` must be greater than or equal to `old_size`,
+            // both the old and new memory allocation are valid for reads and writes for `old_size`
+            // bytes. Also, because the old allocation wasn't yet deallocated, it cannot overlap
+            // `new_ptr`. Thus, the call to `copy_nonoverlapping` is safe. The safety contract
+            // for `dealloc` must be upheld by the caller.
+            old_size => unsafe {
+                let new_ptr = self.alloc_impl(new_layout, zeroed)?;
+                ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_mut_ptr(), old_size);
+                Allocator::deallocate(self, ptr, old_layout);
+                Ok(new_ptr)
+            },
+        }
+    }
+}
+
+// The Allocator impl checks the layout size to be non-zero and forwards to the
+// platform functions in `std::sys::*::alloc`.
+unsafe impl Allocator for System {
+    #[inline]
+    fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
+        self.alloc_impl(layout, false)
+    }
+
+    #[inline]
+    fn allocate_zeroed(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
+        self.alloc_impl(layout, true)
+    }
+
+    #[inline]
+    unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
+        if layout.size() != 0 {
+            // SAFETY: `layout` is non-zero in size,
+            // other conditions must be upheld by the caller
+            unsafe { SystemAlloc.dealloc(ptr.as_ptr(), layout) }
+        }
+    }
+
+    #[inline]
+    unsafe fn grow(
+        &self, ptr: NonNull<u8>, old_layout: Layout, new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        // SAFETY: all conditions must be upheld by the caller
+        unsafe { self.grow_impl(ptr, old_layout, new_layout, false) }
+    }
+
+    #[inline]
+    unsafe fn grow_zeroed(
+        &self, ptr: NonNull<u8>, old_layout: Layout, new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        // SAFETY: all conditions must be upheld by the caller
+        unsafe { self.grow_impl(ptr, old_layout, new_layout, true) }
+    }
+
+    #[inline]
+    unsafe fn shrink(
+        &self, ptr: NonNull<u8>, old_layout: Layout, new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        debug_assert!(
+            new_layout.size() <= old_layout.size(),
+            "`new_layout.size()` must be smaller than or equal to `old_layout.size()`"
+        );
+
+        match new_layout.size() {
+            // SAFETY: conditions must be upheld by the caller
+            0 => unsafe {
+                Allocator::deallocate(self, ptr, old_layout);
+                Ok(new_layout.dangling_ptr().cast_slice(0))
+            },
+
+            // SAFETY: `new_size` is non-zero. Other conditions must be upheld by the caller
+            new_size if old_layout.align() == new_layout.align() => unsafe {
+                // `realloc` probably checks for `new_size <= old_layout.size()` or something
+                // similar.
+                core::hint::assert_unchecked(new_size <= old_layout.size());
+
+                let raw_ptr = SystemAlloc.realloc(ptr.as_ptr(), old_layout, new_size);
+                let ptr = NonNull::new(raw_ptr).ok_or(AllocError)?;
+                Ok(ptr.cast_slice(new_size))
+            },
+
+            // SAFETY: because `new_size` must be smaller than or equal to `old_layout.size()`,
+            // both the old and new memory allocation are valid for reads and writes for `new_size`
+            // bytes. Also, because the old allocation wasn't yet deallocated, it cannot overlap
+            // `new_ptr`. Thus, the call to `copy_nonoverlapping` is safe. The safety contract
+            // for `dealloc` must be upheld by the caller.
+            new_size => unsafe {
+                let new_ptr = Allocator::allocate(self, new_layout)?;
+                ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_mut_ptr(), new_size);
+                Allocator::deallocate(self, ptr, old_layout);
+                Ok(new_ptr)
+            },
+        }
+    }
+}
+
+unsafe impl GlobalAllocator for System {}
+
 #[alloc_error_handler]
 #[cfg(not(feature = "std"))]
 fn aeh(layout: core::alloc::Layout) -> ! {
