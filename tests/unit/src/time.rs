@@ -80,6 +80,7 @@ pub fn instant_elapsed() {
 
 // #[test]
 pub fn instant_math() {
+    pspsdk::thread::sleep(Duration::from_secs(2));
     let a = Instant::now();
     let b = Instant::now();
     println!("a: {a:?}");
