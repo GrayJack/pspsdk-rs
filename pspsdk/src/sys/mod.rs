@@ -828,6 +828,33 @@ pub extern "C" fn get_k1() -> u32 {
     core::arch::naked_asm!(".set noreorder", ".set noat", "jr $ra", "move $v0, $k1")
 }
 
+/// Sets the processor K0 register to a given value.
+///
+/// # Safety
+///
+/// Touching a privileged CPU register is unsafe and changing K0 value can cause issues on system
+/// state, more specifically TLS state.
+#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
+#[unsafe(naked)]
+pub unsafe extern "C" fn set_k0(k1: u32) -> u32 {
+    core::arch::naked_asm!(
+        ".set noreorder",
+        ".set noat",
+        "move $v0, $k0",
+        "jr	 $ra",
+        "move $k0, $a0"
+    )
+}
+
+/// Gets the current value of the processor K0 register.
+///
+/// The K0 register is reserved to be used for Thead Local information.
+#[cfg(all(target_os = "psp", feature = "non-stub-code"))]
+#[unsafe(naked)]
+pub extern "C" fn get_k0() -> u32 {
+    core::arch::naked_asm!(".set noreorder", ".set noat", "jr $ra", "move $v0, $k0")
+}
+
 /// Disables the CPU FPU exceptions.
 #[cfg(all(target_os = "psp", feature = "non-stub-code"))]
 #[unsafe(naked)]
