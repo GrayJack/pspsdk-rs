@@ -5,7 +5,7 @@
 #![no_std]
 #![no_main]
 
-use pspsdk::testrt::TestRunner;
+use pspsdk::{process, testrt::TestRunner};
 
 extern crate alloc;
 
@@ -18,7 +18,7 @@ fn psp_main() {
     let test_groups = [sync::test_group, time::test_group];
 
     // let mut runner = TestRunner::file_runner(c"ms0:/psp_output_file.log");
-    let mut runner = TestRunner::stdout_runner();
+    let mut runner = TestRunner::stdout_runner(true);
 
     runner.start_run();
 

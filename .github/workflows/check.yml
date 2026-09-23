@@ -69,7 +69,7 @@ jobs:
           set -euo pipefail
           /ppsspp/build-sdl/PPSSPPHeadless --graphics=software ./pspsdk-unit-tests.EBOOT.PBP --timeout=10 -r . > psp_output_file.log
           cat psp_output_file.log
-          if [[ "$(tail -n 2 psp_output_file.log)" == *"FINAL_SUCCESS"* ]]; then
+          if [ "$(tail -n 1 psp_output_file.log)" = "FINAL_SUCCESS" ]; then
               echo Test passed
           else
               echo Test failed

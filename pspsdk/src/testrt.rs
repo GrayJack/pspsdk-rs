@@ -30,7 +30,7 @@ pub struct TestRunner<'a> {
 enum TestRunnerMode {
     Fifo(FileDesc),
     File(FileDesc),
-    Stdout,
+    Stdout { finish_process: bool },
     Screen,
 }
 
@@ -53,9 +53,9 @@ impl<'a> TestRunner<'a> {
         }
     }
 
-    pub fn stdout_runner() -> Self {
+    pub fn stdout_runner(finish_process: bool) -> Self {
         Self {
-            mode: TestRunnerMode::Stdout,
+            mode: TestRunnerMode::Stdout { finish_process },
             failure: false,
             failures: Vec::new(),
         }
@@ -167,7 +167,7 @@ impl<'a> TestRunner<'a> {
             TestRunnerMode::Screen => {
                 crate::dprint!("{}", args);
             },
-            TestRunnerMode::Stdout => {
+            TestRunnerMode::Stdout { .. } => {
                 crate::print!("{}", args);
             },
         }
@@ -179,7 +179,14 @@ impl<'a> TestRunner<'a> {
                 drop(fd);
                 quit_game();
             },
-            TestRunnerMode::Screen | TestRunnerMode::Stdout => sleep(),
+            TestRunnerMode::Stdout { finish_process } => {
+                if finish_process {
+                    quit_game();
+                } else {
+                    sleep()
+                }
+            },
+            TestRunnerMode::Screen => sleep(),
         }
     }
 }
