@@ -65,7 +65,7 @@ pub enum ThreadAttributes {
     /// Specifies that the scratchpad memory is available.
     ///
     /// # Firmware Version
-    /// This is not usable on PSP firmware version 1.00.
+    /// This is not usable on PSP firmware version >= 1.00.
     UseScratchSRAM = 0x00008000,
     /// Specifies that the VFPU is available.
     UseVFPU = 0x00004000,
