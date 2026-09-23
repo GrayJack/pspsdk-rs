@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["sceHprmIsHeadphoneExist","sceHprmIsMicrophoneExist","sceHprmIsRemoteExist","sceHprmPeekCurrentKey","sceHprmPeekLatch","sceHprmReadLatch","sceHprmRegisterCallback","sceHprmUnregitserCallback"],"struct":["HprmCallbackSlot","HprmKey"]};

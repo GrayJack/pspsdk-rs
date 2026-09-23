@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["AUDIO_SAMPLE_MAX","AUDIO_SAMPLE_MIN"],"enum":["AudioFormats","AudioInputFrequency","AudioOutputFrequency"],"fn":["audio_sample_align","sceAudioChReserve"],"mod":["atrac","routing"],"struct":["AudioChannelId","AudioInputParams"]};

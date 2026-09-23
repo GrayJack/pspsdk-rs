@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["GlobalVariablePoolAlloc","PartitionAlloc","System","SystemAlloc","VariablePoolAlloc","VariablePoolAllocBuilder"]};
