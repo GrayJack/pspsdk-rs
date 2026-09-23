@@ -1,10 +1,12 @@
 //! Allocators for the PSP system.
 use core::{
-    alloc::{AllocError, Allocator, GlobalAlloc},
+    alloc::{AllocError, Allocator, GlobalAlloc, Layout},
     ffi::CStr,
     mem::MaybeUninit,
     ptr::{self, NonNull},
 };
+
+use alloc::alloc::GlobalAllocator;
 
 use crate::{
     io,
@@ -43,12 +45,22 @@ const DEFAULT_VPL_SIZE: usize = cfg_select! {
 };
 
 /// An general allocator for the PSP OS.
+#[derive(Clone)]
 pub struct SystemAlloc;
 
+unsafe impl core::alloc::AllocatorClone for SystemAlloc {}
+unsafe impl core::alloc::StaticAllocator for SystemAlloc {}
+unsafe impl GlobalAllocator for SystemAlloc {}
+
 /// An allocator to a specific PSP RAM partition
+#[derive(Clone)]
 pub struct PartitionAlloc {
     partition: MemoryPartitionId,
 }
+
+unsafe impl core::alloc::AllocatorClone for PartitionAlloc {}
+unsafe impl core::alloc::StaticAllocator for PartitionAlloc {}
+unsafe impl GlobalAllocator for PartitionAlloc {}
 
 impl PartitionAlloc {
     /// Creates a new `PartitionAlloc` that will allocate in the given PSP `partition`.
@@ -56,58 +68,6 @@ impl PartitionAlloc {
     /// The allocation policy is to allocate from the lowest available address.
     pub const fn new(partition: MemoryPartitionId) -> Self {
         Self { partition }
-    }
-}
-
-
-unsafe impl GlobalAlloc for SystemAlloc {
-    unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        let size = layout.size() + size_of::<SceUid>();
-
-        let res = unsafe {
-            sceKernelAllocPartitionMemory(
-                DEFAULT_PARTITION_ID,
-                c"SystemAlloc".as_ptr().cast(),
-                MemoryBlockKind::LowAligned,
-                size,
-                layout.align(),
-            )
-        };
-
-        match res.ok() {
-            Some(id) => {
-                let mut ptr: *mut u8 = sceKernelGetBlockHeadAddr(id).cast();
-
-                if ptr.is_null() {
-                    return ptr;
-                }
-
-                unsafe {
-                    *ptr.cast() = id;
-
-                    ptr = ptr.wrapping_add(size_of::<SceUid>());
-
-                    // We must add at least one, to store this value.
-                    let align_padding = 1 + ptr.wrapping_add(1).align_offset(layout.align());
-                    *ptr.wrapping_add(align_padding - 1) = align_padding as u8;
-                    ptr.wrapping_add(align_padding)
-                }
-            },
-            None => ptr::null_mut(),
-        }
-    }
-
-    unsafe fn dealloc(&self, ptr: *mut u8, _layout: core::alloc::Layout) {
-        if ptr.is_null() {
-            return;
-        }
-        unsafe {
-            let align_padding = *ptr.wrapping_sub(1);
-
-            let id = *ptr.wrapping_sub(align_padding as usize).cast::<MemoryBlockId>().offset(-1);
-
-            let _res = sceKernelFreePartitionMemory(id);
-        }
     }
 }
 
@@ -170,57 +130,6 @@ unsafe impl Allocator for SystemAlloc {
 
                 let _res = sceKernelFreePartitionMemory(id);
             }
-        }
-    }
-}
-
-unsafe impl GlobalAlloc for PartitionAlloc {
-    unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-        let size = layout.size() + size_of::<SceUid>();
-
-        let res = unsafe {
-            sceKernelAllocPartitionMemory(
-                self.partition,
-                c"PartitionAlloc".as_ptr().cast(),
-                MemoryBlockKind::LowAligned,
-                size,
-                layout.align(),
-            )
-        };
-
-        match res.ok() {
-            Some(id) => {
-                let mut ptr: *mut u8 = sceKernelGetBlockHeadAddr(id).cast();
-
-                if ptr.is_null() {
-                    return ptr;
-                }
-
-                unsafe {
-                    *ptr.cast() = id;
-
-                    ptr = ptr.wrapping_add(size_of::<SceUid>());
-
-                    // We must add at least one, to store this value.
-                    let align_padding = 1 + ptr.wrapping_add(1).align_offset(layout.align());
-                    *ptr.wrapping_add(align_padding - 1) = align_padding as u8;
-                    ptr.wrapping_add(align_padding)
-                }
-            },
-            None => ptr::null_mut(),
-        }
-    }
-
-    unsafe fn dealloc(&self, ptr: *mut u8, _layout: core::alloc::Layout) {
-        if ptr.is_null() {
-            return;
-        }
-        unsafe {
-            let align_padding = *ptr.wrapping_sub(1);
-
-            let id = *ptr.wrapping_sub(align_padding as usize).cast::<MemoryBlockId>().offset(-1);
-
-            let _res = sceKernelFreePartitionMemory(id);
         }
     }
 }
@@ -298,9 +207,14 @@ pub struct VariablePoolAllocBuilder {
 }
 
 /// A memory allocator using the PSP Variable-sized Memory Pool.
+#[derive(Clone)]
 pub struct VariablePoolAlloc {
     id: VplId,
 }
+
+unsafe impl core::alloc::AllocatorClone for VariablePoolAlloc {}
+unsafe impl core::alloc::StaticAllocator for VariablePoolAlloc {}
+unsafe impl GlobalAllocator for VariablePoolAlloc {}
 
 impl VariablePoolAlloc {
     /// Creates a variable memory pool allocator with a given size.
