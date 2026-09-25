@@ -88,44 +88,31 @@ impl BorrowedFd<'_> {
 impl BorrowedFd<'_> {
     #[inline]
     pub fn read(&self, buf: &mut [u8]) -> io::Result<usize> {
-        if sys::is_interrupt_enabled() {
-            let res = unsafe { sceIoRead(self.fd, buf.as_mut_ptr().cast(), buf.len()) };
-            res.into_result().map_err(Into::into)
-        } else {
-            Err(io::Error::from(sys::SceError::IO))
-        }
+        let res = unsafe { sceIoRead(self.fd, buf.as_mut_ptr().cast(), buf.len()) };
+        res.into_result().map_err(Into::into)
     }
 
     #[inline]
     pub fn read_buf(&self, mut cursor: io::BorrowedCursor<'_, u8>) -> io::Result<()> {
-        if sys::is_interrupt_enabled() {
-            let res = unsafe {
-                sceIoRead(self.fd, cursor.as_mut().as_mut_ptr().cast(), cursor.capacity())
-            };
+        let res =
+            unsafe { sceIoRead(self.fd, cursor.as_mut().as_mut_ptr().cast(), cursor.capacity()) };
 
-            let ret = res.into_result()?;
+        let ret = res.into_result()?;
 
-            // SAFETY: `ret` bytes were written to the initialized portion of the buffer
-            unsafe {
-                cursor.advance(ret);
-            }
-
-            Ok(())
-        } else {
-            Err(io::Error::from(sys::SceError::IO))
+        // SAFETY: `ret` bytes were written to the initialized portion of the buffer
+        unsafe {
+            cursor.advance(ret);
         }
+
+        Ok(())
     }
 
     #[inline]
     pub fn write(&self, buf: &[u8]) -> io::Result<usize> {
-        if sys::is_interrupt_enabled() {
-            unsafe {
-                sceIoWrite(self.fd, buf.as_ptr().cast(), buf.len())
-                    .into_result()
-                    .map_err(Into::into)
-            }
-        } else {
-            Err(io::Error::from(sys::SceError::IO))
+        unsafe {
+            sceIoWrite(self.fd, buf.as_ptr().cast(), buf.len())
+                .into_result()
+                .map_err(Into::into)
         }
     }
 
@@ -149,18 +136,14 @@ impl BorrowedFd<'_> {
 
     #[inline]
     pub fn seek(&self, pos: io::SeekFrom) -> io::Result<u64> {
-        if sys::is_interrupt_enabled() {
-            let (whence, pos) = match pos {
-                // Casting to `i64` is fine, too large values will end up as
-                // negative which will cause an error in `lseek`.
-                io::SeekFrom::Start(off) => (Whence::Start, off as i64),
-                io::SeekFrom::End(off) => (Whence::End, off),
-                io::SeekFrom::Current(off) => (Whence::Current, off),
-            };
-            sceIoLseek(self.fd, pos, whence).into_result().map_err(From::from)
-        } else {
-            Err(io::Error::from(sys::SceError::IO))
-        }
+        let (whence, pos) = match pos {
+            // Casting to `i64` is fine, too large values will end up as
+            // negative which will cause an error in `lseek`.
+            io::SeekFrom::Start(off) => (Whence::Start, off as i64),
+            io::SeekFrom::End(off) => (Whence::End, off),
+            io::SeekFrom::Current(off) => (Whence::Current, off),
+        };
+        sceIoLseek(self.fd, pos, whence).into_result().map_err(From::from)
     }
 
     #[inline]
