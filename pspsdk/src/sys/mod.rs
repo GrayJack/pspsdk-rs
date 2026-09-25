@@ -100,7 +100,9 @@ impl Default for SceUid {
 
 impl core::fmt::Debug for SceUid {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        f.debug_tuple("SceUid").field(&self.to_inner()).finish()
+        f.debug_tuple("SceUid")
+            .field(&format_args!("{:#010X}", self.to_inner()))
+            .finish()
     }
 }
 
@@ -114,7 +116,7 @@ impl core::fmt::Debug for SceUid {
 /// Cloning this type is cheap, the reason it is not [`Copy`] is to incentivize the handling of the
 /// error values.
 #[repr(transparent)]
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[must_use = "this `SceResult` may be an error value, which should be handled"]
 pub struct SceResult<T>(u32, PhantomData<T>);
 
@@ -286,6 +288,40 @@ impl<T: SceResultOk> SceResult<T> {
     }
 }
 
+impl<T> Clone for SceResult<T> {
+    fn clone(&self) -> Self {
+        Self(self.0, self.1)
+    }
+}
+
+#[cfg(feature = "specialization")]
+default impl<T> core::fmt::Debug for SceResult<T> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if self.is_ok() {
+            f.debug_tuple("SceResult::Ok")
+                .field(&format_args!("{:#010X}", self.0))
+                .finish()
+        } else {
+            let err = unsafe { SceError::from_raw_unchecked(self.0) };
+            f.debug_tuple("SceResult::Err").field(&err).finish()
+        }
+    }
+}
+
+impl<T> core::fmt::Debug for SceResult<T>
+where
+    T: SceResultOk + core::fmt::Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let res = self.clone().into_result();
+
+        match res {
+            Ok(t) => f.debug_tuple("SceResult::Ok").field(&t).finish(),
+            Err(err) => f.debug_tuple("SceResult::Err").field(&err).finish(),
+        }
+    }
+}
+
 /// A type that represents the return value of some PSP OS APIs.
 ///
 /// If its value is in the range of [`SceError`] ( 0xFFFFFFFF_80000001..=0xFFFFFFFF_FFFFFFFF), then
@@ -296,7 +332,7 @@ impl<T: SceResultOk> SceResult<T> {
 /// Cloning this type is cheap, the reason it is not [`Copy`] is to incentivize the handling of the
 /// error values.
 #[repr(transparent)]
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[must_use = "this `SceResult` may be an error value, which should be handled"]
 pub struct SceResult64<T>(u64, PhantomData<T>);
 
@@ -458,6 +494,26 @@ impl<T: SceResultOk> SceResult64<T> {
         }
 
         self
+    }
+}
+
+impl<T> Clone for SceResult64<T> {
+    fn clone(&self) -> Self {
+        Self(self.0, self.1)
+    }
+}
+
+impl<T> core::fmt::Debug for SceResult64<T>
+where
+    T: SceResultOk + core::fmt::Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let res = self.clone().into_result();
+
+        match res {
+            Ok(t) => f.debug_tuple("SceResult64::Ok").field(&t).finish(),
+            Err(err) => f.debug_tuple("SceResult64::Err").field(&err).finish(),
+        }
     }
 }
 

@@ -23,6 +23,11 @@
     get_mut_unchecked,
     ptr_cast_slice
 )]
+#![cfg_attr(
+    feature = "specialization",
+    allow(incomplete_features, reason = "specialization")
+)]
+#![cfg_attr(feature = "specialization", feature(specialization))]
 #![cfg_attr(all(feature = "non-stub-code", panic = "unwind"), feature(panic_unwind))]
 #![cfg_attr(all(feature = "non-stub-code", panic = "abort"), feature(panic_abort))]
 #![cfg_attr(doc, feature(doc_cfg))]
