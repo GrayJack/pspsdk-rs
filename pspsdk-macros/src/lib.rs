@@ -509,6 +509,7 @@ fn psp_fw_select_impl(arg: PspFwSelect) -> Result<TokenStream> {
             pspfwcfg::PspFwSelectCondPat::Lit(lit) => {
                 if lit == target_fw {
                     res = Some(ts);
+                    break;
                 } else {
                     continue;
                 }
@@ -517,6 +518,7 @@ fn psp_fw_select_impl(arg: PspFwSelect) -> Result<TokenStream> {
                 syn::RangeLimits::HalfOpen(_) => {
                     if (start..end).contains(&target_fw) {
                         res = Some(ts);
+                        break;
                     } else {
                         continue;
                     }
@@ -524,6 +526,7 @@ fn psp_fw_select_impl(arg: PspFwSelect) -> Result<TokenStream> {
                 syn::RangeLimits::Closed(_) => {
                     if (start..=end).contains(&target_fw) {
                         res = Some(ts);
+                        break;
                     } else {
                         continue;
                     }
@@ -537,6 +540,7 @@ fn psp_fw_select_impl(arg: PspFwSelect) -> Result<TokenStream> {
                     ));
                 } else {
                     res = Some(ts);
+                    break;
                 }
             },
         }
