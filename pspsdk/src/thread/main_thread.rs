@@ -53,6 +53,7 @@ cfg_select! {
 
         /// # Safety
         /// May only be called once.
+        #[allow(unused, reason = "FW version dependant")]
         pub(crate) unsafe fn set(id: ThreadId) {
             unsafe { MAIN = MaybeUninit::new(id) };
             INIT.store(true, Release);

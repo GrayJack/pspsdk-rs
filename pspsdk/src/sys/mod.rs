@@ -32,6 +32,8 @@ pub mod usersystemlib;
 
 #[cfg(feature = "non-stub-code")]
 pub mod sync;
+#[cfg(feature = "non-stub-code")]
+pub mod thread_local;
 
 /// A `usize`-like with the guarantee to be the correct size on PSP.
 pub type SceSize = cfg_select! {
@@ -1061,10 +1063,19 @@ pub fn spin_loop() {
     }
 }
 
+#[cfg(feature = "non-stub-code")]
+pub(crate) unsafe fn init() {
+    thread_local::key::init();
+}
+
 // SAFETY: must be called only once during runtime cleanup.
 // NOTE: this is not guaranteed to run, for example when the program aborts.
 #[cfg(all(target_os = "psp", feature = "non-stub-code"))]
-pub(crate) unsafe fn cleanup() {}
+pub(crate) unsafe fn cleanup() {
+    unsafe {
+        thread_local::key::cleanup();
+    }
+}
 
 /// Performs a volatile write of a memory location `addr` with the given `value` without
 /// reading or dropping the old value.
@@ -1127,18 +1138,22 @@ where
 #[inline(always)]
 #[cfg(feature = "non-stub-code")]
 pub fn get_tls_addr(id: thread::TlsPoolId) -> Option<*mut core::ffi::c_void> {
-    pspsdk_macros::psp_fw_select! {
-        570.. => {
+    cfg_select! {
+        not(fw_has_thread_local) => {
+            let _ = id;
+            None
+        },
+        fw_has_thread_local => {
             cfg_select! {
-                pbp => {
-                    let res = usersystemlib::sceKernelGetTlsAddr(id);
-                    if res.is_null() {
-                        None
-                    } else {
-                        Some(res)
-                    }
-                },
-                all(prx, not(feature = "kernel")) => {
+                // pbp => {
+                //     let res = usersystemlib::sceKernelGetTlsAddr(id);
+                //     if res.is_null() {
+                //         None
+                //     } else {
+                //         Some(res)
+                //     }
+                // },
+                all(not(feature = "kernel")) => {
                     use core::mem::MaybeUninit;
                     let k0 = crate::sys::get_k0();
                     let intr = crate::sys::get_current_interrupt_status();
@@ -1147,12 +1162,17 @@ pub fn get_tls_addr(id: thread::TlsPoolId) -> Option<*mut core::ffi::c_void> {
                     if k0 != 0 && intr != 0 && tmp == 0 {
                         let tlspool_id = id.tls_addr(k0);
 
+                        // crate::dbg!(id, k0, intr, tmp, &tlspool_id);
                         match tlspool_id {
                             Some(tlspool_id) => Some(tlspool_id as *mut _),
                             None => {
                                 let mut ptr = MaybeUninit::uninit();
                                 let res = unsafe {
-                                    crate::sys::thread::_sceKernelAllocateTlspl(id, ptr.as_mut_ptr(), 0)
+                                    crate::sys::thread::_sceKernelAllocateTlspl(
+                                        id,
+                                        ptr.as_mut_ptr(),
+                                        0,
+                                    )
                                 };
 
                                 if res.is_ok() {
@@ -1173,9 +1193,5 @@ pub fn get_tls_addr(id: thread::TlsPoolId) -> Option<*mut core::ffi::c_void> {
                 },
             }
         },
-        _ => {
-            let _ = id;
-            None
-        }
     }
 }

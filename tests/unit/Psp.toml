@@ -1,6 +1,7 @@
 [project]
 kind = "EBOOT"
 rustflags = "-Clink-arg=-no-gc-sections"
+target-fw = "6.60"
 
 [project.pbp]
 title = "PSPSDK Unit Tests"

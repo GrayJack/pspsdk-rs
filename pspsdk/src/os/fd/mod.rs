@@ -10,10 +10,7 @@ pub use owned::{AsFd, BorrowedFd, OwnedFd};
 
 use crate::{
     io,
-    sys::{
-        self,
-        io::{sceIoLseek, sceIoRead, sceIoWrite, Whence},
-    },
+    sys::io::{sceIoLseek, sceIoRead, sceIoWrite, Whence},
 };
 
 /// A high-level abstraction on PSP file descriptor to create a `File` abstraction

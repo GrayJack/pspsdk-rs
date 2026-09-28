@@ -639,3 +639,27 @@ macro_rules! rtabort {
         }
     }
 }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! rtassert {
+    ($e:expr) => {
+        if !$e {
+            $crate::rtabort!(concat!("assertion failed: ", stringify!($e)));
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! rtunwrap {
+    ($ok:ident, $e:expr) => {
+        match $e {
+            $ok(v) => v,
+            ref err => {
+                let err = err.as_ref().map(drop); // map Ok/Some which might not be Debug
+                $crate::rtabort!(concat!("unwrap failed: ", stringify!($e), " = {:?}"), err)
+            },
+        }
+    };
+}

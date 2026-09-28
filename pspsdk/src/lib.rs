@@ -21,7 +21,8 @@
     duration_constants,
     panic_can_unwind,
     get_mut_unchecked,
-    ptr_cast_slice
+    ptr_cast_slice,
+    unique_rc_arc
 )]
 #![cfg_attr(
     feature = "specialization",

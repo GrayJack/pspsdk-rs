@@ -3,10 +3,7 @@ use core::mem::ManuallyDrop;
 use crate::{
     io,
     os::fd::{FileDesc, FromRawFd},
-    sys::{
-        self,
-        io::{sceKernelStderr, sceKernelStdin, sceKernelStdout},
-    },
+    sys::io::{sceKernelStderr, sceKernelStdin, sceKernelStdout},
 };
 
 pub const STDIN_BUF_SIZE: usize = 256;

@@ -43,6 +43,9 @@ stub-c = []
 # If not enabled, it uses array based buffers.
 heap-stdio-buffer = []
 
+# Uses specialization for SceResult
+specialization = []
+
 # Build with std support
 std = []
 

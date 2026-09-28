@@ -6,6 +6,7 @@
 //! * Panic hooks
 //! * Executing a panic up to doing the actual implementation
 //! * Shims around "try"
+#![allow(unused, reason = "FW version dependant")]
 
 use core::{
     any::Any,
@@ -15,8 +16,9 @@ use core::{
 };
 
 use alloc::{boxed::Box, panicking::PanicPayload, string::String};
+use pspsdk_macros::psp_fw_select;
 
-use crate::{panic::PanicHookInfo, process, rtabort, rtprintpanic};
+use crate::{panic::PanicHookInfo, process, rtabort, rtprintpanic, thread};
 
 #[cfg(not(feature = "std"))]
 pub(crate) fn print(args: core::fmt::Arguments) {
@@ -95,30 +97,52 @@ fn default_hook(info: &PanicHookInfo<'_>) {
     let msg = payload_as_str(info.payload());
 
     let write = || {
-        // Use a lock to prevent mixed output in multithreading context.
-        // Some platforms also require it when printing a backtrace, like `SymFromAddr` on Windows.
-        // let mut lock = backtrace::lock();
+        cfg_select! {
+            not(fw_has_thread_local) => {
+                let tid = crate::sys::thread::sceKernelGetThreadId().ok();
+                if let Some(tid) = tid {
+                    let mut tinfo = crate::sys::thread::ThreadInfo::default();
+                    let res = crate::sys::thread::sceKernelReferThreadStatus(tid, &mut tinfo);
 
-        let tid = crate::sys::thread::sceKernelGetThreadId().ok();
-        if let Some(tid) = tid {
-            let mut tinfo = crate::sys::thread::ThreadInfo::default();
-            let res = crate::sys::thread::sceKernelReferThreadStatus(tid, &mut tinfo);
+                    if res.is_ok() {
+                        let thread_name = str::from_utf8(&tinfo.name).unwrap_or("<unnamed>");
+                        rtprintpanic!(
+                            "thread `{}` ({}) panicked at {location}:\n{msg}\n",
+                            thread_name,
+                            tid.to_inner()
+                        );
+                    } else {
+                        rtprintpanic!(
+                            "thread <unnamed> ({}) panicked at {location}:\n{msg}\n",
+                            tid.to_inner()
+                        );
+                    }
+                } else {
+                    rtprintpanic!("panicked at {location}:\n{msg}\n");
+                }
+            },
+            fw_has_thread_local => {
+                thread::with_current_name(|name| {
+                    let name = name.unwrap_or("<unnamed>");
+                    let tid = thread::current_os_id();
 
-            if res.is_ok() {
-                let thread_name = str::from_utf8(&tinfo.name).unwrap_or("<unnamed>");
-                rtprintpanic!(
-                    "thread `{}` ({}) panicked at {location}:\n{msg}\n",
-                    thread_name,
-                    tid.to_inner()
-                );
-            } else {
-                rtprintpanic!(
-                    "thread <unnamed> ({}) panicked at {location}:\n{msg}\n",
-                    tid.to_inner()
-                );
-            }
-        } else {
-            rtprintpanic!("panicked at {location}:\n{msg}\n");
+                    // Try to write the panic message to a buffer first to prevent other concurrent
+                    // outputs interleaving with it.
+                    // let mut buffer = [0u8; 512];
+                    // let mut cursor = crate::io::Cursor::new(&mut buffer[..]);
+
+                    let write_msg = || {
+                        // We add a newline to ensure the panic message appears at the start of a
+                        // line.
+                        rtprintpanic!(
+                            "\nthread '{name}' ({}) panicked at {location}:\n{msg}\n",
+                            tid.to_inner()
+                        );
+                    };
+
+                    write_msg();
+                });
+            },
         }
     };
 
@@ -168,7 +192,10 @@ pub mod panic_count {
 #[cfg(not(test))]
 #[cfg(not(panic = "immediate-abort"))]
 pub mod panic_count {
-    use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    use core::{
+        cell::Cell,
+        sync::atomic::{AtomicBool, AtomicUsize, Ordering},
+    };
 
     const ALWAYS_ABORT_FLAG: usize = 1 << (usize::BITS - 1);
 
@@ -181,11 +208,13 @@ pub mod panic_count {
 
     // Panic count for the current thread and whether a panic hook is currently
     // being executed..
-    // thread_local! {
-    //     static LOCAL_PANIC_COUNT: Cell<(usize, bool)> = const { Cell::new((0, false)) }
-    // }
+    #[cfg(fw_has_thread_local)]
+    crate::thread_local! {
+        static LOCAL_PANIC_COUNT: Cell<(usize, bool)> = Cell::new((0, false));
+    }
     // TODO: Make this thread local
     // static LOCAL_PANIC_COUNT: Cell<(usize, bool)> = const { Cell::new((0, false)) };
+    #[cfg(not(fw_has_thread_local))]
     static IN_PANIC_HOOK: AtomicBool = AtomicBool::new(false);
 
     // Sum of panic counts from all threads. The purpose of this is to have
@@ -228,40 +257,49 @@ pub mod panic_count {
             return Some(MustAbort::AlwaysAbort);
         }
 
+        cfg_select! {
+            not(fw_has_thread_local) => {
+                let in_panic_hook = IN_PANIC_HOOK.load(Ordering::Relaxed);
+                if in_panic_hook {
+                    return Some(MustAbort::PanicInHook);
+                }
+                IN_PANIC_HOOK.store(run_panic_hook, Ordering::Relaxed);
 
-        let in_panic_hook = IN_PANIC_HOOK.load(Ordering::Relaxed);
-        if in_panic_hook {
-            return Some(MustAbort::PanicInHook);
+                None
+            },
+            fw_has_thread_local => LOCAL_PANIC_COUNT.with(|c| {
+                let (count, in_panic_hook) = c.get();
+                if in_panic_hook {
+                    return Some(MustAbort::PanicInHook);
+                }
+                c.set((count + 1, run_panic_hook));
+                None
+            }),
         }
-        IN_PANIC_HOOK.store(run_panic_hook, Ordering::Relaxed);
-
-        None
-
-        // LOCAL_PANIC_COUNT.with(|c| {
-        //     let (count, in_panic_hook) = c.get();
-        //     if in_panic_hook {
-        //         return Some(MustAbort::PanicInHook);
-        //     }
-        //     c.set((count + 1, run_panic_hook));
-        //     None
-        // })
     }
 
     pub fn finished_panic_hook() {
-        IN_PANIC_HOOK.store(false, Ordering::Relaxed);
-        // LOCAL_PANIC_COUNT.with(|c| {
-        //     let (count, _) = c.get();
-        //     c.set((count, false));
-        // });
+        cfg_select! {
+            not(fw_has_thread_local) => IN_PANIC_HOOK.store(false, Ordering::Relaxed),
+            fw_has_thread_local => LOCAL_PANIC_COUNT.with(|c| {
+                let (count, _) = c.get();
+                c.set((count, false));
+            }),
+        };
     }
 
     pub fn decrease() {
         GLOBAL_PANIC_COUNT.fetch_sub(1, Ordering::Relaxed);
-        IN_PANIC_HOOK.store(false, Ordering::Relaxed);
-        // LOCAL_PANIC_COUNT.with(|c| {
-        //     let (count, _) = c.get();
-        //     c.set((count - 1, false));
-        // });
+
+        cfg_select! {
+            not(fw_has_thread_local) => IN_PANIC_HOOK.store(false, Ordering::Relaxed),
+            fw_has_thread_local => {
+                LOCAL_PANIC_COUNT.with(|c| {
+                    let (count, _) = c.get();
+                    c.set((count - 1, false));
+                });
+            },
+        };
     }
 
     pub fn set_always_abort() {
@@ -271,8 +309,10 @@ pub mod panic_count {
     // Disregards ALWAYS_ABORT_FLAG
     #[must_use]
     pub fn get_count() -> usize {
-        GLOBAL_PANIC_COUNT.load(Ordering::Relaxed)
-        // LOCAL_PANIC_COUNT.with(|c| c.get().0)
+        cfg_select! {
+            not(fw_has_thread_local) => GLOBAL_PANIC_COUNT.load(Ordering::Relaxed),
+            fw_has_thread_local => LOCAL_PANIC_COUNT.with(|c| c.get().0),
+        }
     }
 
     // Disregards ALWAYS_ABORT_FLAG
@@ -300,8 +340,10 @@ pub mod panic_count {
     #[cold]
     #[inline(never)]
     fn is_zero_slow_path() -> bool {
-        GLOBAL_PANIC_COUNT.load(Ordering::Relaxed) == 0
-        // LOCAL_PANIC_COUNT.with(|c| c.get().0 == 0)
+        cfg_select! {
+            not(fw_has_thread_local) => GLOBAL_PANIC_COUNT.load(Ordering::Relaxed) == 0,
+            fw_has_thread_local => LOCAL_PANIC_COUNT.with(|c| c.get().0 == 0),
+        }
     }
 }
 

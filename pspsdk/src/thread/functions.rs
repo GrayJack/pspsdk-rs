@@ -1,13 +1,16 @@
 //! Free functions.
-use core::num::NonZero;
-
-// use super::{builder::Builder, current::current, join_handle::JoinHandle};
+#[allow(unused, reason = "FW version dependant")]
+use core::{mem, num::NonZero};
 
 use crate::{
     io, panicking,
     sys::thread as imp,
+    thread::{Builder, JoinHandle},
     time::{Duration, Instant},
 };
+
+#[cfg(fw_has_thread_local)]
+use super::current::current;
 
 /// Spawns a new thread, returning a [`JoinHandle`] for it.
 ///
@@ -119,7 +122,6 @@ use crate::{
 /// [`Err`]: crate::result::Result::Err
 #[cfg_attr(miri, track_caller)]
 // even without panics, this helps for Miri backtraces
-#[cfg(false)] // FIXME:
 pub fn spawn<F, T>(f: F) -> JoinHandle<T>
 where
     F: FnOnce() -> T,
@@ -388,6 +390,7 @@ pub fn sleep_until(deadline: Instant) {
 
 /// Used to ensure that `park` and `park_timeout` do not unwind, as that can
 /// cause undefined behavior if not handled correctly (see #102398 for context).
+#[allow(unused, reason = "FW version dependant")]
 struct PanicGuard;
 
 impl Drop for PanicGuard {
@@ -519,15 +522,16 @@ impl Drop for PanicGuard {
 /// [`unpark`]: super::Thread::unpark
 /// [`thread::park_timeout`]: park_timeout
 /// [release sequence]: https://en.cppreference.com/w/cpp/atomic/memory_order#Release_sequence
-// pub fn park() {
-//     let guard = PanicGuard;
-//     // SAFETY: park_timeout is called on the parker owned by this thread.
-//     unsafe {
-//         current().park();
-//     }
-//     // No panic occurred, do not abort.
-//     forget(guard);
-// }
+#[cfg(fw_has_thread_local)]
+pub fn park() {
+    let guard = PanicGuard;
+    // SAFETY: park_timeout is called on the parker owned by this thread.
+    unsafe {
+        current().park();
+    }
+    // No panic occurred, do not abort.
+    mem::forget(guard);
+}
 
 /// Uses [`park_timeout`].
 ///
@@ -541,10 +545,11 @@ impl Drop for PanicGuard {
 /// amount of time waited to be precisely `ms` long.
 ///
 /// See the [park documentation][`park`] for more detail.
-// #[deprecated(note = "replaced by `pspsdk::thread::park_timeout`")]
-// pub fn park_timeout_ms(ms: u32) {
-//     park_timeout(Duration::from_millis(ms as u64))
-// }
+#[deprecated(note = "replaced by `pspsdk::thread::park_timeout`")]
+#[cfg(fw_has_thread_local)]
+pub fn park_timeout_ms(ms: u32) {
+    park_timeout(Duration::from_millis(ms as u64))
+}
 
 /// Blocks unless or until the current thread's token is made available or
 /// the specified duration has been reached (may wake spuriously).
@@ -586,7 +591,7 @@ impl Drop for PanicGuard {
 ///     timeout_remaining = timeout - elapsed;
 /// }
 /// ```
-#[cfg(false)] // FIXME:
+#[cfg(fw_has_thread_local)]
 pub fn park_timeout(dur: Duration) {
     let guard = PanicGuard;
     // SAFETY: park_timeout is called on a handle owned by this thread.
@@ -594,7 +599,7 @@ pub fn park_timeout(dur: Duration) {
         current().park_timeout(dur);
     }
     // No panic occurred, do not abort.
-    forget(guard);
+    mem::forget(guard);
 }
 
 /// Returns an estimate of the default amount of parallelism a program should use.
@@ -657,8 +662,8 @@ pub fn park_timeout(dur: Duration) {
 ///   take, or know in a reliable and race-free way how much of that limit is already taken.
 ///
 /// On all targets:
-/// - It may overcount the amount of parallelism available when running in a VM
-/// with CPU usage limits (e.g. an overcommitted host).
+/// - It may overcount the amount of parallelism available when running in a VM with CPU usage
+///   limits (e.g. an over-committed host).
 ///
 /// # Errors
 ///

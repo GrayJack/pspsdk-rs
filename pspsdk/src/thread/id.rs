@@ -58,6 +58,7 @@ impl ThreadId {
     }
 
     // #[cfg(any(not(target_thread_local), target_has_atomic = "64"))]
+    #[allow(unused, reason = "FW version dependant")]
     pub(super) fn from_u64(v: u64) -> Option<ThreadId> {
         NonZero::new(v).map(ThreadId)
     }

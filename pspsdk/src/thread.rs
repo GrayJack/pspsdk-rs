@@ -159,16 +159,13 @@ use core::any::Any;
 
 use alloc::boxed::Box;
 
-// #[macro_use]
-// mod local;
-// mod builder;
-// mod current;
+mod builder;
+mod current;
 mod functions;
 mod id;
-// mod join_handle;
-// mod lifecycle;
-// mod scoped;
-// mod spawnhook;
+mod join_handle;
+mod lifecycle;
+mod scoped;
 #[allow(clippy::module_inception)]
 mod thread;
 
@@ -177,28 +174,47 @@ pub(crate) mod main_thread;
 // #[cfg(all(test, not(any(target_os = "emscripten", target_os = "wasi"))))]
 // mod tests;
 
-// pub use builder::Builder;
-// pub use current::current;
-// pub use current::current_id;
-// pub(crate) use current::{current_or_unnamed, current_os_id, drop_current, with_current_name};
+pub use builder::Builder;
+#[doc(hidden)]
+pub use current::current_os_id;
 #[expect(deprecated)]
-pub use functions::{available_parallelism, panicking, sleep, sleep_ms, sleep_until, yield_now};
-// pub use functions::park_timeout;
-// pub use functions::{park, park_timeout_ms, spawn};
+pub use functions::{
+    available_parallelism, panicking, sleep, sleep_ms, sleep_until, spawn, yield_now,
+};
 pub use id::ThreadId;
-// pub use join_handle::JoinHandle;
-// pub(crate) use lifecycle::ThreadInit;
-// pub use local::{AccessError, LocalKey};
-// pub use scoped::{Scope, ScopedJoinHandle, scope};
-// pub use spawnhook::add_spawn_hook;
+pub use join_handle::JoinHandle;
+pub(crate) use lifecycle::ThreadInit;
+pub use scoped::{Scope, ScopedJoinHandle};
 pub use thread::Thread;
 
+// Requires thread_local
+
+#[cfg(fw_has_thread_local)]
+#[macro_use]
+mod local;
+#[cfg(fw_has_thread_local)]
+mod spawnhook;
+
+#[cfg(fw_has_thread_local)]
+pub use current::{current, current_id};
+#[cfg(fw_has_thread_local)]
+pub(crate) use current::{current_or_unnamed, drop_current, with_current_name};
+#[expect(deprecated)]
+#[cfg(fw_has_thread_local)]
+pub use functions::{park, park_timeout, park_timeout_ms};
+#[cfg(fw_has_thread_local)]
+pub use local::{AccessError, LocalKey};
+#[cfg(fw_has_thread_local)]
+pub use scoped::scope;
+#[cfg(fw_has_thread_local)]
+pub use spawnhook::add_spawn_hook;
+
 // Implementation details used by the thread_local!{} macro.
-// #[doc(hidden)]
-// pub mod local_impl {
-//     pub use super::local::thread_local_process_attrs;
-//     pub use crate::sys::thread_local::*;
-// }
+#[doc(hidden)]
+#[cfg(fw_has_thread_local)]
+pub mod local_impl {
+    pub use crate::{sys::thread_local::*, thread_local_process_attrs};
+}
 
 /// A specialized [`Result`] type for threads.
 ///
@@ -243,6 +259,12 @@ pub use thread::Thread;
 /// [`Result`]: crate::result::Result
 /// [`pspsdk::panic::resume_unwind`]: crate::panic::resume_unwind
 pub type Result<T> = core::result::Result<T, Box<dyn Any + Send + 'static>>;
+
+/// A type alias that represents the type of the thread OS ID.
+///
+/// The thread OS ID is an identification used by the OS, and therefore doesn't necessarily comply
+/// with the guarantees of the [`ThreadId`].
+pub type ThreadOsId = crate::sys::thread::ThreadId;
 
 // fn _assert_sync_and_send() {
 //     fn _assert_both<T: Send + Sync>() {}

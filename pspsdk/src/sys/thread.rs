@@ -25,6 +25,9 @@ pub use non_stub::{
     available_parallelism, current_os_id, set_name, sleep, sleep_until, yield_now, Thread,
 };
 
+/// The default size for user-level thread stack size in bytes.
+pub const DEFAULT_USER_STACK_SIZE: usize = 256 * 1024;
+
 /// The thread UID, created with [`sceKernelCreateThread`].
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -1496,7 +1499,8 @@ unsafe extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `priority`: The priority of the queue
+    /// - `priority`: The priority of the queue. You can pass `0` for the current priority of the
+    ///   calling thread.
     ///
     /// # Return Value
     ///
@@ -3880,7 +3884,8 @@ unsafe extern "C" {
     ///
     /// # Parameters
     ///
-    /// - `priority`: The priority of the queue
+    /// - `priority`: The priority of the queue. You can pass `0` for the current priority of the
+    ///   calling thread.
     ///
     /// # Return Value
     ///
@@ -6344,6 +6349,7 @@ impl TlsPoolId {
         unsafe { core::mem::transmute(self) }
     }
 
+    #[allow(unused, reason = "FW dependant")]
     pub(crate) fn tls_addr(&self, k0: u32) -> Option<usize> {
         let addr =
             unsafe { *(((((self.to_inner() << 0x19) >> 0x1C) + 0x10) * 4 + k0) as *mut *mut ()) };

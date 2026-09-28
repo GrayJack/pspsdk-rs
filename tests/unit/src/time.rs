@@ -1,8 +1,10 @@
 use core::fmt::Debug;
 
+use alloc::vec::Vec;
 use pspsdk::{
     println,
     testrt::TestRunner,
+    thread,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
@@ -36,6 +38,7 @@ pub fn test_group(tr: &mut TestRunner) {
     tr.test("time::big_math", big_math);
     tr.test("time::system_time_max_min", system_time_max_min);
     tr.test("time::system_time_saturating", system_time_saturating);
+    tr.test("time::instant_monotonic_concurrent", instant_monotonic_concurrent);
 }
 
 // #[test]
@@ -52,25 +55,25 @@ pub fn instant_monotonic() {
 
 // #[test]
 // #[cfg(not(target_arch = "wasm32"))]
-// fn instant_monotonic_concurrent() -> std::thread::Result<()> {
-//     let threads: Vec<_> = (0..8)
-//         .map(|_| {
-//             std::thread::spawn(|| {
-//                 let mut old = Instant::now();
-//                 let count = if cfg!(miri) { 1_000 } else { 5_000_000 };
-//                 for _ in 0..count {
-//                     let new = Instant::now();
-//                     assert!(new >= old);
-//                     old = new;
-//                 }
-//             })
-//         })
-//         .collect();
-//     for t in threads {
-//         t.join()?;
-//     }
-//     Ok(())
-// }
+fn instant_monotonic_concurrent() -> thread::Result<()> {
+    let threads: Vec<_> = (0..8)
+        .map(|_| {
+            thread::spawn(|| {
+                let mut old = Instant::now();
+                let count = if cfg!(miri) { 1_000 } else { 5_000_000 };
+                for _ in 0..count {
+                    let new = Instant::now();
+                    assert!(new >= old);
+                    old = new;
+                }
+            })
+        })
+        .collect();
+    for t in threads {
+        t.join()?;
+    }
+    Ok(())
+}
 
 // #[test]
 pub fn instant_elapsed() {
@@ -80,7 +83,7 @@ pub fn instant_elapsed() {
 
 // #[test]
 pub fn instant_math() {
-    pspsdk::thread::sleep(Duration::from_secs(2));
+    thread::sleep(Duration::from_secs(2));
     let a = Instant::now();
     let b = Instant::now();
     println!("a: {a:?}");

@@ -1,4 +1,4 @@
-use super::{id::ThreadId, main_thread};
+use core::{ffi::CStr, fmt, pin::Pin};
 
 use crate::{
     allocators::System,
@@ -6,7 +6,8 @@ use crate::{
     sys::{sync::Parker, thread as imp},
     time::Duration,
 };
-use core::{ffi::CStr, fmt, pin::Pin};
+
+use super::{id::ThreadId, main_thread, ThreadOsId};
 
 // This module ensures private fields are kept private, which is necessary to enforce the safety
 // requirements.
@@ -52,7 +53,7 @@ use thread_name_string::ThreadNameString;
 struct Inner {
     name: Option<ThreadNameString>,
     id: ThreadId,
-    os_id: OnceLock<u64>,
+    os_id: OnceLock<ThreadOsId>,
     parker: Parker,
 }
 
@@ -92,6 +93,7 @@ pub struct Thread {
     inner: Pin<Arc<Inner, System>>,
 }
 
+#[allow(unused, reason = "FW version dependant")]
 impl Thread {
     pub(crate) fn new(id: ThreadId, name: Option<String>) -> Thread {
         let name = name.map(ThreadNameString::from);
@@ -176,11 +178,12 @@ impl Thread {
     /// # Examples
     ///
     /// ```
-    /// use std::{
+    /// use core::{
     ///     sync::atomic::{AtomicBool, Ordering},
-    ///     thread,
     ///     time::Duration,
     /// };
+    ///
+    /// use pspsdk::thread;
     ///
     /// static QUEUED: AtomicBool = AtomicBool::new(false);
     ///
@@ -202,7 +205,7 @@ impl Thread {
     /// while !QUEUED.load(Ordering::Acquire) {
     ///     // Spinning is of course inefficient; in practice, this would more likely be
     ///     // a dequeue where we have no work to do if there's nobody queued.
-    ///     std::hint::spin_loop();
+    ///     core::hint::spin_loop();
     /// }
     ///
     /// println!("Unpark the thread");
@@ -263,7 +266,7 @@ impl Thread {
     /// }
     /// ```
     #[must_use]
-    pub fn os_id(&self) -> Option<u64> {
+    pub fn os_id(&self) -> Option<ThreadOsId> {
         self.inner.os_id.get().copied()
     }
 

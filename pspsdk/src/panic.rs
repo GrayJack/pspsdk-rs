@@ -318,3 +318,18 @@ pub fn resume_unwind(payload: Box<dyn Any + Send>) -> ! {
 pub fn always_abort() {
     crate::panicking::panic_count::set_always_abort();
 }
+
+
+/// Panics the current thread with the given message as the panic payload.
+///
+/// The message can be of any (`Any + Send`) type, not just strings.
+///
+/// The message is wrapped in a `Box<'static + Any + Send>`, which can be
+/// accessed later using [`PanicHookInfo::payload`].
+///
+/// See the [`panic!`] macro for more information about panicking.
+#[inline]
+#[track_caller]
+pub fn panic_any<M: 'static + Any + Send>(msg: M) -> ! {
+    crate::panicking::begin_panic(msg);
+}

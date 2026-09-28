@@ -1,6 +1,14 @@
 use std::env;
 
-const ALLOWED_CFGS: &[&str] = &["pbp", "eboot", "pboot", "prx", "os_err_human", "default_exit_cb"];
+const ALLOWED_CFGS: &[&str] = &[
+    "pbp",
+    "eboot",
+    "pboot",
+    "prx",
+    "os_err_human",
+    "default_exit_cb",
+    "fw_has_thread_local",
+];
 
 const PSPSDK_TARGET_FW: Option<&str> = std::option_env!("PSPSDK_TARGET_FW");
 
@@ -30,6 +38,12 @@ fn main() {
             660..=661 => println!("cargo:rustc-cfg=feature=\"psp_660\""),
             _ => {},
         }
+    }
+
+    match target_fw {
+        Some(..570) => {},
+        Some(570..=661) | None => println!("cargo:rustc-cfg=fw_has_thread_local"),
+        Some(_) => {},
     }
 
     if env::var("CARGO_FEATURE_STUB_ONLY").is_ok() {

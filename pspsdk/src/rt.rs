@@ -11,10 +11,15 @@ use core::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
+use pspsdk_macros::psp_fw_select;
+
 use crate::{
     panicking,
     sys::{self, thread::ThreadId},
 };
+
+#[cfg(fw_has_thread_local)]
+use crate::thread;
 
 const MAX_ARGC: usize = 19;
 
@@ -147,6 +152,36 @@ pub(crate) unsafe fn init(_argc: usize, argv: *const *mut u8) {
     if cfg!(pbp) && cfg!(default_exit_cb) {
         crate::enable_home_button();
     }
+
+    cfg_select! {
+        not(fw_has_thread_local) => {},
+        fw_has_thread_local => {
+            // Remember the main thread ID to give it the correct name.
+            // SAFETY: this is the only time and place where we call this function.
+            unsafe { thread::main_thread::set(thread::current_id()) };
+        },
+    }
+
+    unsafe { sys::init() };
+}
+
+/// Clean up the thread-local runtime state. This *should* be run after all other
+/// code managed by the Rust runtime, but will not cause UB if that condition is
+/// not fulfilled. Also note that this function is not guaranteed to be run, but
+/// skipping it will cause leaks and therefore is to be avoided.
+pub(crate) fn thread_cleanup() {
+    // This function is run in situations where unwinding leads to an abort
+    // (think `extern "C"` functions). Abort here instead so that we can
+    // print a nice message.
+    crate::panic::catch_unwind(|| {
+        psp_fw_select! {
+            ..570 => {},
+            _ => {
+                thread::drop_current();
+            }
+        }
+    })
+    .unwrap_or_else(handle_rt_panic);
 }
 
 /// Cleanup procedure to be run after `main`
@@ -179,11 +214,7 @@ fn handle_rt_panic<T>(e: alloc::boxed::Box<dyn core::any::Any + Send>) -> T {
 fn psp_start_internal(
     main: &(dyn Fn() -> i32 + Sync + core::panic::RefUnwindSafe), argc: usize, argv: *const *mut u8,
 ) -> isize {
-    // For now, init won't panic, so calling outside on c
-    // SAFETY: Only called once during runtime initialization.
-
     use crate::panic;
-    unsafe { init(argc, argv) };
 
     // Guard against the code called by this function from unwinding outside of the Rust-controlled
     // code, which is UB. This is a requirement imposed by a combination of how the
@@ -199,6 +230,9 @@ fn psp_start_internal(
     // We use `catch_unwind` with `handle_rt_panic` instead of `abort_unwind` to make the error in
     // case of a panic a bit nicer.
     panic::catch_unwind(move || {
+        // SAFETY: Only called once during runtime initialization.
+        unsafe { init(argc, argv) };
+
         let ret_code = panic::catch_unwind(main).unwrap_or_else(move |payload| {
             use crate::sys::SceError;
 
