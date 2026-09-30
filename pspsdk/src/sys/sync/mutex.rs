@@ -81,8 +81,6 @@ impl Mutex {
     pub fn lock(&self) {
         let id = self.get_id().unwrap_or_else(|| panic!("failed to init mutex"));
 
-        debug_assert!(is_interrupt_enabled(), "raw mutex requires interrupts enabled");
-
         let res = sceKernelLockMutexCB(id, 1, None);
 
         if res.is_err() {
@@ -231,8 +229,6 @@ impl ReentrantMutex {
     #[track_caller]
     pub fn lock(&self) {
         let id = self.get_id().unwrap_or_else(|| panic!("failed to init mutex"));
-
-        debug_assert!(is_interrupt_enabled(), "raw mutex requires interrupts enabled");
 
         let res = sceKernelLockMutexCB(id, 1, None);
         if res.is_err() {
@@ -384,8 +380,6 @@ impl LwMutex {
     #[track_caller]
     pub fn lock(&self) {
         let work_area = self.get_work_area().unwrap_or_else(|| panic!("failed to init lwmutex"));
-
-        debug_assert!(is_interrupt_enabled(), "raw mutex requires interrupts enabled");
 
         let res = unsafe {
             cfg_select! {
@@ -613,8 +607,6 @@ impl SemaMutex {
     #[track_caller]
     pub fn lock(&self) {
         let id = self.get_id().unwrap_or_else(|| panic!("failed to init mutex"));
-
-        debug_assert!(is_interrupt_enabled(), "raw mutex requires interrupts enabled");
 
         let res = sceKernelWaitSemaCB(id, 1, None);
 

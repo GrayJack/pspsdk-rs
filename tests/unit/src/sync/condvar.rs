@@ -441,8 +441,6 @@ pub fn poison_wait_timeout_wake() {
 
         let (g, timeout_res) = c.wait_timeout(g, Duration::from_millis(u64::MAX));
 
-        pspsdk::dbg!(timeout_res);
-
         assert!(!timeout_res.timed_out());
         // spurious wakeups mean this isn't necessarily true
         // so execute test again, if not notified
