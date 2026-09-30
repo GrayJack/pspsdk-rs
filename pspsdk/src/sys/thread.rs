@@ -26,7 +26,19 @@ pub use non_stub::{
 };
 
 /// The default size for user-level thread stack size in bytes.
-pub const DEFAULT_USER_STACK_SIZE: usize = 256 * 1024;
+pub const DEFAULT_USER_STACK_SIZE: usize = 16 * 1024;
+
+/// The default size for kernel-level thread stack size in bytes.
+pub const DEFAULT_KERNEL_STACK_SIZE: usize = 4 * 1024;
+
+/// The default size for thread stack size in bytes.
+pub const DEFAULT_STACK_SIZE: usize = if cfg!(feature = "kernel") {
+    DEFAULT_KERNEL_STACK_SIZE
+} else {
+    DEFAULT_USER_STACK_SIZE
+};
+/// The smallest value acceptable for a PSP thread stack.
+pub const STACK_MIN_SIZE: usize = 0x200;
 
 /// The thread UID, created with [`sceKernelCreateThread`].
 #[repr(transparent)]

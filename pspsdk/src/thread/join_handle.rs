@@ -114,8 +114,8 @@ impl<T> JoinHandle<T> {
     /// If the associated thread panics, [`Err`] is returned with the parameter given
     /// to [`panic!`] (though see the Notes below).
     ///
-    /// [`Err`]: crate::result::Result::Err
-    /// [atomic memory orderings]: crate::sync::atomic
+    /// [`Err`]: core::result::Result::Err
+    /// [atomic memory orderings]: core::sync::atomic
     ///
     /// # Panics
     ///

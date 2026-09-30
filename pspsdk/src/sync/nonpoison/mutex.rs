@@ -50,12 +50,11 @@ type DefaultMutex = psp_fw_select! {
 /// # Examples
 ///
 /// ```
-/// use std::{
-///     sync::{mpsc::channel, Arc},
-///     thread,
-/// };
+/// use std::sync::mpsc::channel;
 ///
-/// use pspsdk::sync::nonpoison::Mutex;
+/// use alloc::sync::Arc;
+///
+/// use pspsdk::{sync::nonpoison::Mutex, thread};
 ///
 /// const N: usize = 10;
 ///
@@ -92,9 +91,9 @@ type DefaultMutex = psp_fw_select! {
 /// either create an inner scope or drop the guard manually.
 ///
 /// ```
-/// use std::{sync::Arc, thread};
+/// use alloc::sync::Arc;
 ///
-/// use pspsdk::sync::nonpoison::Mutex;
+/// use pspsdk::{sync::nonpoison::Mutex, thread};
 ///
 /// const N: usize = 3;
 ///
@@ -329,9 +328,9 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::nonpoison::Mutex;
+    /// use pspsdk::{sync::nonpoison::Mutex, thread};
     ///
     /// let mutex = Arc::new(Mutex::new(0));
     /// let c_mutex = Arc::clone(&mutex);
@@ -366,9 +365,9 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::nonpoison::Mutex;
+    /// use pspsdk::{sync::nonpoison::Mutex, thread};
     ///
     /// let mutex = Arc::new(Mutex::new(0));
     /// let c_mutex = Arc::clone(&mutex);

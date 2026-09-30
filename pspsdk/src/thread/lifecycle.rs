@@ -43,6 +43,7 @@ where
         // let amt = env::var_os("RUST_MIN_STACK")
         //     .and_then(|s| s.to_str().and_then(|s| s.parse().ok()))
         //     .unwrap_or(imp::DEFAULT_MIN_STACK_SIZE);
+        // let amt = imp::STACK_MIN_SIZE * 10;
         let amt = imp::DEFAULT_USER_STACK_SIZE;
 
         // 0 is our sentinel value, so ensure that we'll never see 0 after

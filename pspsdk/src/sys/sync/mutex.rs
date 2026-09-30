@@ -125,35 +125,13 @@ impl Mutex {
 impl Mutex {
     #[inline(never)]
     fn get_id(&self) -> Option<MutexId> {
-        let mut i = 0;
-        while i < 0x10 {
-            i += 1;
-            match self.id.load(Ordering::Acquire) {
-                UNINIT => {
-                    if self
-                        .id
-                        .compare_exchange(UNINIT, INITIALIZING, Ordering::AcqRel, Ordering::Acquire)
-                        .is_ok()
-                    {
-                        match self.create_id() {
-                            Some(id) => return Some(id),
-                            None => {
-                                continue;
-                            },
-                        }
-                    }
-                },
-                INITIALIZING => {
-                    crate::sys::spin_loop();
-                },
-                raw_id => {
-                    let id = unsafe { mem::transmute::<u32, MutexId>(raw_id) };
-                    return Some(id);
-                },
-            }
+        match self.id.load(Ordering::Acquire) {
+            UNINIT => self.create_id(),
+            raw => {
+                let id = unsafe { mem::transmute::<u32, MutexId>(raw) };
+                Some(id)
+            },
         }
-
-        None
     }
 
     /// Creates the mutex and store its UID.
@@ -181,10 +159,7 @@ impl Drop for Mutex {
     fn drop(&mut self) {
         let raw_id = self.id.load(Ordering::Relaxed);
 
-        // With &mut self, concurrent initialization should be impossible.
-        debug_assert_ne!(raw_id, INITIALIZING, "attempt to drop mutex while initializing");
-
-        if raw_id != UNINIT && raw_id != INITIALIZING {
+        if raw_id != UNINIT {
             let id = unsafe { mem::transmute::<u32, MutexId>(raw_id) };
             let res = sceKernelDeleteMutex(id);
 
@@ -299,33 +274,13 @@ impl ReentrantMutex {
 impl ReentrantMutex {
     #[inline(never)]
     fn get_id(&self) -> Option<MutexId> {
-        let mut i = 0;
-        while i < 0x10 {
-            i += 1;
-            match self.id.load(Ordering::Acquire) {
-                UNINIT => {
-                    if self
-                        .id
-                        .compare_exchange(UNINIT, INITIALIZING, Ordering::AcqRel, Ordering::Acquire)
-                        .is_ok()
-                    {
-                        match self.create_id() {
-                            Some(id) => return Some(id),
-                            None => continue,
-                        }
-                    }
-                },
-                INITIALIZING => {
-                    crate::sys::spin_loop();
-                },
-                raw_id => {
-                    let id = unsafe { mem::transmute::<u32, MutexId>(raw_id) };
-                    return Some(id);
-                },
-            }
+        match self.id.load(Ordering::Acquire) {
+            UNINIT => self.create_id(),
+            raw => {
+                let id = unsafe { mem::transmute::<u32, MutexId>(raw) };
+                Some(id)
+            },
         }
-
-        None
     }
 
     /// Creates the mutex and store its UID.
@@ -358,10 +313,7 @@ impl Drop for ReentrantMutex {
     fn drop(&mut self) {
         let raw_id = self.id.load(Ordering::Relaxed);
 
-        // With &mut self, concurrent initialization should be impossible.
-        debug_assert_ne!(raw_id, INITIALIZING, "attempt to drop mutex while initializing");
-
-        if raw_id != UNINIT && raw_id != INITIALIZING {
+        if raw_id != UNINIT {
             let id = unsafe { mem::transmute::<u32, MutexId>(raw_id) };
             let res = sceKernelDeleteMutex(id);
 
@@ -714,24 +666,10 @@ impl SemaMutex {
 
 impl SemaMutex {
     fn get_id(&self) -> Option<SemaId> {
-        let mut i = 0;
-        while i < 0x10 {
-            i += 1;
-            match self.sema.compare_exchange(
-                UNINIT,
-                INITIALIZING,
-                Ordering::AcqRel,
-                Ordering::Acquire,
-            ) {
-                Ok(_) => match self.create_id() {
-                    Some(id) => return Some(id),
-                    None => continue,
-                },
-                Err(INITIALIZING) => crate::sys::spin_loop(),
-                Err(raw) => return Some(unsafe { SemaId::from_raw_unchecked(raw) }),
-            }
+        match self.sema.load(Ordering::Acquire) {
+            UNINIT => self.create_id(),
+            raw => Some(unsafe { SemaId::from_raw_unchecked(raw) }),
         }
-        None
     }
 
     #[cold]
@@ -760,10 +698,7 @@ impl Drop for SemaMutex {
     fn drop(&mut self) {
         let raw = self.sema.load(Ordering::Relaxed);
 
-        // With &mut self, concurrent initialization should be impossible.
-        debug_assert_ne!(raw, INITIALIZING, "attempt to drop mutex while initializing");
-
-        if raw != UNINIT && raw != INITIALIZING {
+        if raw != UNINIT {
             let id = unsafe { mem::transmute::<u32, SemaId>(raw) };
             let res = sceKernelDeleteSema(id);
 

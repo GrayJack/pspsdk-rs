@@ -149,9 +149,7 @@ impl Once {
     /// # Examples
     ///
     /// ```
-    /// use std::thread;
-    ///
-    /// use pspsdk::sync::poison::Once;
+    /// use pspsdk::{sync::poison::Once, thread};
     ///
     /// static INIT: Once = Once::new();
     ///
@@ -218,9 +216,7 @@ impl Once {
     /// ```
     ///
     /// ```
-    /// use std::thread;
-    ///
-    /// use pspsdk::sync::Once;
+    /// use pspsdk::{sync::poison::Once, thread};
     ///
     /// static INIT: Once = Once::new();
     ///
@@ -241,9 +237,7 @@ impl Once {
     /// # Example
     ///
     /// ```rust
-    /// use std::thread;
-    ///
-    /// use pspsdk::sync::poison::Once;
+    /// use pspsdk::{sync::poison::Once, thread};
     ///
     /// static READY: Once = Once::new();
     ///

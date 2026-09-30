@@ -187,9 +187,11 @@ impl<T: ?Sized, M: RawMutex> ReentrantLock<T, M> {
     /// # Examples
     ///
     /// ```
-    /// use std::{cell::Cell, sync::Arc, thread};
+    /// use core::cell::Cell;
     ///
-    /// use pspsdk::sync::nonpoison::ReentrantLock;
+    /// use alloc::sync::Arc;
+    ///
+    /// use pspsdk::{sync::nonpoison::ReentrantLock, thread};
     ///
     /// let lock = Arc::new(ReentrantLock::new(Cell::new(0)));
     /// let c_lock = Arc::clone(&lock);
@@ -253,7 +255,7 @@ impl<T: ?Sized, M: RawMutex> ReentrantLock<T, M> {
     /// Otherwise, an RAII guard is returned.
     ///
     /// This function does not block.
-    pub(crate) fn try_lock(&self) -> Option<ReentrantLockGuard<'_, T, M>> {
+    pub fn try_lock(&self) -> Option<ReentrantLockGuard<'_, T, M>> {
         let this_thread = current_thread_id().to_inner() as usize;
         // SAFETY: We only touch lock_count when we own the lock.
         unsafe {

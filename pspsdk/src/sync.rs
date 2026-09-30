@@ -196,9 +196,7 @@ impl OnceState {
     /// A poisoned [`Once`]:
     ///
     /// ```
-    /// use std::thread;
-    ///
-    /// use pspsdk::sync::poison::Once;
+    /// use pspsdk::{sync::poison::Once, thread};
     ///
     /// static INIT: Once = Once::new();
     ///
@@ -269,9 +267,14 @@ impl WaitTimeoutResult {
     /// and will leave the loop upon timeout.
     ///
     /// ```
-    /// use std::{sync::Arc, thread, time::Duration};
+    /// use core::time::Duration;
     ///
-    /// use pspsdk::sync::nonpoison::{Condvar, Mutex};
+    /// use alloc::sync::Arc;
+    ///
+    /// use pspsdk::{
+    ///     sync::nonpoison::{Condvar, Mutex},
+    ///     thread,
+    /// };
     ///
     /// let pair = Arc::new((Mutex::new(false), Condvar::new()));
     /// let pair2 = Arc::clone(&pair);

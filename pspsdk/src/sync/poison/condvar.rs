@@ -772,9 +772,12 @@ impl Condvar {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::poison::{Condvar, Mutex};
+    /// use pspsdk::{
+    ///     sync::poison::{Condvar, Mutex},
+    ///     thread,
+    /// };
     ///
     /// let pair = Arc::new((Mutex::new(false), Condvar::new()));
     /// let pair2 = Arc::clone(&pair);
@@ -826,9 +829,12 @@ impl Condvar {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::poison::{Condvar, Mutex};
+    /// use pspsdk::{
+    ///     sync::poison::{Condvar, Mutex},
+    ///     thread,
+    /// };
     ///
     /// let pair = Arc::new((Mutex::new(true), Condvar::new()));
     /// let pair2 = Arc::clone(&pair);
@@ -896,9 +902,13 @@ impl Condvar {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread, time::Duration};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::poison::{Condvar, Mutex};
+    /// use pspsdk::{
+    ///     sync::poison::{Condvar, Mutex},
+    ///     thread,
+    ///     time::Duration,
+    /// };
     ///
     /// let pair = Arc::new((Mutex::new(false), Condvar::new()));
     /// let pair2 = Arc::clone(&pair);
@@ -965,9 +975,13 @@ impl Condvar {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread, time::Duration};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::poison::{Condvar, Mutex};
+    /// use pspsdk::{
+    ///     sync::poison::{Condvar, Mutex},
+    ///     thread,
+    ///     time::Duration,
+    /// };
     ///
     /// let pair = Arc::new((Mutex::new(true), Condvar::new()));
     /// let pair2 = Arc::clone(&pair);

@@ -484,9 +484,9 @@ impl<T: 'static> LocalKey<Cell<T>> {
     /// # Examples
     ///
     /// ```
-    /// use std::cell::Cell;
+    /// use core::cell::Cell;
     ///
-    /// thread_local! {
+    /// pspsdk::thread_local! {
     ///     static X: Cell<i32> = panic!("!");
     /// }
     ///
@@ -520,9 +520,9 @@ impl<T: 'static> LocalKey<Cell<T>> {
     /// # Examples
     ///
     /// ```
-    /// use std::cell::Cell;
+    /// use core::cell::Cell;
     ///
-    /// thread_local! {
+    /// pspsdk::thread_local! {
     ///     static X: Cell<i32> = const { Cell::new(1) };
     /// }
     ///
@@ -548,9 +548,9 @@ impl<T: 'static> LocalKey<Cell<T>> {
     /// # Examples
     ///
     /// ```
-    /// use std::cell::Cell;
+    /// use core::cell::Cell;
     ///
-    /// thread_local! {
+    /// pspsdk::thread_local! {
     ///     static X: Cell<Option<i32>> = const { Cell::new(Some(1)) };
     /// }
     ///
@@ -577,9 +577,9 @@ impl<T: 'static> LocalKey<Cell<T>> {
     /// # Examples
     ///
     /// ```
-    /// use std::cell::Cell;
+    /// use core::cell::Cell;
     ///
-    /// thread_local! {
+    /// pspsdk::thread_local! {
     ///     static X: Cell<i32> = const { Cell::new(1) };
     /// }
     ///
@@ -604,9 +604,9 @@ impl<T: 'static> LocalKey<Cell<T>> {
     /// # Examples
     ///
     /// ```
-    /// use std::cell::Cell;
+    /// use core::cell::Cell;
     ///
-    /// thread_local! {
+    /// pspsdk::thread_local! {
     ///     static X: Cell<i32> = const { Cell::new(5) };
     /// }
     ///
@@ -637,9 +637,9 @@ impl<T: 'static> LocalKey<RefCell<T>> {
     /// # Examples
     ///
     /// ```
-    /// use std::cell::RefCell;
+    /// use core::cell::RefCell;
     ///
-    /// thread_local! {
+    /// pspsdk::thread_local! {
     ///     static X: RefCell<Vec<i32>> = RefCell::new(Vec::new());
     /// }
     ///
@@ -667,9 +667,9 @@ impl<T: 'static> LocalKey<RefCell<T>> {
     /// # Examples
     ///
     /// ```
-    /// use std::cell::RefCell;
+    /// use core::cell::RefCell;
     ///
-    /// thread_local! {
+    /// pspsdk::thread_local! {
     ///     static X: RefCell<Vec<i32>> = RefCell::new(Vec::new());
     /// }
     ///
@@ -700,9 +700,9 @@ impl<T: 'static> LocalKey<RefCell<T>> {
     /// # Examples
     ///
     /// ```
-    /// use std::cell::RefCell;
+    /// use core::cell::RefCell;
     ///
-    /// thread_local! {
+    /// pspsdk::thread_local! {
     ///     static X: RefCell<Vec<i32>> = panic!("!");
     /// }
     ///
@@ -738,9 +738,9 @@ impl<T: 'static> LocalKey<RefCell<T>> {
     /// # Examples
     ///
     /// ```
-    /// use std::cell::RefCell;
+    /// use core::cell::RefCell;
     ///
-    /// thread_local! {
+    /// pspsdk::thread_local! {
     ///     static X: RefCell<Vec<i32>> = RefCell::new(Vec::new());
     /// }
     ///
@@ -771,9 +771,9 @@ impl<T: 'static> LocalKey<RefCell<T>> {
     /// # Examples
     ///
     /// ```
-    /// use std::cell::RefCell;
+    /// use core::cell::RefCell;
     ///
-    /// thread_local! {
+    /// pspsdk::thread_local! {
     ///     static X: RefCell<Vec<i32>> = RefCell::new(Vec::new());
     /// }
     ///

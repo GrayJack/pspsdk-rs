@@ -299,9 +299,9 @@ impl<T: ?Sized, L: RawRwLock> RwLock<T, L> {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::nonpoison::RwLock;
+    /// use pspsdk::{sync::nonpoison::RwLock, thread};
     ///
     /// let lock = Arc::new(RwLock::new(1));
     /// let c_lock = Arc::clone(&lock);
@@ -1057,8 +1057,8 @@ impl<'a, T: ?Sized, L: RawRwLock> RwLockWriteGuard<'a, T, L> {
     /// # Example
     ///
     /// ```
-    /// #![feature(rwlock_downgrade)]
-    /// use std::sync::{Arc, RwLock, RwLockWriteGuard};
+    /// use alloc::sync::Arc;
+    /// use pspsdk::sync::nonpoison::{RwLock, RwLockWriteGuard};
     ///
     /// // The inner value starts as 0.
     /// let rw = Arc::new(RwLock::new(0));
@@ -1067,7 +1067,7 @@ impl<'a, T: ?Sized, L: RawRwLock> RwLockWriteGuard<'a, T, L> {
     /// let mut main_write_guard = rw.write().unwrap();
     ///
     /// let evil = rw.clone();
-    /// let handle = std::thread::spawn(move || {
+    /// let handle = pspsdk::thread::spawn(move || {
     ///     // This will not return until the main thread drops the `main_read_guard`.
     ///     let mut evil_guard = evil.write().unwrap();
     ///

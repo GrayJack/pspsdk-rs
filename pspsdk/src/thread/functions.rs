@@ -119,7 +119,7 @@ use super::current::current;
 /// [`catch_unwind`]: ../../std/panic/fn.catch_unwind.html
 /// [`channels`]: crate::sync::mpsc
 /// [`join`]: JoinHandle::join
-/// [`Err`]: crate::result::Result::Err
+/// [`Err`]: core::result::Result::Err
 #[cfg_attr(miri, track_caller)]
 // even without panics, this helps for Miri backtraces
 pub fn spawn<F, T>(f: F) -> JoinHandle<T>
@@ -502,7 +502,7 @@ impl Drop for PanicGuard {
 /// while !QUEUED.load(Ordering::Acquire) {
 ///     // Spinning is of course inefficient; in practice, this would more likely be
 ///     // a dequeue where we have no work to do if there's nobody queued.
-///     std::hint::spin_loop();
+///     core::hint::spin_loop();
 /// }
 ///
 /// // Set the flag, and let the thread wake up.

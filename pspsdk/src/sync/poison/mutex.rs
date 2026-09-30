@@ -66,12 +66,11 @@ type DefaultMutex = psp_fw_select! {
 /// # Examples
 ///
 /// ```
-/// use std::{
-///     sync::{mpsc::channel, Arc},
-///     thread,
-/// };
+/// use std::sync::mpsc::channel;
 ///
-/// use pspsdk::sync::poison::Mutex;
+/// use alloc::sync::Arc;
+///
+/// use pspsdk::{sync::poison::Mutex, thread};
 ///
 /// const N: usize = 10;
 ///
@@ -107,9 +106,9 @@ type DefaultMutex = psp_fw_select! {
 /// To recover from a poisoned mutex:
 ///
 /// ```
-/// use std::{sync::Arc, thread};
+/// use alloc::sync::Arc;
 ///
-/// use pspsdk::sync::poison::Mutex;
+/// use pspsdk::{sync::poison::Mutex, thread};
 ///
 /// let lock = Arc::new(Mutex::new(0_u32));
 /// let lock2 = Arc::clone(&lock);
@@ -139,9 +138,9 @@ type DefaultMutex = psp_fw_select! {
 /// either create an inner scope or drop the guard manually.
 ///
 /// ```
-/// use std::{sync::Arc, thread};
+/// use alloc::sync::Arc;
 ///
-/// use pspsdk::sync::poison::Mutex;
+/// use pspsdk::{sync::poison::Mutex, thread};
 ///
 /// const N: usize = 3;
 ///
@@ -243,11 +242,11 @@ unsafe impl<T: ?Sized + Sync, M: RawMutex> Sync for MutexGuard<'_, T, M> {}
 /// The data protected by the mutex can be accessed through this guard via its
 /// [`Deref`] and [`DerefMut`] implementations.
 ///
-/// This structure is created by the [`map`] and [`try_map`] methods on
+/// This structure is created by the [`map`] and [`filter_map`] methods on
 /// [`MutexGuard`].
 ///
 /// [`map`]: MutexGuard::map
-/// [`try_map`]: MutexGuard::try_map
+/// [`filter_map`]: MutexGuard::filter_map
 /// [`Condvar`]: crate::sync::poison::Condvar
 #[must_use = "if unused the Mutex will immediately unlock"]
 #[clippy::has_significant_drop]
@@ -403,9 +402,9 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::poison::Mutex;
+    /// use pspsdk::{sync::poison::Mutex, thread};
     ///
     /// let mutex = Arc::new(Mutex::new(0));
     /// let c_mutex = Arc::clone(&mutex);
@@ -450,9 +449,9 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::poison::Mutex;
+    /// use pspsdk::{sync::poison::Mutex, thread};
     ///
     /// let mutex = Arc::new(Mutex::new(0));
     /// let c_mutex = Arc::clone(&mutex);
@@ -502,9 +501,9 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::poison::Mutex;
+    /// use pspsdk::{sync::poison::Mutex, thread};
     ///
     /// let mutex = Arc::new(Mutex::new(0));
     /// let c_mutex = Arc::clone(&mutex);
@@ -560,9 +559,9 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::poison::Mutex;
+    /// use pspsdk::{sync::poison::Mutex, thread};
     ///
     /// let mutex = Arc::new(Mutex::new(0));
     /// let c_mutex = Arc::clone(&mutex);
@@ -590,9 +589,9 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
     /// # Examples
     ///
     /// ```
-    /// use std::{sync::Arc, thread};
+    /// use alloc::sync::Arc;
     ///
-    /// use pspsdk::sync::poison::Mutex;
+    /// use pspsdk::{sync::poison::Mutex, thread};
     ///
     /// let mutex = Arc::new(Mutex::new(0));
     /// let c_mutex = Arc::clone(&mutex);
@@ -923,7 +922,7 @@ impl<'a, T: ?Sized, M: RawMutex> MutexGuard<'a, T, M> {
         U: ?Sized,
     {
         // SAFETY: the conditions of `MutexGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         // The signature of the closure guarantees that it will not "leak" the lifetime of the
         // reference passed to it. If the closure panics, the guard will be dropped.
         let data = NonNull::from(f(unsafe { &mut *orig.lock.data.get() }));
@@ -944,16 +943,16 @@ impl<'a, T: ?Sized, M: RawMutex> MutexGuard<'a, T, M> {
     /// The `Mutex` is already locked, so this cannot fail.
     ///
     /// This is an associated function that needs to be used as
-    /// `MutexGuard::try_map(...)`. A method would interfere with methods of the
+    /// `MutexGuard::filter_map(...)`. A method would interfere with methods of the
     /// same name on the contents of the `MutexGuard` used through `Deref`.
-    #[doc(alias = "filter_map")]
-    pub fn try_map<U, F>(orig: Self, f: F) -> Result<MappedMutexGuard<'a, U, M>, Self>
+    #[doc(alias = "try_map")]
+    pub fn filter_map<U, F>(orig: Self, f: F) -> Result<MappedMutexGuard<'a, U, M>, Self>
     where
         F: FnOnce(&mut T) -> Option<&mut U>,
         U: ?Sized,
     {
         // SAFETY: the conditions of `MutexGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         // The signature of the closure guarantees that it will not "leak" the lifetime of the
         // reference passed to it. If the closure panics, the guard will be dropped.
         match f(unsafe { &mut *orig.lock.data.get() }) {
@@ -1032,7 +1031,7 @@ impl<'a, T: ?Sized, M: RawMutex> MappedMutexGuard<'a, T, M> {
         U: ?Sized,
     {
         // SAFETY: the conditions of `MutexGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         // The signature of the closure guarantees that it will not "leak" the lifetime of the
         // reference passed to it. If the closure panics, the guard will be dropped.
         let data = NonNull::from(f(unsafe { orig.data.as_mut() }));
@@ -1053,16 +1052,16 @@ impl<'a, T: ?Sized, M: RawMutex> MappedMutexGuard<'a, T, M> {
     /// The `Mutex` is already locked, so this cannot fail.
     ///
     /// This is an associated function that needs to be used as
-    /// `MappedMutexGuard::try_map(...)`. A method would interfere with methods of the
+    /// `MappedMutexGuard::filter_map(...)`. A method would interfere with methods of the
     /// same name on the contents of the `MutexGuard` used through `Deref`.
-    #[doc(alias = "filter_map")]
-    pub fn try_map<U, F>(mut orig: Self, f: F) -> Result<MappedMutexGuard<'a, U, M>, Self>
+    #[doc(alias = "try_map")]
+    pub fn filter_map<U, F>(mut orig: Self, f: F) -> Result<MappedMutexGuard<'a, U, M>, Self>
     where
         F: FnOnce(&mut T) -> Option<&mut U>,
         U: ?Sized,
     {
         // SAFETY: the conditions of `MutexGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         // The signature of the closure guarantees that it will not "leak" the lifetime of the
         // reference passed to it. If the closure panics, the guard will be dropped.
         match f(unsafe { orig.data.as_mut() }) {

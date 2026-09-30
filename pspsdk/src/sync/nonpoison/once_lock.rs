@@ -34,7 +34,7 @@ use crate::sync::{nonpoison::Once, ExclusiveState};
 /// assert!(CELL.get().is_none());
 ///
 /// // Spawn a thread and write to `OnceLock`.
-/// std::thread::spawn(|| {
+/// pspsdk::thread::spawn(|| {
 ///     let value = CELL.get_or_init(|| 12345);
 ///     assert_eq!(value, &12345);
 /// })
@@ -48,12 +48,9 @@ use crate::sync::{nonpoison::Once, ExclusiveState};
 /// You can use `OnceLock` to implement a type that requires "append-only" logic:
 ///
 /// ```
-/// use std::{
-///     sync::atomic::{AtomicU32, Ordering},
-///     thread,
-/// };
+/// use core::sync::atomic::{AtomicU32, Ordering};
 ///
-/// use pspsdk::sync::OnceLock;
+/// use pspsdk::{sync::OnceLock, thread};
 ///
 /// struct OnceList<T> {
 ///     data: OnceLock<T>,
@@ -208,8 +205,7 @@ impl<T> OnceLock<T> {
     ///
     /// Waiting for a computation on another thread to finish:
     /// ```rust
-    /// # use std::thread;
-    /// use pspsdk::sync::nonpoison::OnceLock;
+    /// use pspsdk::{sync::nonpoison::OnceLock, thread};
     ///
     /// let value = OnceLock::new();
     ///
@@ -244,7 +240,7 @@ impl<T> OnceLock<T> {
     /// fn main() {
     ///     assert!(CELL.get().is_none());
     ///
-    ///     std::thread::spawn(|| {
+    ///     pspsdk::thread::spawn(|| {
     ///         assert_eq!(CELL.set(92), Ok(()));
     ///     })
     ///     .join()
@@ -280,7 +276,7 @@ impl<T> OnceLock<T> {
     /// fn main() {
     ///     assert!(CELL.get().is_none());
     ///
-    ///     std::thread::spawn(|| {
+    ///     pspsdk::thread::spawn(|| {
     ///         assert_eq!(CELL.try_insert(92), Ok(&92));
     ///     })
     ///     .join()

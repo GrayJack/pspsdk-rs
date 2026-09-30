@@ -263,7 +263,7 @@ pub fn is_interrupt_enabled() -> bool {
 /// function altogether:
 ///
 /// ```
-/// # use std::io::Error as MyError;
+/// # use pspsdk::io::Error as MyError;
 /// fn main() -> Result<(), MyError> {
 ///     // ...
 ///     Ok(())
@@ -289,7 +289,7 @@ pub fn is_interrupt_enabled() -> bool {
 /// on Windows:
 ///
 /// ```no_run
-/// use std::process;
+/// use pspsdk::process;
 ///
 /// process::exit(0x0100);
 /// ```

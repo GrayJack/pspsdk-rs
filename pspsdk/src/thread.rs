@@ -138,17 +138,17 @@
 //! Note that the stack size of the main thread is *not* determined by Rust.
 //!
 //! [channels]: crate::sync::mpsc
-//! [`Arc`]: crate::sync::Arc
+//! [`Arc`]: alloc::sync::Arc
 //! [`join`]: JoinHandle::join
-//! [`Result`]: crate::result::Result
-//! [`Ok`]: crate::result::Result::Ok
-//! [`Err`]: crate::result::Result::Err
+//! [`Result`]: core::result::Result
+//! [`Ok`]: core::result::Result::Ok
+//! [`Err`]: core::result::Result::Err
 //! [`thread::current`]: current::current
 //! [`thread::Result`]: Result
 //! [`unpark`]: Thread::unpark
 //! [`thread::park_timeout`]: park_timeout
-//! [`Cell`]: crate::cell::Cell
-//! [`RefCell`]: crate::cell::RefCell
+//! [`Cell`]: core::cell::Cell
+//! [`RefCell`]: core::cell::RefCell
 //! [`with`]: LocalKey::with
 //! [`thread_local!`]: crate::thread_local
 
@@ -224,7 +224,7 @@ pub mod local_impl {
 /// is the value the thread panicked with;
 /// that is, the argument the `panic!` macro was called with.
 /// Unlike with normal errors, this value doesn't implement
-/// the [`Error`](crate::error::Error) trait.
+/// the [`Error`](core::error::Error) trait.
 ///
 /// Thus, a sensible way to handle a thread panic is to either:
 ///
@@ -256,7 +256,7 @@ pub mod local_impl {
 /// }
 /// ```
 ///
-/// [`Result`]: crate::result::Result
+/// [`Result`]: core::result::Result
 /// [`pspsdk::panic::resume_unwind`]: crate::panic::resume_unwind
 pub type Result<T> = core::result::Result<T, Box<dyn Any + Send + 'static>>;
 

@@ -6,7 +6,6 @@ use core::{
 use crate::{
     sync::RawMutex,
     sys::{
-        is_interrupt_enabled,
         sync::SemaMutex,
         thread::{
             sceKernelCreateSema, sceKernelDeleteSema, sceKernelSignalSema, sceKernelWaitSemaCB,
@@ -17,9 +16,7 @@ use crate::{
 };
 
 
-const UNINIT: u32 = u32::MAX;
-const INITIALIZING: u32 = u32::MAX - 1;
-
+const UNINIT: u32 = 0;
 
 pub struct Condvar {
     lock: SemaMutex,
@@ -114,68 +111,58 @@ impl Condvar {
             },
         };
 
-        if is_interrupt_enabled() {
-            let mut timeout = timeout.map(|d| d.as_micros().min(u128::from(u32::MAX)) as u32);
-            let res = sceKernelWaitSemaCB(queue, 1, timeout.as_mut());
+        let mut timeout = timeout.and_then(|duration| {
+            let micros = duration.as_micros();
 
-            match res.into_result() {
-                Ok(()) => {
-                    // Woken by notifier. Notifier already decremented waiter count.
-                    mutex.lock();
-                    true
-                },
-                Err(err) => {
-                    match err {
-                        SceError::KERNEL_WAIT_TIMEOUT => {
-                            // Decrement waiter count under gate to avoid races
-                            self.lock.lock();
-                            self.waiters.fetch_sub(1, Ordering::Relaxed);
-                            unsafe { self.lock.unlock() };
-
-                            mutex.lock();
-                            false
-                        },
-                        _ => {
-                            // Best-effort recovery: decrement waiter and reacquire mutex
-                            self.lock.lock();
-                            self.waiters.fetch_sub(1, Ordering::Relaxed);
-                            unsafe { self.lock.unlock() };
-                            mutex.lock();
-                            true
-                        },
-                    }
-                },
+            if micros >= u128::from(u32::MAX) {
+                None
+            } else {
+                Some(micros as u32)
             }
-        } else {
-            false
+        });
+
+        let res = sceKernelWaitSemaCB(queue, 1, timeout.as_mut());
+
+        match res.into_result() {
+            Ok(()) => {
+                // Woken by notifier. Notifier already decremented waiter count.
+                mutex.lock();
+                true
+            },
+            Err(err) => {
+                match err {
+                    SceError::KERNEL_WAIT_TIMEOUT => {
+                        // Decrement waiter count under gate to avoid races
+                        self.lock.lock();
+                        self.waiters.fetch_sub(1, Ordering::Relaxed);
+                        unsafe { self.lock.unlock() };
+
+                        mutex.lock();
+                        false
+                    },
+                    _ => {
+                        // Best-effort recovery: decrement waiter and reacquire mutex
+                        self.lock.lock();
+                        self.waiters.fetch_sub(1, Ordering::Relaxed);
+                        unsafe { self.lock.unlock() };
+                        mutex.lock();
+                        true
+                    },
+                }
+            },
         }
     }
 }
 
 impl Condvar {
     fn get_queue(&self) -> Option<SemaId> {
-        let mut i = 0;
-
-        while i < 0x10 {
-            i += 1;
-            match self.queue.load(Ordering::Acquire) {
-                UNINIT => {
-                    if self
-                        .queue
-                        .compare_exchange(UNINIT, INITIALIZING, Ordering::AcqRel, Ordering::Acquire)
-                        .is_ok()
-                    {
-                        match self.create_queue() {
-                            Some(id) => return Some(id),
-                            None => continue,
-                        }
-                    }
-                },
-                INITIALIZING => core::hint::spin_loop(),
-                raw => return Some(unsafe { SemaId::from_raw_unchecked(raw) }),
-            }
+        match self.queue.load(Ordering::Acquire) {
+            UNINIT => {
+                let id = self.create_queue()?;
+                Some(id)
+            },
+            raw => Some(unsafe { SemaId::from_raw_unchecked(raw) }),
         }
-        None
     }
 
     #[cold]
@@ -206,7 +193,7 @@ impl Condvar {
 impl Drop for Condvar {
     fn drop(&mut self) {
         let raw = self.queue.load(Ordering::Relaxed);
-        if raw != UNINIT && raw != INITIALIZING {
+        if raw != UNINIT {
             let id = unsafe { SemaId::from_raw_unchecked(raw) };
             let res = sceKernelDeleteSema(id);
 

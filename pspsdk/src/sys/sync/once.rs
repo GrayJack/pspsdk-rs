@@ -24,7 +24,6 @@ const EVENT_COMPLETE: u32 = 1 << 0;
 const EVENT_POISONED: u32 = 1 << 1;
 
 const UNINIT_FLAG: u32 = u32::MAX;
-const INITIALIZING_FLAG: u32 = u32::MAX - 1;
 
 pub struct OnceState {
     poisoned: bool,
@@ -214,32 +213,10 @@ impl Once {
 
 impl Once {
     fn get_event_flag(&self) -> Option<EventFlagId> {
-        let mut i = 0;
-        while i < 0x10 {
-            i += 1;
-            match self.event_flag_id.load(Ordering::Acquire) {
-                UNINIT_FLAG => {
-                    if self
-                        .event_flag_id
-                        .compare_exchange(
-                            UNINIT_FLAG,
-                            INITIALIZING_FLAG,
-                            Ordering::AcqRel,
-                            Ordering::Acquire,
-                        )
-                        .is_ok()
-                    {
-                        match self.create_event_flag() {
-                            Some(id) => return Some(id),
-                            None => continue,
-                        }
-                    }
-                },
-                INITIALIZING_FLAG => core::hint::spin_loop(),
-                raw => return Some(unsafe { EventFlagId::from_raw_unchecked(raw) }),
-            }
+        match self.event_flag_id.load(Ordering::Acquire) {
+            UNINIT_FLAG => self.create_event_flag(),
+            raw => Some(unsafe { EventFlagId::from_raw_unchecked(raw) }),
         }
-        None
     }
 
     #[cold]
@@ -284,7 +261,7 @@ impl Drop for Once {
     fn drop(&mut self) {
         let raw_id = self.event_flag_id.load(Ordering::Relaxed);
 
-        if raw_id != UNINIT_FLAG && raw_id != INITIALIZING_FLAG {
+        if raw_id != UNINIT_FLAG {
             let id = unsafe { EventFlagId::from_raw_unchecked(raw_id) };
             let res = sceKernelDeleteEventFlag(id);
 

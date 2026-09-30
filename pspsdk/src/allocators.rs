@@ -28,6 +28,7 @@ pub use crate::sys::mem::{MemoryBlockKind, MemoryPartitionId};
 
 #[global_allocator]
 static GLOBAL_ALLOC: SystemAlloc = SystemAlloc;
+// static GLOBAL_ALLOC: GlobalVariablePoolAlloc = GlobalVariablePoolAlloc::new();
 
 const DEFAULT_PARTITION_ID: MemoryPartitionId =
     cfg_select! {

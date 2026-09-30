@@ -44,7 +44,7 @@ use super::{join_handle::JoinHandle, lifecycle::spawn_unchecked};
 /// [`name`]: Builder::name
 /// [`spawn`]: Builder::spawn
 /// [`thread::spawn`]: super::spawn
-/// [`unwrap`]: crate::result::Result::unwrap
+/// [`unwrap`]: core::result::Result::unwrap
 /// [naming-threads]: ./index.html#naming-threads
 /// [stack-size]: ./index.html#stack-size
 #[must_use = "must eventually spawn the thread"]

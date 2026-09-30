@@ -173,10 +173,9 @@ pub struct Guard {
 /// # Examples
 ///
 /// ```
-/// use std::{
-///     sync::{Arc, Mutex},
-///     thread,
-/// };
+/// use alloc::sync::Arc;
+///
+/// use pspsdk::{sync::Mutex, thread};
 ///
 /// let mutex = Arc::new(Mutex::new(1));
 ///
@@ -293,11 +292,9 @@ impl<T> PoisonError<T> {
     /// # Examples
     ///
     /// ```
-    /// use std::{
-    ///     collections::HashSet,
-    ///     sync::{Arc, Mutex},
-    ///     thread,
-    /// };
+    /// use alloc::{collections::HashSet, sync::Arc};
+    ///
+    /// use pspsdk::{sync::Mutex, thread};
     ///
     /// let mutex = Arc::new(Mutex::new(HashSet::new()));
     ///

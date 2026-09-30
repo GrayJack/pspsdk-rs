@@ -70,9 +70,10 @@ pub use core::time::{Duration, TryFromFloatSecsError};
 /// Example:
 ///
 /// ```no_run
-/// use std::thread::sleep;
-///
-/// use pspsdk::time::{Duration, Instant};
+/// use pspsdk::{
+///     thread::sleep,
+///     time::{Duration, Instant},
+/// };
 ///
 /// fn main() {
 ///     let now = Instant::now();
@@ -183,9 +184,10 @@ pub struct Instant(time::Instant);
 /// Example:
 ///
 /// ```no_run
-/// use std::thread::sleep;
-///
-/// use pspsdk::time::{Duration, Instant};
+/// use pspsdk::{
+///     thread::sleep,
+///     time::{Duration, Instant},
+/// };
 ///
 /// fn main() {
 ///     let now = SystemTime::now();
@@ -246,9 +248,10 @@ pub struct SystemTime(time::SystemTime);
 /// # Examples
 ///
 /// ```no_run
-/// use std::thread::sleep;
-///
-/// use pspsdk::time::{Duration, Instant};
+/// use pspsdk::{
+///     thread::sleep,
+///     time::{Duration, Instant},
+/// };
 ///
 /// let sys_time = SystemTime::now();
 /// sleep(Duration::from_secs(1));
@@ -290,9 +293,10 @@ impl Instant {
     /// # Examples
     ///
     /// ```no_run
-    /// use std::thread::sleep;
-    ///
-    /// use pspsdk::time::{Duration, Instant};
+    /// use pspsdk::{
+    ///     thread::sleep,
+    ///     time::{Duration, Instant},
+    /// };
     ///
     /// let now = Instant::now();
     /// sleep(Duration::new(1, 0));
@@ -316,9 +320,10 @@ impl Instant {
     /// # Examples
     ///
     /// ```no_run
-    /// use std::thread::sleep;
-    ///
-    /// use pspsdk::time::{Duration, Instant};
+    /// use pspsdk::{
+    ///     thread::sleep,
+    ///     time::{Duration, Instant},
+    /// };
     ///
     /// let now = Instant::now();
     /// sleep(Duration::new(1, 0));
@@ -337,9 +342,10 @@ impl Instant {
     /// # Examples
     ///
     /// ```no_run
-    /// use std::thread::sleep;
-    ///
-    /// use pspsdk::time::{Duration, Instant};
+    /// use pspsdk::{
+    ///     thread::sleep,
+    ///     time::{Duration, Instant},
+    /// };
     ///
     /// let now = Instant::now();
     /// sleep(Duration::new(1, 0));
@@ -365,9 +371,10 @@ impl Instant {
     /// # Examples
     ///
     /// ```no_run
-    /// use std::thread::sleep;
-    ///
-    /// use pspsdk::time::{Duration, Instant};
+    /// use pspsdk::{
+    ///     thread::sleep,
+    ///     time::{Duration, Instant},
+    /// };
     ///
     /// let instant = Instant::now();
     /// let three_secs = Duration::from_secs(3);
@@ -610,7 +617,7 @@ impl SystemTime {
     /// # Examples
     ///
     /// ```no_run
-    /// use std::thread::sleep;
+    /// use pspsdk::thread::sleep;
     ///
     /// use pspsdk::time::{Duration, SystemTime};
     ///

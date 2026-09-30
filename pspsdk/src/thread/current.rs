@@ -247,7 +247,7 @@ pub(crate) fn current_or_unnamed() -> Thread {
 /// Getting a handle to the current thread with `thread::current()`:
 ///
 /// ```
-/// use std::thread;
+/// use pspsdk::thread;
 ///
 /// let handler = thread::Builder::new()
 ///     .name("named thread".into())

@@ -10,7 +10,6 @@ use crate::sys::thread::{
 };
 
 const UNINIT: u32 = u32::MAX;
-const INITIALIZING: u32 = u32::MAX - 1;
 
 const PARK_BIT: u32 = 0x01;
 
@@ -77,28 +76,10 @@ impl Parker {
 
 impl Parker {
     fn get_id(&self) -> Option<EventFlagId> {
-        let mut i = 0;
-        while i < 0x10 {
-            i += 1;
-            match self.ev_flag.load(Ordering::Acquire) {
-                UNINIT => {
-                    if self
-                        .ev_flag
-                        .compare_exchange(UNINIT, INITIALIZING, Ordering::AcqRel, Ordering::Acquire)
-                        .is_ok()
-                    {
-                        match self.create_ev_flag() {
-                            Some(id) => return Some(id),
-                            None => continue,
-                        }
-                    }
-                },
-                INITIALIZING => crate::sys::spin_loop(),
-                raw => return Some(unsafe { EventFlagId::from_raw_unchecked(raw) }),
-            }
+        match self.ev_flag.load(Ordering::Acquire) {
+            UNINIT => self.create_ev_flag(),
+            raw => Some(unsafe { EventFlagId::from_raw_unchecked(raw) }),
         }
-
-        None
     }
 
     #[cold]

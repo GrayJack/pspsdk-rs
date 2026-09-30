@@ -33,7 +33,6 @@ impl Thread {
                 return SceResult::new(u32::MAX);
             }
 
-
             // SAFETY: we are simply recreating the box that was leaked earlier.
             let init_ptr = unsafe { *(argp as *mut *mut ThreadInit) };
             let init: Box<ThreadInit> = unsafe { Box::from_raw(init_ptr) };
@@ -43,10 +42,7 @@ impl Thread {
             SceResult::new(0)
         }
 
-        // crate::dbg!(&init.handle);
-
         let thread_name = init.handle.cname().unwrap_or(c"");
-
 
         let thread = unsafe {
             sceKernelCreateThread(
@@ -63,8 +59,6 @@ impl Thread {
         let mut init_ptr = Box::into_raw(init);
         let ptr = &raw mut init_ptr;
         let res = unsafe { sceKernelStartThread(thread, size_of_val(&init_ptr), ptr.cast()) };
-
-        // crate::eprintln!("{:?}", &res);
 
         if let Some(err) = res.err() {
             // The thread failed to start and as a result data was not consumed. Therefore, it is
