@@ -9,8 +9,9 @@ use core::{
 use alloc::sync::Arc;
 
 use pspsdk::{
+    panic,
     sync::nonpoison::{MappedMutexGuard, Mutex, MutexGuard},
-    sys,
+    sys, thread,
 };
 
 // struct Packet<T>(Arc<(Mutex<T>, Condvar)>);
@@ -49,40 +50,41 @@ pub fn smoke() {
 
 // #[test]
 // #[cfg_attr(linux, ignore = "`std::thread` internal incompatibilities issues")]
-// pub fn lots_and_lots() {
-//     const J: u32 = 1000;
-//     const K: u32 = 3;
+#[cfg(false)]
+pub fn lots_and_lots() {
+    const J: u32 = 1000;
+    const K: u32 = 3;
 
-//     let m = Arc::new(Mutex::new(0));
+    let m = Arc::new(Mutex::new(0));
 
-//     fn inc(m: &Mutex<u32>) {
-//         for _ in 0..J {
-//             *m.lock() += 1;
-//         }
-//     }
+    fn inc(m: &Mutex<u32>) {
+        for _ in 0..J {
+            *m.lock() += 1;
+        }
+    }
 
-//     let (tx, rx) = channel();
-//     for _ in 0..K {
-//         let tx2 = tx.clone();
-//         let m2 = m.clone();
-//         thread::spawn(move || {
-//             inc(&m2);
-//             tx2.send(()).unwrap();
-//         });
-//         let tx2 = tx.clone();
-//         let m2 = m.clone();
-//         thread::spawn(move || {
-//             inc(&m2);
-//             tx2.send(()).unwrap();
-//         });
-//     }
+    let (tx, rx) = channel();
+    for _ in 0..K {
+        let tx2 = tx.clone();
+        let m2 = m.clone();
+        thread::spawn(move || {
+            inc(&m2);
+            tx2.send(()).unwrap();
+        });
+        let tx2 = tx.clone();
+        let m2 = m.clone();
+        thread::spawn(move || {
+            inc(&m2);
+            tx2.send(()).unwrap();
+        });
+    }
 
-//     drop(tx);
-//     for _ in 0..2 * K {
-//         rx.recv().unwrap();
-//     }
-//     assert_eq!(*m.lock(), J * K * 2);
-// }
+    drop(tx);
+    for _ in 0..2 * K {
+        rx.recv().unwrap();
+    }
+    assert_eq!(*m.lock(), J * K * 2);
+}
 
 // #[test]
 pub fn try_lock() {
@@ -164,65 +166,67 @@ pub fn test_replace() {
 
 // #[test]
 // #[cfg_attr(linux, ignore = "`std::thread` internal incompatibilities issues")]
-// pub fn test_mutex_arc_condvar() {
-//     let packet = Packet(Arc::new((Mutex::new(false), Condvar::new())));
-//     let packet2 = Packet(packet.0.clone());
-//     let (tx, rx) = channel();
-//     let _t = thread::spawn(move || {
-//         // wait until parent gets in
-//         rx.recv().unwrap();
-//         let (lock, cvar) = &*packet2.0;
-//         let mut lock = lock.lock();
-//         *lock = true;
-//         cvar.notify_one();
-//     });
+#[cfg(false)]
+pub fn test_mutex_arc_condvar() {
+    let packet = Packet(Arc::new((Mutex::new(false), Condvar::new())));
+    let packet2 = Packet(packet.0.clone());
+    let (tx, rx) = channel();
+    let _t = thread::spawn(move || {
+        // wait until parent gets in
+        rx.recv().unwrap();
+        let (lock, cvar) = &*packet2.0;
+        let mut lock = lock.lock();
+        *lock = true;
+        cvar.notify_one();
+    });
 
-//     let (lock, cvar) = &*packet.0;
-//     let mut lock = lock.lock();
-//     tx.send(()).unwrap();
-//     assert!(!*lock);
-//     while !*lock {
-//         lock = cvar.wait(&mut lock);
-//     }
-// }
+    let (lock, cvar) = &*packet.0;
+    let mut lock = lock.lock();
+    tx.send(()).unwrap();
+    assert!(!*lock);
+    while !*lock {
+        lock = cvar.wait(&mut lock);
+    }
+}
 
-
-// #[test]
-// pub fn test_mutex_arc_nested() {
-//     // Tests nested mutexes and access
-//     // to underlying data.
-//     let arc = Arc::new(Mutex::new(1));
-//     let arc2 = Arc::new(Mutex::new(arc));
-//     let (tx, rx) = channel();
-//     let _t = thread::spawn(move || {
-//         let lock = arc2.lock();
-//         let lock2 = lock.lock();
-//         assert_eq!(*lock2, 1);
-//         tx.send(()).unwrap();
-//     });
-//     rx.recv().unwrap();
-// }
 
 // #[test]
-// pub fn test_mutex_arc_access_in_unwind() {
-//     let arc = Arc::new(Mutex::new(1));
-//     let arc2 = arc.clone();
-//     let _ = thread::spawn(move || {
-//         struct Unwinder {
-//             i: Arc<Mutex<i32>>,
-//         }
-//         impl Drop for Unwinder {
-//             fn drop(&mut self) {
-//                 *self.i.lock() += 1;
-//             }
-//         }
-//         let _u = Unwinder { i: arc2 };
-//         panic!();
-//     })
-//     .join();
-//     let lock = arc.lock();
-//     assert_eq!(*lock, 2);
-// }
+#[cfg(false)]
+pub fn test_mutex_arc_nested() {
+    // Tests nested mutexes and access
+    // to underlying data.
+    let arc = Arc::new(Mutex::new(1));
+    let arc2 = Arc::new(Mutex::new(arc));
+    let (tx, rx) = channel();
+    let _t = thread::spawn(move || {
+        let lock = arc2.lock();
+        let lock2 = lock.lock();
+        assert_eq!(*lock2, 1);
+        tx.send(()).unwrap();
+    });
+    rx.recv().unwrap();
+}
+
+// #[test]
+pub fn test_mutex_arc_access_in_unwind() {
+    let arc = Arc::new(Mutex::new(1));
+    let arc2 = arc.clone();
+    let _ = thread::spawn(move || {
+        struct Unwinder {
+            i: Arc<Mutex<i32>>,
+        }
+        impl Drop for Unwinder {
+            fn drop(&mut self) {
+                *self.i.lock() += 1;
+            }
+        }
+        let _u = Unwinder { i: arc2 };
+        panic!();
+    })
+    .join();
+    let lock = arc.lock();
+    assert_eq!(*lock, 2);
+}
 
 // #[test]
 pub fn test_mutex_unsized() {
@@ -261,4 +265,105 @@ pub fn test_mutex_with_mut() {
 
     assert_eq!(*mutex.lock(), 5);
     assert_eq!(result, 10);
+}
+
+// #[test]
+// #[cfg_attr(not(panic = "unwind"), ignore = "test requires unwinding support")]
+pub fn test_mutex_arc_poison() {
+    use pspsdk::sync::poison::Mutex;
+
+    let arc = Arc::new(Mutex::new(1));
+    assert!(!arc.is_poisoned());
+    let arc2 = arc.clone();
+    let _ = thread::spawn(move || {
+        let lock = arc2.lock();
+        assert_eq!(*lock, 2); // deliberate assertion failure to poison the mutex
+    })
+    .join();
+    assert!(arc.lock_checked().is_err());
+    assert!(arc.is_poisoned());
+}
+
+// #[test]
+// #[cfg_attr(not(panic = "unwind"), ignore = "test requires unwinding support")]
+pub fn test_mutex_arc_poison_mapped() {
+    use pspsdk::sync::poison::{Mutex, MutexGuard};
+
+    let arc = Arc::new(Mutex::new(1));
+    assert!(!arc.is_poisoned());
+    let arc2 = arc.clone();
+    let _ = thread::spawn(move || {
+        let lock = arc2.lock();
+        let lock = MutexGuard::map(lock, |val| val);
+        assert_eq!(*lock, 2); // deliberate assertion failure to poison the mutex
+    })
+    .join();
+    assert!(arc.lock_checked().is_err());
+    assert!(arc.is_poisoned());
+}
+
+// #[test]
+// #[cfg_attr(not(panic = "unwind"), ignore = "test requires unwinding support")]
+pub fn panic_while_mapping_unlocked_poison() {
+    use pspsdk::sync::poison::{MappedMutexGuard, Mutex, MutexGuard, TryLockError};
+
+    let lock = Mutex::new(());
+
+    let _ = panic::catch_unwind(|| {
+        let guard = lock.lock();
+        let _guard = MutexGuard::map::<(), _>(guard, |_| panic!());
+    });
+
+    match lock.try_lock() {
+        Ok(_) => panic!("panicking in a MutexGuard::map closure should poison the Mutex"),
+        Err(TryLockError::WouldBlock) => {
+            panic!("panicking in a MutexGuard::map closure should unlock the mutex")
+        },
+        Err(TryLockError::Poisoned(_)) => {},
+    }
+
+    let _ = panic::catch_unwind(|| {
+        let guard = lock.lock();
+        let _guard = MutexGuard::filter_map::<(), _>(guard, |_| panic!());
+    });
+
+    match lock.try_lock() {
+        Ok(_) => panic!("panicking in a MutexGuard::filter_map closure should poison the Mutex"),
+        Err(TryLockError::WouldBlock) => {
+            panic!("panicking in a MutexGuard::filter_map closure should unlock the mutex")
+        },
+        Err(TryLockError::Poisoned(_)) => {},
+    }
+
+    let _ = panic::catch_unwind(|| {
+        let guard = lock.lock();
+        let guard = MutexGuard::map::<(), _>(guard, |val| val);
+        let _guard = MappedMutexGuard::map::<(), _>(guard, |_| panic!());
+    });
+
+    match lock.try_lock() {
+        Ok(_) => panic!("panicking in a MappedMutexGuard::map closure should poison the Mutex"),
+        Err(TryLockError::WouldBlock) => {
+            panic!("panicking in a MappedMutexGuard::map closure should unlock the mutex")
+        },
+        Err(TryLockError::Poisoned(_)) => {},
+    }
+
+    let _ = panic::catch_unwind(|| {
+        let guard = lock.lock();
+        let guard = MutexGuard::map::<(), _>(guard, |val| val);
+        let _guard = MappedMutexGuard::filter_map::<(), _>(guard, |_| panic!());
+    });
+
+    match lock.try_lock() {
+        Ok(_) => {
+            panic!("panicking in a MappedMutexGuard::filter_map closure should poison the Mutex")
+        },
+        Err(TryLockError::WouldBlock) => {
+            panic!("panicking in a MappedMutexGuard::filter_map closure should unlock the mutex")
+        },
+        Err(TryLockError::Poisoned(_)) => {},
+    }
+
+    drop(lock);
 }

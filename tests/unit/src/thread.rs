@@ -25,7 +25,7 @@ use pspsdk::{
 pub fn test_group(tr: &mut TestRunner) {
     tr.test("thread::test_unnamed_thread", test_unnamed_thread);
     tr.test("thread::test_named_thread", test_named_thread);
-    // tr.test("thread::test_is_finished", test_is_finished);
+    tr.test("thread::test_is_finished", test_is_finished);
     tr.test("thread::test_thread_os_id_not_equal", test_thread_os_id_not_equal);
     tr.test("thread::test_join_panic", test_join_panic);
     tr.test("thread::test_child_doesnt_ref_parent", test_child_doesnt_ref_parent);
