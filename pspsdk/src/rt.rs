@@ -174,11 +174,11 @@ pub(crate) fn thread_cleanup() {
     // (think `extern "C"` functions). Abort here instead so that we can
     // print a nice message.
     crate::panic::catch_unwind(|| {
-        psp_fw_select! {
-            ..570 => {},
-            _ => {
+        cfg_select! {
+            not(fw_has_thread_local) => {},
+            fw_has_thread_local => {
                 thread::drop_current();
-            }
+            },
         }
     })
     .unwrap_or_else(handle_rt_panic);

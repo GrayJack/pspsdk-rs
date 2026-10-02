@@ -228,7 +228,7 @@ pub fn poison_wait_while() {
 
     // Inside of our lock, spawn a new thread, and then wait for it to start.
     let _t = thread::spawn(move || {
-        let &(ref lock, ref cvar) = &*pair2;
+        let (lock, cvar) = &*pair2;
         let mut started = lock.lock();
         *started = true;
         // We notify the condvar that the value has changed.

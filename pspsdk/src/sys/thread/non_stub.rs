@@ -39,6 +39,8 @@ impl Thread {
             let rust_start = init.init();
             rust_start();
 
+            unsafe { crate::sys::thread_local::key::run_dtors() };
+
             SceResult::new(0)
         }
 

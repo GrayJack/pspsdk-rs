@@ -13,10 +13,12 @@ pspsdk::module!("UNIT_TESTS", 1, 1);
 
 mod sync;
 mod thread;
+mod thread_local;
 mod time;
 
 fn psp_main() {
-    let test_groups = [thread::test_group, sync::test_group, time::test_group];
+    let test_groups =
+        [thread::test_group, thread_local::test_group, sync::test_group, time::test_group];
 
     // let mut runner = TestRunner::file_runner(c"ms0:/psp_output_file.log");
     let mut runner = TestRunner::stdout_runner(true);

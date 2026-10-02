@@ -6,9 +6,9 @@ use core::{
 
 use crate::{
     allocators::MemoryPartitionId,
-    sync::Mutex,
+    sync::RwLock,
     sys::{
-        sync::SemaMutex,
+        sync::SemaRwLock,
         thread::{TlsPoolAttributes, TlsPoolId},
     },
 };
@@ -32,8 +32,8 @@ struct TlsBlock {
     slots: [*mut u8; MAX_KEYS],
 }
 
-static DTORS: Mutex<[Option<unsafe extern "C" fn(*mut u8)>; MAX_KEYS], SemaMutex> =
-    Mutex::new_with([None; MAX_KEYS], SemaMutex::new());
+static DTORS: RwLock<[Option<unsafe extern "C" fn(*mut u8)>; MAX_KEYS], SemaRwLock> =
+    RwLock::new_with([None; MAX_KEYS], SemaRwLock::new());
 
 pub type Key = usize;
 
@@ -108,7 +108,7 @@ pub fn create(dtor: Option<unsafe extern "C" fn(*mut u8)>) -> Key {
                 crate::rtabort!("out of TLS keys");
             }
 
-            let mut guard = DTORS.lock();
+            let mut guard = DTORS.write();
             let slot = guard.get_mut(key - 1).unwrap_or_else(|| {
                 crate::eprintln!("failed on create");
                 fail()
@@ -174,4 +174,35 @@ pub unsafe fn destroy(_key: Key) {
     // A Rust key is only an index into the shared table.
     //
     // Do not delete the PSP TLS pool here: other Rust TLS keys still use it.
+}
+
+pub unsafe fn run_dtors() {
+    loop {
+        let mut ran_dtor = false;
+        let key_count = NEXT_KEY.load(Ordering::Acquire);
+
+        for key in 1..key_count {
+            let value = unsafe { get(key) };
+
+            if value.is_null() || value.addr() <= 2 {
+                continue;
+            }
+
+            let dtor = {
+                let dtors = DTORS.read();
+                dtors[key - 1]
+            };
+
+            if let Some(dtor) = dtor {
+                ran_dtor = true;
+                unsafe {
+                    dtor(value);
+                }
+            }
+        }
+
+        if !ran_dtor {
+            break;
+        }
+    }
 }
