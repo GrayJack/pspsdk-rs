@@ -8,7 +8,7 @@
     pattern_type_macro,
     structural_match,
     asm_experimental_arch,
-    allocator_api,
+    allocator_ext,
     alloc_error_handler,
     std_internals,
     core_intrinsics,

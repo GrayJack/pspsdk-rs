@@ -152,6 +152,7 @@ pub(crate) struct ThreadInit {
 impl ThreadInit {
     /// Initialize the 'current thread' mechanism on this thread, returning the
     /// Rust entry point.
+    #[allow(clippy::boxed_local, reason = "implementation detail")]
     pub(crate) fn init(self: Box<Self>) -> Box<dyn FnOnce() + Send> {
         cfg_select! {
             not(fw_has_thread_local) => {},
