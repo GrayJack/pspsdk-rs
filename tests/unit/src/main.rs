@@ -1,5 +1,6 @@
 #![feature(duration_constants)]
 #![feature(duration_constructors)]
+#![feature(macro_metavar_expr_concat)]
 // #![feature(time_systemtime_limits)]
 // #![feature(time_saturating_systemtime)]
 #![no_std]

@@ -11,8 +11,6 @@ use core::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
-use pspsdk_macros::psp_fw_select;
-
 use crate::{
     panicking,
     sys::{self, thread::ThreadId},

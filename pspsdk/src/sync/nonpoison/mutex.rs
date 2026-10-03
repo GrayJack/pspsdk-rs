@@ -11,7 +11,7 @@ use core::{
 use crate::{
     psp_fw_select,
     sync::{
-        nonpoison::{TryLockError, TryLockResult},
+        nonpoison::{TryLockResult, WouldBlock},
         RawMutex, RawMutexTimed,
     },
     sys::sync as sys,
@@ -360,7 +360,7 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
     /// If the mutex could not be acquired because it is already locked, then
     /// this call will return the [`WouldBlock`] error.
     ///
-    /// [`WouldBlock`]: TryLockError::WouldBlock
+    /// [`WouldBlock`]: WouldBlock
     ///
     /// # Examples
     ///
@@ -388,7 +388,7 @@ impl<T: ?Sized, M: RawMutex> Mutex<T, M> {
         if self.inner.try_lock() {
             Ok(unsafe { MutexGuard::new(self) })
         } else {
-            Err(TryLockError::WouldBlock)
+            Err(WouldBlock)
         }
     }
 
@@ -529,7 +529,7 @@ impl<T: ?Sized + fmt::Debug, M: RawMutex> fmt::Debug for Mutex<T, M> {
             Ok(guard) => {
                 d.field("data", &&*guard);
             },
-            Err(TryLockError::WouldBlock) => {
+            Err(WouldBlock) => {
                 d.field("data", &format_args!("<locked>"));
             },
         }

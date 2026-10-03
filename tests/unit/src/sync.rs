@@ -6,6 +6,40 @@ mod mutex;
 mod once;
 mod once_lock;
 mod reentrant_lock;
+mod rwlock;
+
+#[macro_export]
+macro_rules! nonpoison_and_poison_unwrap_test {
+    (
+        name: $name:ident,
+        test_body: {$($test_body:tt)*}
+    ) => {
+        // Creates the nonpoison test.
+        // #[test]
+        pub fn ${concat(nonpoison_, $name)}() {
+            #[allow(unused_imports)]
+            use ::core::convert::identity as maybe_unwrap;
+            use ::pspsdk::sync::nonpoison as locks;
+
+            $($test_body)*
+        }
+
+        // Creates the poison test with the suffix `_unwrap_poisoned`.
+        // #[test]
+        pub fn ${concat(poison_, $name)}() {
+            #[allow(unused_imports)]
+            use super::result_unwrap as maybe_unwrap;
+            use ::pspsdk::sync::poison as locks;
+
+            $($test_body)*
+        }
+    }
+}
+
+#[track_caller]
+fn result_unwrap<T, E: core::fmt::Debug>(x: Result<T, E>) -> T {
+    x.unwrap()
+}
 
 pub fn test_group(tr: &mut TestRunner) {
     tr.test("condvar::poison_smoke", condvar::poison_smoke);
@@ -140,4 +174,129 @@ pub fn test_group(tr: &mut TestRunner) {
     tr.test("reentrant_lock::smoke", reentrant_lock::smoke);
     tr.test("reentrant_lock::is_mutex", reentrant_lock::is_mutex);
     tr.test("reentrant_lock::trylock_works", reentrant_lock::trylock_works);
+
+    tr.test("rwlock::test_needs_drop", rwlock::test_needs_drop);
+    tr.test("rwlock::poison_smoke", rwlock::poison_smoke);
+    tr.test("rwlock::nonpoison_smoke", rwlock::nonpoison_smoke);
+    // tr.test("rwlock::poison_frob", rwlock::poison_frob);
+    // tr.test("rwlock::nonpoison_frob", rwlock::nonpoison_frob);
+    // tr.test("rwlock::poison_test_rw_arc", rwlock::poison_test_rw_arc);
+    // tr.test("rwlock::nonpoison_test_rw_arc", rwlock::nonpoison_test_rw_arc);
+    tr.test(
+        "rwlock::poison_test_rw_arc_access_in_unwind",
+        rwlock::poison_test_rw_arc_access_in_unwind,
+    );
+    tr.test(
+        "rwlock::nonpoison_test_rw_arc_access_in_unwind",
+        rwlock::nonpoison_test_rw_arc_access_in_unwind,
+    );
+    tr.test("rwlock::poison_test_rwlock_unsized", rwlock::poison_test_rwlock_unsized);
+    tr.test(
+        "rwlock::nonpoison_test_rwlock_unsized",
+        rwlock::nonpoison_test_rwlock_unsized,
+    );
+    tr.test("rwlock::poison_test_into_inner", rwlock::poison_test_into_inner);
+    tr.test("rwlock::nonpoison_test_into_inner", rwlock::nonpoison_test_into_inner);
+    tr.test("rwlock::poison_test_into_inner_drop", rwlock::poison_test_into_inner_drop);
+    tr.test(
+        "rwlock::nonpoison_test_into_inner_drop",
+        rwlock::nonpoison_test_into_inner_drop,
+    );
+    tr.test("rwlock::poison_test_get_cloned", rwlock::poison_test_get_cloned);
+    tr.test("rwlock::nonpoison_test_get_cloned", rwlock::nonpoison_test_get_cloned);
+    tr.test("rwlock::poison_test_get_mut", rwlock::poison_test_get_mut);
+    tr.test("rwlock::nonpoison_test_get_mut", rwlock::nonpoison_test_get_mut);
+    tr.test("rwlock::poison_test_set", rwlock::poison_test_set);
+    tr.test("rwlock::nonpoison_test_set", rwlock::nonpoison_test_set);
+    tr.test("rwlock::poison_test_replace", rwlock::poison_test_replace);
+    tr.test("rwlock::nonpoison_test_replace", rwlock::nonpoison_test_replace);
+    tr.test(
+        "rwlock::poison_test_read_guard_covariance",
+        rwlock::poison_test_read_guard_covariance,
+    );
+    tr.test(
+        "rwlock::nonpoison_test_read_guard_covariance",
+        rwlock::nonpoison_test_read_guard_covariance,
+    );
+    tr.test(
+        "rwlock::poison_test_mapped_read_guard_covariance",
+        rwlock::poison_test_mapped_read_guard_covariance,
+    );
+    tr.test(
+        "rwlock::nonpoison_test_mapped_read_guard_covariance",
+        rwlock::nonpoison_test_mapped_read_guard_covariance,
+    );
+    tr.test("rwlock::poison_test_downgrade_basic", rwlock::poison_test_downgrade_basic);
+    tr.test(
+        "rwlock::nonpoison_test_downgrade_basic",
+        rwlock::nonpoison_test_downgrade_basic,
+    );
+    tr.test(
+        "rwlock::poison_test_downgrade_observe",
+        rwlock::poison_test_downgrade_observe,
+    );
+    tr.test(
+        "rwlock::nonpoison_test_downgrade_observe",
+        rwlock::nonpoison_test_downgrade_observe,
+    );
+    tr.test(
+        "rwlock::poison_test_downgrade_atomic",
+        rwlock::poison_test_downgrade_atomic,
+    );
+    tr.test(
+        "rwlock::nonpoison_test_downgrade_atomic",
+        rwlock::nonpoison_test_downgrade_atomic,
+    );
+    tr.test(
+        "rwlock::poison_test_mapping_mapped_guard",
+        rwlock::poison_test_mapping_mapped_guard,
+    );
+    tr.test(
+        "rwlock::nonpoison_test_mapping_mapped_guard",
+        rwlock::nonpoison_test_mapping_mapped_guard,
+    );
+    tr.test(
+        "rwlock::nonpoison_test_rwlock_try_write",
+        rwlock::nonpoison_test_rwlock_try_write,
+    );
+    tr.test(
+        "rwlock::poison_test_rwlock_try_write",
+        rwlock::poison_test_rwlock_try_write,
+    );
+    tr.test("rwlock::test_into_inner_poison", rwlock::test_into_inner_poison);
+    tr.test("rwlock::test_get_cloned_poison", rwlock::test_get_cloned_poison);
+    tr.test("rwlock::test_get_mut_poison", rwlock::test_get_mut_poison);
+    tr.test("rwlock::test_set_poison", rwlock::test_set_poison);
+    tr.test("rwlock::test_replace_poison", rwlock::test_replace_poison);
+    tr.test("rwlock::test_rw_arc_poison_wr", rwlock::test_rw_arc_poison_wr);
+    tr.test(
+        "rwlock::test_rw_arc_poison_mapped_w_r",
+        rwlock::test_rw_arc_poison_mapped_w_r,
+    );
+    tr.test("rwlock::test_rw_arc_poison_ww", rwlock::test_rw_arc_poison_ww);
+    tr.test(
+        "rwlock::test_rw_arc_poison_mapped_w_w",
+        rwlock::test_rw_arc_poison_mapped_w_w,
+    );
+    tr.test("rwlock::test_rw_arc_no_poison_rr", rwlock::test_rw_arc_no_poison_rr);
+    tr.test(
+        "rwlock::test_rw_arc_no_poison_mapped_r_r",
+        rwlock::test_rw_arc_no_poison_mapped_r_r,
+    );
+    tr.test("rwlock::test_rw_arc_no_poison_rw", rwlock::test_rw_arc_no_poison_rw);
+    tr.test(
+        "rwlock::test_rw_arc_no_poison_mapped_r_w",
+        rwlock::test_rw_arc_no_poison_mapped_r_w,
+    );
+    tr.test(
+        "rwlock::panic_while_mapping_read_unlocked_no_poison",
+        rwlock::panic_while_mapping_read_unlocked_no_poison,
+    );
+    tr.test(
+        "rwlock::panic_while_mapping_write_unlocked_poison",
+        rwlock::panic_while_mapping_write_unlocked_poison,
+    );
+    tr.test("rwlock::test_rwlock_with", rwlock::test_rwlock_with);
+    tr.test("rwlock::test_rwlock_with_mut", rwlock::test_rwlock_with_mut);
+    tr.test("rwlock::test_rwlock_max_readers", rwlock::test_rwlock_max_readers);
 }

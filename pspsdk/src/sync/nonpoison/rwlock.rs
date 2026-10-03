@@ -11,7 +11,7 @@ use core::{
 use crate::{
     psp_fw_select,
     sync::{
-        nonpoison::{TryLockError, TryLockResult},
+        nonpoison::{TryLockResult, WouldBlock},
         RawRwLock, RawRwLockTimed,
     },
     sys::sync as sys,
@@ -151,11 +151,11 @@ unsafe impl<T: ?Sized + Sync, L: RawRwLock> Sync for RwLockWriteGuard<'_, T, L> 
 /// RAII structure used to release the shared read access of a lock when
 /// dropped, which can point to a subfield of the protected data.
 ///
-/// This structure is created by the [`map`] and [`try_map`] methods
+/// This structure is created by the [`map`] and [`filter_map`] methods
 /// on [`RwLockReadGuard`].
 ///
 /// [`map`]: RwLockReadGuard::map
-/// [`try_map`]: RwLockReadGuard::try_map
+/// [`filter_map`]: RwLockReadGuard::filter_map
 #[must_use = "if unused the RwLock will immediately unlock"]
 // #[must_not_suspend = "holding a MappedRwLockReadGuard across suspend points can cause deadlocks,
 // \                       delays, and cause Futures to not implement `Send`"]
@@ -175,11 +175,11 @@ unsafe impl<T: ?Sized + Sync, L: RawRwLock> Sync for MappedRwLockReadGuard<'_, T
 /// RAII structure used to release the exclusive write access of a lock when
 /// dropped, which can point to a subfield of the protected data.
 ///
-/// This structure is created by the [`map`] and [`try_map`] methods
+/// This structure is created by the [`map`] and [`filter_map`] methods
 /// on [`RwLockWriteGuard`].
 ///
 /// [`map`]: RwLockWriteGuard::map
-/// [`try_map`]: RwLockWriteGuard::try_map
+/// [`filter_map`]: RwLockWriteGuard::filter_map
 #[must_use = "if unused the RwLock will immediately unlock"]
 #[clippy::has_significant_drop]
 pub struct MappedRwLockWriteGuard<'a, T: ?Sized + 'a, L: RawRwLock = DefaultRwLock> {
@@ -340,7 +340,7 @@ impl<T: ?Sized, L: RawRwLock> RwLock<T, L> {
     /// This function will return the [`WouldBlock`] error if the `RwLock` could
     /// not be acquired because it was already locked exclusively.
     ///
-    /// [`WouldBlock`]: TryLockError::WouldBlock
+    /// [`WouldBlock`]: WouldBlock
     ///
     /// # Examples
     ///
@@ -360,7 +360,7 @@ impl<T: ?Sized, L: RawRwLock> RwLock<T, L> {
             if self.inner.try_read() {
                 Ok(RwLockReadGuard::new(self))
             } else {
-                Err(TryLockError::WouldBlock)
+                Err(WouldBlock)
             }
         }
     }
@@ -410,7 +410,7 @@ impl<T: ?Sized, L: RawRwLock> RwLock<T, L> {
     /// This function will return the [`WouldBlock`] error if the `RwLock` could
     /// not be acquired because it was already locked exclusively.
     ///
-    /// [`WouldBlock`]: TryLockError::WouldBlock
+    /// [`WouldBlock`]: WouldBlock
     ///
     ///
     /// # Examples
@@ -431,7 +431,7 @@ impl<T: ?Sized, L: RawRwLock> RwLock<T, L> {
             if self.inner.try_write() {
                 Ok(RwLockWriteGuard::new(self))
             } else {
-                Err(TryLockError::WouldBlock)
+                Err(WouldBlock)
             }
         }
     }
@@ -617,7 +617,7 @@ impl<T: ?Sized + fmt::Debug, L: RawRwLock> fmt::Debug for RwLock<T, L> {
             Ok(guard) => {
                 d.field("data", &&*guard);
             },
-            Err(TryLockError::WouldBlock) => {
+            Err(WouldBlock) => {
                 d.field("data", &format_args!("<locked>"));
             },
         }
@@ -775,7 +775,7 @@ impl<T: ?Sized, L: RawRwLock> Deref for MappedRwLockReadGuard<'_, T, L> {
 
     fn deref(&self) -> &T {
         // SAFETY: the conditions of `RwLockReadGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         unsafe { self.data.as_ref() }
     }
 }
@@ -785,7 +785,7 @@ impl<T: ?Sized, L: RawRwLock> Deref for MappedRwLockWriteGuard<'_, T, L> {
 
     fn deref(&self) -> &T {
         // SAFETY: the conditions of `RwLockWriteGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         unsafe { self.data.as_ref() }
     }
 }
@@ -793,7 +793,7 @@ impl<T: ?Sized, L: RawRwLock> Deref for MappedRwLockWriteGuard<'_, T, L> {
 impl<T: ?Sized, L: RawRwLock> DerefMut for MappedRwLockWriteGuard<'_, T, L> {
     fn deref_mut(&mut self) -> &mut T {
         // SAFETY: the conditions of `RwLockWriteGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         unsafe { self.data.as_mut() }
     }
 }
@@ -819,7 +819,7 @@ impl<T: ?Sized, L: RawRwLock> Drop for RwLockWriteGuard<'_, T, L> {
 impl<T: ?Sized, L: RawRwLock> Drop for MappedRwLockReadGuard<'_, T, L> {
     fn drop(&mut self) {
         // SAFETY: the conditions of `RwLockReadGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         unsafe {
             self.inner_lock.read_unlock();
         }
@@ -829,7 +829,7 @@ impl<T: ?Sized, L: RawRwLock> Drop for MappedRwLockReadGuard<'_, T, L> {
 impl<T: ?Sized, L: RawRwLock> Drop for MappedRwLockWriteGuard<'_, T, L> {
     fn drop(&mut self) {
         // SAFETY: the conditions of `RwLockWriteGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         unsafe {
             self.inner_lock.write_unlock();
         }
@@ -856,7 +856,7 @@ impl<'a, T: ?Sized, L: RawRwLock> RwLockReadGuard<'a, T, L> {
         U: ?Sized,
     {
         // SAFETY: the conditions of `RwLockReadGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         // The signature of the closure guarantees that it will not "leak" the lifetime of the
         // reference passed to it. If the closure panics, the guard will be dropped.
         let data = NonNull::from(f(unsafe { orig.data.as_ref() }));
@@ -874,21 +874,21 @@ impl<'a, T: ?Sized, L: RawRwLock> RwLockReadGuard<'a, T, L> {
     /// The `RwLock` is already locked for reading, so this cannot fail.
     ///
     /// This is an associated function that needs to be used as
-    /// `RwLockReadGuard::try_map(...)`. A method would interfere with methods
+    /// `RwLockReadGuard::filter_map(...)`. A method would interfere with methods
     /// of the same name on the contents of the `RwLockReadGuard` used through
     /// `Deref`.
     ///
     /// # Panics
     ///
     /// If the closure panics, the guard will be dropped (unlocked).
-    #[doc(alias = "filter_map")]
-    pub fn try_map<U, F>(orig: Self, f: F) -> Result<MappedRwLockReadGuard<'a, U, L>, Self>
+    #[doc(alias = "try_map")]
+    pub fn filter_map<U, F>(orig: Self, f: F) -> Result<MappedRwLockReadGuard<'a, U, L>, Self>
     where
         F: FnOnce(&T) -> Option<&U>,
         U: ?Sized,
     {
         // SAFETY: the conditions of `RwLockReadGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         // The signature of the closure guarantees that it will not "leak" the lifetime of the
         // reference passed to it. If the closure panics, the guard will be dropped.
         match f(unsafe { orig.data.as_ref() }) {
@@ -925,7 +925,7 @@ impl<'a, T: ?Sized, L: RawRwLock> MappedRwLockReadGuard<'a, T, L> {
         U: ?Sized,
     {
         // SAFETY: the conditions of `RwLockReadGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         // The signature of the closure guarantees that it will not "leak" the lifetime of the
         // reference passed to it. If the closure panics, the guard will be dropped.
         let data = NonNull::from(f(unsafe { orig.data.as_ref() }));
@@ -943,21 +943,21 @@ impl<'a, T: ?Sized, L: RawRwLock> MappedRwLockReadGuard<'a, T, L> {
     /// The `RwLock` is already locked for reading, so this cannot fail.
     ///
     /// This is an associated function that needs to be used as
-    /// `MappedRwLockReadGuard::try_map(...)`. A method would interfere with
+    /// `MappedRwLockReadGuard::filter_map(...)`. A method would interfere with
     /// methods of the same name on the contents of the `MappedRwLockReadGuard`
     /// used through `Deref`.
     ///
     /// # Panics
     ///
     /// If the closure panics, the guard will be dropped (unlocked).
-    #[doc(alias = "filter_map")]
-    pub fn try_map<U, F>(orig: Self, f: F) -> Result<MappedRwLockReadGuard<'a, U, L>, Self>
+    #[doc(alias = "try_map")]
+    pub fn filter_map<U, F>(orig: Self, f: F) -> Result<MappedRwLockReadGuard<'a, U, L>, Self>
     where
         F: FnOnce(&T) -> Option<&U>,
         U: ?Sized,
     {
         // SAFETY: the conditions of `RwLockReadGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         // The signature of the closure guarantees that it will not "leak" the lifetime of the
         // reference passed to it. If the closure panics, the guard will be dropped.
         match f(unsafe { orig.data.as_ref() }) {
@@ -994,7 +994,7 @@ impl<'a, T: ?Sized, L: RawRwLock> RwLockWriteGuard<'a, T, L> {
         U: ?Sized,
     {
         // SAFETY: the conditions of `RwLockWriteGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         // The signature of the closure guarantees that it will not "leak" the lifetime of the
         // reference passed to it. If the closure panics, the guard will be dropped.
         let data = NonNull::from(f(unsafe { &mut *orig.lock.data.get() }));
@@ -1013,21 +1013,21 @@ impl<'a, T: ?Sized, L: RawRwLock> RwLockWriteGuard<'a, T, L> {
     /// The `RwLock` is already locked for writing, so this cannot fail.
     ///
     /// This is an associated function that needs to be used as
-    /// `RwLockWriteGuard::try_map(...)`. A method would interfere with methods
+    /// `RwLockWriteGuard::filter_map(...)`. A method would interfere with methods
     /// of the same name on the contents of the `RwLockWriteGuard` used through
     /// `Deref`.
     ///
     /// # Panics
     ///
     /// If the closure panics, the guard will be dropped (unlocked).
-    #[doc(alias = "filter_map")]
-    pub fn try_map<U, F>(orig: Self, f: F) -> Result<MappedRwLockWriteGuard<'a, U, L>, Self>
+    #[doc(alias = "try_map")]
+    pub fn filter_map<U, F>(orig: Self, f: F) -> Result<MappedRwLockWriteGuard<'a, U, L>, Self>
     where
         F: FnOnce(&mut T) -> Option<&mut U>,
         U: ?Sized,
     {
         // SAFETY: the conditions of `RwLockWriteGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         // The signature of the closure guarantees that it will not "leak" the lifetime of the
         // reference passed to it. If the closure panics, the guard will be dropped.
         match f(unsafe { &mut *orig.lock.data.get() }) {
@@ -1126,7 +1126,7 @@ impl<'a, T: ?Sized, L: RawRwLock> MappedRwLockWriteGuard<'a, T, L> {
         U: ?Sized,
     {
         // SAFETY: the conditions of `RwLockWriteGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         // The signature of the closure guarantees that it will not "leak" the lifetime of the
         // reference passed to it. If the closure panics, the guard will be dropped.
         let data = NonNull::from(f(unsafe { orig.data.as_mut() }));
@@ -1145,21 +1145,21 @@ impl<'a, T: ?Sized, L: RawRwLock> MappedRwLockWriteGuard<'a, T, L> {
     /// The `RwLock` is already locked for writing, so this cannot fail.
     ///
     /// This is an associated function that needs to be used as
-    /// `MappedRwLockWriteGuard::try_map(...)`. A method would interfere with
+    /// `MappedRwLockWriteGuard::filter_map(...)`. A method would interfere with
     /// methods of the same name on the contents of the `MappedRwLockWriteGuard`
     /// used through `Deref`.
     ///
     /// # Panics
     ///
     /// If the closure panics, the guard will be dropped (unlocked).
-    #[doc(alias = "filter_map")]
-    pub fn try_map<U, F>(mut orig: Self, f: F) -> Result<MappedRwLockWriteGuard<'a, U, L>, Self>
+    #[doc(alias = "try_map")]
+    pub fn filter_map<U, F>(mut orig: Self, f: F) -> Result<MappedRwLockWriteGuard<'a, U, L>, Self>
     where
         F: FnOnce(&mut T) -> Option<&mut U>,
         U: ?Sized,
     {
         // SAFETY: the conditions of `RwLockWriteGuard::new` were satisfied when the original guard
-        // was created, and have been upheld throughout `map` and/or `try_map`.
+        // was created, and have been upheld throughout `map` and/or `filter_map`.
         // The signature of the closure guarantees that it will not "leak" the lifetime of the
         // reference passed to it. If the closure panics, the guard will be dropped.
         match f(unsafe { orig.data.as_mut() }) {
