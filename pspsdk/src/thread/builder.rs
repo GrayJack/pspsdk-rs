@@ -222,11 +222,10 @@ impl Builder {
     /// references in the supplied thread closure and its return type.
     /// This can be guaranteed in two ways:
     ///
-    /// - ensure that [`join`][`JoinHandle::join`] is called before any referenced
-    /// data is dropped
-    /// - use only types with `'static` lifetime bounds, i.e., those with no or only
-    /// `'static` references (both [`thread::Builder::spawn`][`Builder::spawn`]
-    /// and [`thread::spawn`] enforce this property statically)
+    /// - ensure that [`join`][`JoinHandle::join`] is called before any referenced data is dropped
+    /// - use only types with `'static` lifetime bounds, i.e., those with no or only `'static`
+    ///   references (both [`thread::Builder::spawn`][`Builder::spawn`] and [`thread::spawn`]
+    ///   enforce this property statically)
     ///
     /// # Examples
     ///
@@ -269,5 +268,11 @@ impl Builder {
         Ok(JoinHandle(unsafe {
             spawn_unchecked(name, stack_size, no_hooks, None, f)
         }?))
+    }
+}
+
+impl Default for Builder {
+    fn default() -> Self {
+        Self::new()
     }
 }

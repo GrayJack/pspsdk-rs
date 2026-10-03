@@ -62,7 +62,7 @@ impl DwarfReader {
         }
         // sign-extend
         if shift < u64::BITS && (byte & 0x40) != 0 {
-            result |= (!0 as u64) << shift;
+            result |= !0_u64 << shift;
         }
         result as i64
     }

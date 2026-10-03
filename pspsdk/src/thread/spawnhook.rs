@@ -33,6 +33,7 @@ impl Drop for SpawnHooks {
     }
 }
 
+#[allow(clippy::type_complexity, reason = "internal")]
 struct SpawnHook {
     hook: Box<dyn Send + Sync + Fn(&Thread) -> Box<dyn Send + FnOnce()>>,
     next: Option<Arc<SpawnHook>>,
