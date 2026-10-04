@@ -360,6 +360,7 @@ pub unsafe fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any +
 /// Invoke a closure, capturing the cause of an unwinding panic if one occurs.
 #[cfg(not(feature = "std"))]
 #[cfg(not(panic = "immediate-abort"))]
+#[allow(clippy::missing_safety_doc, reason = "internal usage")]
 pub unsafe fn catch_unwind<R, F: FnOnce() -> R>(f: F) -> Result<R, Box<dyn Any + Send>> {
     union Data<F, R> {
         f: ManuallyDrop<F>,

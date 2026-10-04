@@ -130,9 +130,9 @@ fn get_pool_id() -> TlsPoolId {
     let raw_id = PSP_TLS_POOL.load(Ordering::Acquire);
     if raw_id == 0 {
         init();
-        unsafe { mem::transmute(PSP_TLS_POOL.load(Ordering::Acquire)) }
+        unsafe { mem::transmute::<u32, TlsPoolId>(PSP_TLS_POOL.load(Ordering::Acquire)) }
     } else {
-        unsafe { mem::transmute(raw_id) }
+        unsafe { mem::transmute::<u32, TlsPoolId>(raw_id) }
     }
 }
 
