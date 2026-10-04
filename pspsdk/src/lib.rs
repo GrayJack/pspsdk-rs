@@ -94,6 +94,10 @@ pub use rt::{init_cwd, module_start_init, process_argc_argv, psp_start, set_cust
 pub mod eabi;
 
 mod macros;
+mod vfpu;
+
+#[doc(hidden)]
+pub use unstringify::unstringify;
 
 mod private {
     #[cfg(feature = "non-stub-code")]

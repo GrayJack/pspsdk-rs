@@ -24,7 +24,7 @@ pub struct Thread {
 }
 
 impl Thread {
-    #[allow(private_interfaces, reason = "Internal API")]
+    #[allow(private_interfaces, clippy::missing_safety_doc, reason = "Internal API")]
     pub unsafe fn with_attr(
         stack: usize, attr: ThreadAttributes, init: Box<ThreadInit>,
     ) -> io::Result<Thread> {
@@ -73,7 +73,7 @@ impl Thread {
         }
     }
 
-    #[allow(private_interfaces, reason = "Internal API")]
+    #[allow(private_interfaces, clippy::missing_safety_doc, reason = "Internal API")]
     pub unsafe fn new(stack: usize, init: Box<ThreadInit>) -> io::Result<Thread> {
         let attr = cfg_select! {
             feature = "kernel" => ThreadAttributes::default(),

@@ -39,7 +39,7 @@ libraries, but also having a more type-safe FFI and high-level abstraction.
 - [x] No dependency on PSPSDK / PSPToolchain
 - [x] Add support for creating kernel mode modules
 - [x] Add support to export functions and static variables
-- [ ] Macro-based VFPU assembler
+- [x] Macro-based VFPU assembler
 - [ ] Full 3D graphics support
 - [ ] Reach full parity with user mode support in PSPSDK
 - [ ] Reach full parity with kernel mode support in PSPSDK

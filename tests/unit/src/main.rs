@@ -1,6 +1,7 @@
 #![feature(duration_constants)]
 #![feature(duration_constructors)]
 #![feature(macro_metavar_expr_concat)]
+#![feature(asm_experimental_arch)]
 #![no_std]
 #![no_main]
 
@@ -14,10 +15,16 @@ mod sync;
 mod thread;
 mod thread_local;
 mod time;
+mod vfpu;
 
 fn psp_main() {
-    let test_groups =
-        [thread::test_group, thread_local::test_group, sync::test_group, time::test_group];
+    let test_groups = [
+        vfpu::test_group,
+        thread::test_group,
+        thread_local::test_group,
+        sync::test_group,
+        time::test_group,
+    ];
 
     // let mut runner = TestRunner::file_runner(c"ms0:/psp_output_file.log");
     let mut runner = TestRunner::stdout_runner(true);
