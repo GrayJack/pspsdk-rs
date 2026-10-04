@@ -18,11 +18,10 @@ impl PspStub {
             let extern_block: ItemForeignMod = syn::parse(item)?;
 
             let items = extern_block
-            .items
-            // .clone()
-            .iter()
-            .map(|item| syn::parse2(item.to_token_stream()))
-            .collect::<Result<_, _>>()?;
+                .items
+                .iter()
+                .map(|item| syn::parse2(item.to_token_stream()))
+                .collect::<Result<_, _>>()?;
 
             Ok(PspStub {
                 lib_info: LibInfo {
