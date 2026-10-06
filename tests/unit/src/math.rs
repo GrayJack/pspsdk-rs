@@ -8,6 +8,10 @@ pub fn test_group(tr: &mut TestRunner) {
     tr.test("math::test_fmodf", test_fmodf);
     tr.test("math::test_fminf", test_fminf);
     tr.test("math::test_fmaxf", test_fmaxf);
+
+    tr.bench("math::cos", test_cos, 100);
+    tr.bench("math::sin", test_sin, 100);
+    tr.bench("math::fmodf", test_fmodf, 100);
 }
 
 fn test_cos() {

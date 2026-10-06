@@ -1,4 +1,9 @@
-use core::{ffi::CStr, fmt::Arguments, panic::UnwindSafe};
+use core::{
+    ffi::CStr,
+    fmt::Arguments,
+    panic::{RefUnwindSafe, UnwindSafe},
+    time::Duration,
+};
 
 use alloc::{format, string::String, vec::Vec};
 
@@ -11,6 +16,7 @@ use crate::{
         self,
         io::{FileFlags, Mode},
     },
+    time::Instant,
 };
 
 pub const OUTPUT_FILENAME: &str = "psp_output_file.log";
@@ -25,6 +31,8 @@ pub struct TestRunner<'a> {
     mode: TestRunnerMode,
     failure: bool,
     failures: Vec<&'a str>,
+    successed: usize,
+    measured: usize,
 }
 
 enum TestRunnerMode {
@@ -41,6 +49,8 @@ impl<'a> TestRunner<'a> {
             mode: TestRunnerMode::Fifo(fd),
             failure: false,
             failures: Vec::new(),
+            successed: 0,
+            measured: 0,
         }
     }
 
@@ -50,6 +60,8 @@ impl<'a> TestRunner<'a> {
             mode: TestRunnerMode::File(fd),
             failure: false,
             failures: Vec::new(),
+            successed: 0,
+            measured: 0,
         }
     }
 
@@ -58,6 +70,8 @@ impl<'a> TestRunner<'a> {
             mode: TestRunnerMode::Stdout { finish_process },
             failure: false,
             failures: Vec::new(),
+            successed: 0,
+            measured: 0,
         }
     }
 
@@ -66,6 +80,8 @@ impl<'a> TestRunner<'a> {
             mode: TestRunnerMode::Screen,
             failure: false,
             failures: Vec::new(),
+            successed: 0,
+            measured: 0,
         }
     }
 
@@ -86,6 +102,7 @@ impl<'a> TestRunner<'a> {
             Ok(r) => {
                 let report = r.report();
                 if report == ExitCode::SUCCESS {
+                    self.successed += 1;
                     self.pass(testcase_name, "ok");
                 } else {
                     self.failure = true;
@@ -126,9 +143,88 @@ impl<'a> TestRunner<'a> {
                 self.write_args(format_args!("[FAIL]: ({testcase_name}): does not panicked\n",));
             },
             Err(_) => {
+                self.successed += 1;
                 self.pass(testcase_name, "ok");
             },
         }
+    }
+
+    pub fn bench<R, F>(&mut self, testcase_name: &'a str, f: F, iterations: usize)
+    where
+        R: Termination + 'static,
+        F: Fn() -> R + UnwindSafe + RefUnwindSafe,
+    {
+        if iterations == 0 {
+            self.failure = true;
+            self.failures.push(testcase_name);
+            self.write_args(format_args!(
+                "[FAIL]: ({testcase_name}) benchmark requires at least one iteration\n"
+            ));
+            return;
+        }
+
+        let mut samples = Vec::with_capacity(iterations);
+
+        for _ in 0..iterations {
+            let result = panic::catch_unwind(|| {
+                let start = Instant::now();
+                let res = f();
+                let elapsed = start.elapsed();
+                (res, elapsed)
+            });
+
+            match result {
+                Ok((res, elapsed)) => {
+                    let report = res.report();
+                    if report == ExitCode::SUCCESS {
+                        samples.push(elapsed);
+                    } else {
+                        self.failure = true;
+                        self.failures.push(testcase_name);
+                        self.write_args(format_args!(
+                            "[FAIL]: ({testcase_name}) exited with: {}\n",
+                            report.to_i32()
+                        ));
+                        return;
+                    }
+                },
+                Err(_) => {
+                    self.failure = true;
+                    self.failures.push(testcase_name);
+                    self.write_args(format_args!("[FAIL]: ({testcase_name}) panicked\n"));
+                    return;
+                },
+            }
+        }
+
+        samples.sort_unstable();
+
+        let median = if samples.len() % 2 == 1 {
+            samples[samples.len() / 2]
+        } else {
+            let middle = samples.len() / 2;
+            Duration::from_nanos_u128((samples[middle - 1] + samples[middle]).as_nanos() / 2)
+        };
+
+        let total_nanos: u128 = samples.iter().map(Duration::as_nanos).sum();
+
+        let mean_nanos = total_nanos / samples.len() as u128;
+
+        let variance = samples
+            .iter()
+            .map(|sample| {
+                let difference = sample.as_nanos() as i128 - mean_nanos as i128;
+                (difference * difference) as u128
+            })
+            .sum::<u128>()
+            / samples.len() as u128;
+
+        let deviation = Duration::from_nanos_u128(variance.isqrt());
+
+        self.measured += 1;
+        self.write_args(format_args!(
+            "[BENCH]: ({testcase_name}) {median:?}/iter (+/- {deviation:?})\n",
+        ));
     }
 
     pub fn start_run(&self) {
@@ -136,6 +232,14 @@ impl<'a> TestRunner<'a> {
     }
 
     pub fn finish_run(self) {
+        // report
+        self.write_args(format_args!(
+            "\nTest results: {} passed; {} failed; {} measured\n",
+            self.successed,
+            self.failures.len(),
+            self.measured
+        ));
+
         if self.failure {
             self.write_args(format_args!("Failing tests: {:?}\n", self.failures));
             self.write_args(format_args!("{}\n", FAILURE_TOKEN));
@@ -151,12 +255,6 @@ impl<'a> TestRunner<'a> {
 
     pub fn dbg(&self, testcase_name: &str, msg: &str) {
         self.write_args(format_args!("[NOTE]: ({testcase_name}) {msg}\n"));
-    }
-
-    pub fn fail(&mut self, testcase_name: &'a str, msg: &str) {
-        self.failure = true;
-        self.failures.push(testcase_name);
-        self.write_args(format_args!("[FAIL]: ({testcase_name}) {msg}\n"));
     }
 
     pub fn write_args(&self, args: Arguments) {
