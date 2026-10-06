@@ -56,6 +56,8 @@ pub mod sys;
 #[cfg(feature = "non-stub-code")]
 pub mod allocators;
 #[cfg(feature = "non-stub-code")]
+pub mod math;
+#[cfg(feature = "non-stub-code")]
 pub mod power;
 
 // Mixed modules (part STD-like and part custom).

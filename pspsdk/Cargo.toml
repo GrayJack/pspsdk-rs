@@ -19,6 +19,7 @@ bitflag-attr = { version = "0.14.0" }
 io_core = { version = "0.5.2", features = ["alloc", "nightly"] }
 pspsdk-macros = { path = "../pspsdk-macros", version = "0.0.1", features = [] }
 unstringify = "0.1.4"
+libm = "0.2.16"
 
 [features]
 default = ["non-stub-code"]

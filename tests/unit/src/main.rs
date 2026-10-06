@@ -11,6 +11,7 @@ extern crate alloc;
 
 pspsdk::module!("UNIT_TESTS", 1, 1);
 
+mod math;
 mod sync;
 mod thread;
 mod thread_local;
@@ -20,6 +21,7 @@ mod vfpu;
 fn psp_main() {
     let test_groups = [
         vfpu::test_group,
+        math::test_group,
         thread::test_group,
         thread_local::test_group,
         sync::test_group,
