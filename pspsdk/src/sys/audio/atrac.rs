@@ -49,7 +49,7 @@ pub enum AtracCodecKind {
     Atrac3Plus = 0x00001000,
 }
 
-// FIXME: Add missing docs and missing function
+// FIXME: Add missing function
 #[psp_stub(libname = "sceAtrac3plus", flags = 0x0009, use_crate)]
 unsafe extern "C" {
     /// Get the Atrac ID for an available/released Atrac object with the specified `codec_kind`.
@@ -355,21 +355,75 @@ unsafe extern "C" {
         write_offset_second_buf: SceSize,
     ) -> SceResult<()>;
 
+    /// Registers an input buffer to the library for an Atrac ID.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID.
+    /// - `buffer_addr` **[[In parameter]]**: The buffer holding the Atrac3 data, including the
+    ///   RIFF/WAVE header.
+    /// - `buffer_byte`: The size of the `buffer_addr`.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
     #[nid(0x0E2A73AB)]
     pub unsafe fn sceAtracSetData(
         atrac_id: AtracId, buffer_addr: *mut u8, buffer_byte: SceSize,
     ) -> SceResult<()>;
 
+    /// Registers an input buffer to the library for an Atrac ID.
+    ///
+    /// This function differs from [`sceAtracSetData`] is that the amount of data read may be less
+    /// than `buffer_byte`.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID.
+    /// - `buffer_addr` **[[In parameter]]**: The buffer holding the Atrac3 data, including the
+    ///   RIFF/WAVE header.
+    /// - `read_byte`: The size of valid data in the buffer associated with `buffer_addr`.
+    /// - `buffer_byte`: The size of the `buffer_addr`.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
     #[nid(0x3F6E26B5)]
     pub unsafe fn sceAtracSetHalfwayBuffer(
         atrac_id: AtracId, buffer_addr: *mut u8, read_byte: u32, buffer_byte: u32,
     ) -> SceResult<()>;
 
+    /// Creates a new Atrac ID from the specified data.
+    ///
+    /// # Parameters
+    ///
+    /// - `buffer_addr` **[[In parameter]]**: The buffer holding the Atrac3 data, including the
+    ///   RIFF/WAVE header.
+    /// - `read_byte`: The size of valid data in the buffer associated with `buffer_addr`.
+    /// - `buffer_byte`: The size of the buffer pointed by `buf`.
+    ///
+    /// # Return Value
+    ///
+    /// Returns the new Atrac ID on success, an error value otherwise.
     #[nid(0x0FAE370E)]
     pub unsafe fn sceAtracSetHalfwayBufferAndGetID(
         buffer_addr: *mut u8, read_byte: u32, buffer_byte: u32,
     ) -> SceResult<AtracId>;
 
+    /// Registers a secondary input buffer to the library for an Atrac ID.
+    ///
+    /// This is for loading Atrac data to be played after the end of the main loop.
+    ///
+    /// # Parameters
+    ///
+    /// - `atrac_id`: The Atrac ID.
+    /// - `buffer_addr` **[[In parameter]]**: The buffer holding the Atrac3 data, including the
+    ///   RIFF/WAVE header.
+    /// - `buffer_byte`: The size of the `buffer_addr`.
+    ///
+    /// # Return Value
+    ///
+    /// `Ok` value on success, error value otherwise.
     #[nid(0x83BF7AFD)]
     pub unsafe fn sceAtracSetSecondBuffer(
         atrac_id: AtracId, second_buffer_addr: *mut u8, second_buffer_byte: u32,
