@@ -8,6 +8,7 @@ use pspsdk_macros::{psp_fw_cfg, psp_stub};
 use crate::sys::{SceError, SceIntoOkValue, SceResult, SceResultOk, SceSize};
 
 pub mod atrac;
+pub mod codec;
 pub mod routing;
 
 /// Minimum value for audio sample value.
