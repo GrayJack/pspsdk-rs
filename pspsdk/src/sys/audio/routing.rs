@@ -122,6 +122,7 @@ unsafe extern "C" {
     /// Gets the current audio routing volume mode.
     ///
     /// # Return Value
+    ///
     /// Returns the current routing volume mode.
     #[nid(if cfg!(feature = "psp_660") { 0xD82D02FD }
         // else if cfg!(feature = "psp_630") { 0x28235C56 }
@@ -142,6 +143,7 @@ unsafe extern "C" {
     /// - `vol_mode`: The audio routing mode to set.
     ///
     /// # Return Value
+    ///
     /// `Ok` value on success, error value otherwise.
     #[nid(if cfg!(feature = "psp_660") { 0x44B384EF }
         // else if cfg!(feature = "psp_630") { 0xBB548475 }
