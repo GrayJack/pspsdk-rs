@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CodecKind"],"fn":["sceAudiocodecAlcExtendParameter","sceAudiocodecCheckNeedMem","sceAudiocodecDecode","sceAudiocodecGetEDRAM","sceAudiocodecGetInfo","sceAudiocodecInit","sceAudiocodecReleaseEDRAM"],"struct":["CodecInfo"]};
