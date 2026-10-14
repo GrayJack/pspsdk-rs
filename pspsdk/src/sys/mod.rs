@@ -15,6 +15,7 @@ pub mod audio;
 pub mod ctrl;
 pub mod display;
 pub mod dma;
+pub mod exception;
 pub mod ge;
 pub mod hprm;
 pub mod io;
