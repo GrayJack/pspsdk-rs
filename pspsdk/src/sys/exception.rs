@@ -4,10 +4,11 @@ use core::ffi::c_void;
 
 use pspsdk_macros::psp_stub;
 
+#[allow(unused)]
 use crate::sys::SceResult;
 
 /// The type of the Non-Maskable Interrupt handler.
-type NmiHandler = unsafe extern "C" fn();
+pub type NmiHandler = unsafe extern "C" fn();
 
 /// A PSP exception handler internal structure. This is not meant to be used directly.
 ///
