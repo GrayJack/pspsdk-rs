@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["abort","exit","is_interrupt_enabled","suspend_interrupts","with_suspended_interrupts"],"struct":["ExitCode","SuspendInterruptsGuard"],"trait":["Termination"]};

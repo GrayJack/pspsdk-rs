@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["RESI_LIBRARY_ENTRY_TABLE_NEW_LEN","RESI_LIBRARY_ENTRY_TABLE_OLD_LEN","STUB_LIBRARY_ENTRY_TABLE_NEW_LEN","STUB_LIBRARY_ENTRY_TABLE_OLD_LEN"],"struct":["FunctionDirectCall","FunctionSyscall","ModuleInfo","ResidentLibraryEntry","StubLibraryEntry","VariableStub"],"union":["FunctionStub","ResidentLibraryEntryItem"]};

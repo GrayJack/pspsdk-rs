@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["acquire_volatile_memory","acquire_volatile_memory_blocking","lock"],"struct":["PowerLockGuard","VolatileMemoryLockGuard"]};
