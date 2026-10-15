@@ -31,6 +31,9 @@ pub mod thread;
 pub mod time;
 pub mod usersystemlib;
 
+#[cfg(feature = "kernel")]
+pub mod id_storage;
+
 #[cfg(feature = "non-stub-code")]
 pub mod sync;
 #[cfg(feature = "non-stub-code")]
