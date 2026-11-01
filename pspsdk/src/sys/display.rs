@@ -27,10 +27,11 @@ pub enum DisplayMode {
 }
 
 #[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[doc(alias("DisplayPixelFormat", "PspDisplayPixelFormats"))]
 pub enum PixelFormat {
     /// 16-bit RGB 5:6:5.
+    #[default]
     Psm5650 = 0,
     /// 16-bit RGBA 5:5:5:1.
     Psm5551 = 1,

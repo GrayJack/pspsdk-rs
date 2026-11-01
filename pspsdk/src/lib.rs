@@ -1,5 +1,5 @@
 #![no_std]
-#![allow(internal_features)]
+#![allow(internal_features, stable_features)]
 #![allow(improper_ctypes, reason = "Rust lint false positive (Rust issue #115457)")]
 #![allow(unused_features, reason = "behavior changes in compilation context")]
 #![feature(

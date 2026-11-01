@@ -16,8 +16,10 @@ pub mod ctrl;
 pub mod display;
 pub mod dma;
 pub mod exception;
+pub mod font;
 pub mod ge;
 pub mod hprm;
+pub mod id_storage;
 pub mod io;
 pub mod libc;
 pub mod library;
@@ -30,9 +32,6 @@ pub mod suspend;
 pub mod thread;
 pub mod time;
 pub mod usersystemlib;
-
-#[cfg(feature = "kernel")]
-pub mod id_storage;
 
 #[cfg(feature = "non-stub-code")]
 pub mod sync;

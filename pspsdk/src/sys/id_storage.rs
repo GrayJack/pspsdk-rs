@@ -1,5 +1,5 @@
 //! ID Storage API.
-
+#![allow(unused)]
 use core::ffi::c_void;
 
 use pspsdk_macros::psp_stub;
@@ -16,7 +16,7 @@ use crate::sys::{SceResult, SceSize};
 #[doc(alias("sceIdStorageEnumCB"))]
 pub type EnumCallback = unsafe extern "C" fn(leaf_id: u16, ppn: i32, common: *mut c_void);
 
-
+#[cfg(feature = "kernel")]
 #[psp_stub(libname = "sceIdStorage_driver", flags = 0x0009, use_crate)]
 extern "C" {
     /// Gets the size of the ID storage leaf.

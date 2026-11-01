@@ -26,7 +26,8 @@ fn main() {
     // Automatically set the kernel NID variant based on the targeted firmware.
     if let Some(target_fw) = target_fw {
         match target_fw {
-            ..370 => println!("cargo:rustc-cfg=feature=\"psp_100\""),
+            ..350 => println!("cargo:rustc-cfg=feature=\"psp_100\""),
+            350..370 => println!("cargo:rustc-cfg=feature=\"psp_350\""),
             370..380 => println!("cargo:rustc-cfg=feature=\"psp_370\""),
             380..395 => println!("cargo:rustc-cfg=feature=\"psp_380\""),
             395..420 => println!("cargo:rustc-cfg=feature=\"psp_395\""),
