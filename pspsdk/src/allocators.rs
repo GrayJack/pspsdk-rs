@@ -30,11 +30,10 @@ pub use crate::sys::mem::{MemoryBlockKind, MemoryPartitionId};
 static GLOBAL_ALLOC: SystemAlloc = SystemAlloc;
 // static GLOBAL_ALLOC: GlobalVariablePoolAlloc = GlobalVariablePoolAlloc::new();
 
-const DEFAULT_PARTITION_ID: MemoryPartitionId =
-    cfg_select! {
-        all(prx, feature = "kernel") => MemoryPartitionId::MainKernel,
-        _ => MemoryPartitionId::MainUser,
-    };
+const DEFAULT_PARTITION_ID: MemoryPartitionId = cfg_select! {
+    all(prx, feature = "kernel") => MemoryPartitionId::MainKernel,
+    _ => MemoryPartitionId::MainUser,
+};
 
 const DEFAULT_VPL_SIZE: usize = cfg_select! {
     // 2 KB
