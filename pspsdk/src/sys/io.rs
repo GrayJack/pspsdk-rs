@@ -395,7 +395,7 @@ pub struct IoBlockInfo {
     pub is_power_locked: bool,
     /// Unknown. It is a boolean of some sort, async related.
     pub unk2: u8,
-    /// The async task priority
+    /// The async task priority.
     pub async_priority: u8,
     /// The thread UID of the thread for the file async operations.
     pub async_thread_id: ThreadId,
@@ -409,7 +409,7 @@ pub struct IoBlockInfo {
     pub async_callback_argp: *mut c_void,
     /// Unused.
     pub unused: u32,
-    /// The current `k1` register value for async operations
+    /// The current `k1` register value for async operations.
     pub k1: u32,
     /// The async return value of operations.
     pub async_return: i64,
@@ -417,7 +417,7 @@ pub struct IoBlockInfo {
     pub async_args: [i32; 6],
     /// The async command to execute.
     pub async_cmd: u32,
-    /// The current user level of
+    /// The current user level of the file.
     pub user_level: u32,
     pub hook: IoHook,
     pub unk3: u32,
