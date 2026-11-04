@@ -6,7 +6,7 @@ use core::ffi::{c_char, c_void, VaList};
 use core::ptr::NonNull;
 
 use bitflag_attr::bitflag;
-use pspsdk_macros::psp_stub;
+use pspsdk_macros::{psp_fw_cfg, psp_stub};
 
 use crate::sys::{SceError, SceIntoOkValue, SceIsize, SceResult, SceResultOk, SceSize, SceUid};
 
@@ -801,6 +801,10 @@ unsafe extern "C" {
     /// - `0x02060010` on v2.60 unit,
     /// - `0x02070010` on v2.70 unit,
     /// - `0x02070110` on v2.71 unit.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 1.03.
     #[nid(if cfg!(feature = "psp_660") { 0xC886B169 }
         else if cfg!(feature = "psp_630") { 0x5E8DCA05 }
         else if cfg!(feature = "psp_600") { 0xFE9BC18B }
@@ -811,6 +815,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xEE1718BC }
         else { 0x3FC9AE6A }
     )]
+    #[psp_fw_cfg(103..)]
     pub safe fn sceKernelDevkitVersion() -> u32;
 
     /// Gets the SDK version set with [`sceKernelSetCompiledSdkVersion`].
@@ -818,6 +823,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// Returns the version number, or `0` if unset.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
     #[nid(if cfg!(feature = "psp_660") { 0xB4F00CB5 }
         else if cfg!(feature = "psp_630") { 0xF0E0AB7A }
         else if cfg!(feature = "psp_600") { 0xB9796F69 }
@@ -828,6 +837,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0x9110439F }
         else { 0xFC114573 }
     )]
+    #[psp_fw_cfg(200..)]
     pub safe fn sceKernelGetCompiledSdkVersion() -> u32;
 
     /// Requests the information of a partition.
@@ -930,6 +940,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 1.50.
     #[nid(if cfg!(feature = "psp_660") { 0x83B5226D }
         else if cfg!(feature = "psp_630") { 0x00E9A04A }
         else if cfg!(feature = "psp_600") { 0x31DFE03F }
@@ -940,6 +954,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xBBD786DD }
         else { 0xB2C7AA36 }
     )]
+    #[psp_fw_cfg(150..)]
     pub unsafe fn sceKernelSetDdrMemoryProtection(
         addr: SceSize, size: SceSize, prot: u32,
     ) -> SceResult<()>;
@@ -1104,6 +1119,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.80.
     #[nid(if cfg!(feature = "psp_660") { 0x79BD1975 }
         else if cfg!(feature = "psp_630") { 0x54DEFDA7 }
         else if cfg!(feature = "psp_600") { 0x6FDEF86F }
@@ -1114,6 +1133,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0x7EF4BDCB }
         else { 0x002BA296 }
     )]
+    #[psp_fw_cfg(280..)]
     pub safe fn sceKernelQueryHeapInfo(heap_id: HeapId, info: &mut HeapInfo) -> SceResult<()>;
 
     /// Get the low heap information
@@ -1127,6 +1147,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// Returns the block count on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.80.
     #[nid(if cfg!(feature = "psp_660") { 0x476B244F }
         else if cfg!(feature = "psp_630") { 0xD94A5183 }
         else if cfg!(feature = "psp_600") { 0x3988900F }
@@ -1137,6 +1161,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0x88F6A684 }
         else { 0x03808C51 }
     )]
+    #[psp_fw_cfg(280..)]
     pub unsafe fn sceKernelQueryLowheapInfo(
         heap_block: *mut HeapBlock, info: &mut LowHeapInfo,
     ) -> SceResult<SceSize>;
@@ -1146,6 +1171,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// The hardware model of PSP.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.80.
     #[nid(if cfg!(feature = "psp_660") { 0x07C586A1 }
         else if cfg!(feature = "psp_630") { 0x458A70B5 }
         else if cfg!(feature = "psp_600") { 0x864EBFD7 }
@@ -1156,6 +1185,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xA3B0B6BC }
         else { 0x6373995D }
     )]
+    #[psp_fw_cfg(280..)]
     pub safe fn sceKernelGetModel() -> PspHardwareModel;
 
     /// Gets the current status of the system.
@@ -1164,6 +1194,10 @@ unsafe extern "C" {
     /// - `0x20000`: Power unlock done.
     /// - `0x40000`: RunExecForThread prepared.
     /// - `0x40020`: runReboot is read and about to to start.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 1.50.
     #[nid(if cfg!(feature = "psp_660") { 0x36C503A9 }
         else if cfg!(feature = "psp_630") { 0x6D336C84 }
         else if cfg!(feature = "psp_600") { 0x2E0F38E5 }
@@ -1174,6 +1208,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xA48F9782 }
         else { 0x452E3696 }
     )]
+    #[psp_fw_cfg(150..)]
     pub safe fn sceKernelGetSystemStatus() -> u32;
 
     /// Sets the status of the system.
@@ -1189,6 +1224,10 @@ unsafe extern "C" {
     /// # Safety
     ///
     /// Changing the system status can cause issues in system behavior.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 1.50.
     #[nid(if cfg!(feature = "psp_660") { 0x521AC5A4 }
         else if cfg!(feature = "psp_630") { 0x604C20C4 }
         else if cfg!(feature = "psp_600") { 0x98ACDE01 }
@@ -1199,6 +1238,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xD26FFD63 }
         else { 0x95F5E8DA }
     )]
+    #[psp_fw_cfg(150..)]
     pub unsafe fn sceKernelSetSystemStatus(new_status: u32) -> u32;
 
     /// Gets the information of the game.
@@ -1206,6 +1246,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// Returns a pointer to the global game information.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
     #[nid(if cfg!(feature = "psp_660") { 0xEF29061C }
         else if cfg!(feature = "psp_630") { 0x38F4EBDC }
         else if cfg!(feature = "psp_600") { 0x2F15F149 }
@@ -1216,6 +1260,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xB1634112 }
         else { 0xCD617A94 }
     )]
+    #[psp_fw_cfg(200..)]
     pub safe fn sceKernelGetGameInfo() -> NonNull<GameInfo>;
 
     /// Copy the global game information to a given local structure.
@@ -1228,6 +1273,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
     #[nid(if cfg!(feature = "psp_660") { 0xB9B7281A }
         else if cfg!(feature = "psp_630") { 0xD9B4E550 }
         else if cfg!(feature = "psp_600") { 0xCA852144 }
@@ -1238,6 +1287,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xAFDB003A }
         else { 0x97B18FA8 }
     )]
+    #[psp_fw_cfg(200..)]
     pub unsafe fn sceKernelCopyGameInfo(info: *mut GameInfo) -> SceResult<()>;
 
     /// Sets the UMD Param SFO on the global [`GameInfo`].
@@ -1246,6 +1296,10 @@ unsafe extern "C" {
     ///
     /// - `umd_param_sfo` **[[In parameter]]**: The UMD Param SFO to set. If the pointer is `null`,
     ///   it resets the data in the global game information.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
     #[nid(if cfg!(feature = "psp_660") { 0xF3BDB718 }
         else if cfg!(feature = "psp_630") { 0x9C6BBA4B }
         else if cfg!(feature = "psp_600") { 0x1DFFBF56 }
@@ -1256,6 +1310,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xB8637A4B }
         else { 0xF91FE6AA }
     )]
+    #[psp_fw_cfg(200..)]
     pub unsafe fn sceKernelSetParamSfo(umd_param_sfo: *const [u8; 16]);
 
     /// Gets the QTGP2 value from the global [`GameInfo`].
@@ -1267,6 +1322,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
     #[nid(if cfg!(feature = "psp_660") { 0x474CA24F }
         else if cfg!(feature = "psp_630") { 0x5B7174DF }
         else if cfg!(feature = "psp_600") { 0x040CDA4C }
@@ -1277,6 +1336,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0x9AB85DA9 }
         else { 0xCE8D3DB3 }
     )]
+    #[psp_fw_cfg(200..)]
     pub safe fn sceKernelGetQTGP2(qtgp2: &mut [u8; 8]) -> SceResult<()>;
 
     /// Sets the QTGP2 value on the global [`GameInfo`].
@@ -1289,6 +1349,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
     #[nid(if cfg!(feature = "psp_660") { 0xA03CB480 }
         else if cfg!(feature = "psp_630") { 0x9E5B1ACB }
         else if cfg!(feature = "psp_600") { 0xD391637C }
@@ -1299,7 +1363,8 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xCDBFF97E }
         else { 0x55E4719C }
     )]
-    pub unsafe fn sceKernelSetQTGP2(qtgp2: *mut [u8; 8]) -> SceResult<()>;
+    #[psp_fw_cfg(200..)]
+    pub safe fn sceKernelSetQTGP2(qtgp2: &[u8; 8]) -> SceResult<()>;
 
     /// Gets the QTGP3 value from the global [`GameInfo`].
     ///
@@ -1310,6 +1375,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
     #[nid(if cfg!(feature = "psp_660") { 0x43E0A861 }
         else if cfg!(feature = "psp_630") { 0x80C7689B }
         else if cfg!(feature = "psp_600") { 0x2F756CC8 }
@@ -1320,6 +1389,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xB015F84F }
         else { 0x6D8E0CDF }
     )]
+    #[psp_fw_cfg(200..)]
     pub safe fn sceKernelGetQTGP3(qtgp3: &mut [u8; 16]) -> SceResult<()>;
 
     /// Sets the QTGP3 value on the global [`GameInfo`].
@@ -1332,6 +1402,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
     #[nid(if cfg!(feature = "psp_660") { 0xFC639A2B }
         else if cfg!(feature = "psp_630") { 0x9F154FA1 }
         else if cfg!(feature = "psp_600") { 0xB00D1EC2 }
@@ -1342,7 +1416,8 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0x1385A8F2 }
         else { 0xC7E57B9C }
     )]
-    pub unsafe fn sceKernelSetQTGP3(qtgp3: *mut [u8; 16]) -> SceResult<()>;
+    #[psp_fw_cfg(200..)]
+    pub unsafe fn sceKernelSetQTGP3(qtgp3: *const [u8; 16]) -> SceResult<()>;
 
     /// Gets if replacing UMD is allowed from the global [`GameInfo`].
     ///
@@ -1353,6 +1428,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
     #[nid(if cfg!(feature = "psp_660") { 0x4972F9D1 }
         else if cfg!(feature = "psp_630") { 0x966EB2BE }
         else if cfg!(feature = "psp_600") { 0x1205AE0C }
@@ -1363,6 +1442,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xEE010E3A }
         else { 0xA262FEF0 }
     )]
+    #[psp_fw_cfg(200..)]
     pub safe fn sceKernelGetAllowReplaceUmd(allow_replace_umd: &mut u32) -> SceResult<()>;
 
     /// Sets if replacing UMD is allowed on the global [`GameInfo`].
@@ -1370,6 +1450,10 @@ unsafe extern "C" {
     /// # Parameters
     ///
     /// - `allow_replace_umd`: The value to set.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
     #[nid(if cfg!(feature = "psp_660") { 0xF19BA38D }
         else if cfg!(feature = "psp_630") { 0x72DB42EC }
         else if cfg!(feature = "psp_600") { 0x7EF1DC3C }
@@ -1380,6 +1464,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0x8B9178EF }
         else { 0xCBB05241 }
     )]
+    #[psp_fw_cfg(200..)]
     pub safe fn sceKernelSetAllowReplaceUmd(allow_replace_umd: u32);
 
     /// Gets the DNAS information from the globel [`GameInfo`].
@@ -1387,6 +1472,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// Returns the DNAS information, `0` if not set.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
     #[nid(if cfg!(feature = "psp_660") { 0xBFD53FB7 }
         else if cfg!(feature = "psp_630") { 0xF7125FA4 }
         else if cfg!(feature = "psp_600") { 0xBD71F23A }
@@ -1397,6 +1486,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xDB9BE041 }
         else { 0x7ECBDBD9 }
     )]
+    #[psp_fw_cfg(200..)]
     pub safe fn sceKernelGetDNAS() -> u32;
 
     /// Sets the DNAS information on the global [`GameInfo`].
@@ -1404,6 +1494,10 @@ unsafe extern "C" {
     /// # Parameters
     ///
     /// - `dnas`: The DNAS information to set.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.00.
     #[nid(if cfg!(feature = "psp_660") { 0x982A4779 }
         else if cfg!(feature = "psp_630") { 0xED6B1D87 }
         else if cfg!(feature = "psp_600") { 0xDCFF8AE5 }
@@ -1414,6 +1508,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0x06BB6385 }
         else { 0x9C304ED7 }
     )]
+    #[psp_fw_cfg(200..)]
     pub safe fn sceKernelSetDNAS(dnas: u32);
 
     /// Sets if UMD cache is on is allowed from the global [`GameInfo`].
@@ -1421,6 +1516,10 @@ unsafe extern "C" {
     /// # Parameters
     ///
     /// - `umd_cache_on`: The value to set.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 6.60.
     #[nid(0x1404C1AA)]
     #[cfg(feature = "psp_660")]
     pub safe fn sceKernelSetUmdCacheOn(umd_cache_on: u32);
@@ -1481,6 +1580,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// Returns a pointer to the global UID root.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 1.50.
     #[nid(if cfg!(feature = "psp_660") { 0xAC12F678 }
         else if cfg!(feature = "psp_630") { 0x41E50FA6 }
         else if cfg!(feature = "psp_600") { 0xCCD58B8B }
@@ -1491,6 +1594,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0x54247DD8 }
         else { 0x536AD5E1 }
     )]
+    #[psp_fw_cfg(150..)]
     pub safe fn sceKernelGetUidmanCB() -> NonNull<UidList>;
 
     /// Deletes a UID.
@@ -1515,6 +1619,10 @@ unsafe extern "C" {
     pub unsafe fn sceKernelDeleteUID(id: SceUid) -> SceResult<()>;
 
     /// Gets the initial system random value.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.50.
     #[nid(if cfg!(feature = "psp_660") { 0x4A325AA0 }
         else if cfg!(feature = "psp_630") { 0x48F77207 }
         else if cfg!(feature = "psp_600") { 0x3B560EE6 }
@@ -1525,6 +1633,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0x9E7265D9 }
         else { 0x38495D84 }
     )]
+    #[psp_fw_cfg(250..)]
     pub safe fn sceKernelGetInitialRandomValue() -> u32;
 
     /// Sets the reboot kernel function.
@@ -1536,6 +1645,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.50.
     #[nid(if cfg!(feature = "psp_660") { 0x96A3CE2C }
         else if cfg!(feature = "psp_630") { 0xE0A74F2D }
         else if cfg!(feature = "psp_600") { 0xC5485286 }
@@ -1546,6 +1659,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xFD347C2B }
         else { 0x29A5899B }
     )]
+    #[psp_fw_cfg(250..)]
     pub unsafe fn sceKernelSetRebootKernel(
         reboot_kernel_fn: unsafe extern "C" fn(_: *mut c_void) -> i32,
     ) -> SceResult<()>;
@@ -1559,6 +1673,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 2.50.
     #[nid(if cfg!(feature = "psp_660") { 0xE73FBC0B }
         else if cfg!(feature = "psp_630") { 0xA51E2C33 }
         else if cfg!(feature = "psp_600") { 0xB0ED0CCD }
@@ -1569,6 +1687,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0x5782A1A2 }
         else { 0xF4390489 }
     )]
+    #[psp_fw_cfg(250..)]
     pub unsafe fn sceKernelRebootKernel(args: *mut c_void) -> SceResult<()>;
 
     /// Register a get ID function, that will be used on [`sceKernelGetId`].
@@ -1580,6 +1699,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 3.00.
     #[nid(if cfg!(feature = "psp_660") { 0x310802A9 }
         else if cfg!(feature = "psp_630") { 0x25A760F0 }
         else if cfg!(feature = "psp_600") { 0x02AEA33F }
@@ -1590,6 +1713,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0xAB1F7C42 }
         else { 0x419DB8F4 }
     )]
+    #[psp_fw_cfg(300..)]
     pub unsafe fn sceKernelRegisterGetIdFunc(
         func: unsafe extern "C" fn(path: *const c_char, id: *mut c_char) -> SceResult<i32>,
     ) -> SceResult<()>;
@@ -1605,6 +1729,10 @@ unsafe extern "C" {
     /// # Return Value
     ///
     /// `Ok` value on success, error value otherwise.
+    ///
+    /// # Firmware Version
+    ///
+    /// This API was introduced on PSP firmware version 3.00.
     #[nid(if cfg!(feature = "psp_660") { 0xD0C1460D }
         else if cfg!(feature = "psp_630") { 0x288B090A }
         else if cfg!(feature = "psp_600") { 0xC10C3C26 }
@@ -1615,6 +1743,7 @@ unsafe extern "C" {
         else if cfg!(feature = "psp_380") { 0x88021868 }
         else { 0xA1ACEA31 }
     )]
+    #[psp_fw_cfg(300..)]
     pub unsafe fn sceKernelGetId(path: *const c_char, id: *mut c_char) -> SceResult<i32>;
 
     /// Makes the kernel to dump the internal memory table to kernel stdout.
@@ -1622,6 +1751,7 @@ unsafe extern "C" {
     /// # Warning
     /// This functions in only available between the version 1.00 and 3.40 of the PSP firmware.
     #[nid(0x26F96157)]
+    #[psp_fw_cfg(..=340)]
     pub safe fn sceKernelSysMemDump();
 
     /// Makes the kernel to dump the list of memory blocks to kernel stdout.
@@ -1629,6 +1759,7 @@ unsafe extern "C" {
     /// # Warning
     /// This functions in only available between the version 1.00 and 3.40 of the PSP firmware.
     #[nid(0x6D6200DD)]
+    #[psp_fw_cfg(..=340)]
     pub safe fn sceKernelSysMemDumpBlock();
 
     /// Makes the kernel to dump the tail blocks to kernel stdout.
@@ -1636,6 +1767,7 @@ unsafe extern "C" {
     /// # Warning
     /// This functions in only available between the version 1.00 and 3.40 of the PSP firmware.
     #[nid(0x621037F5)]
+    #[psp_fw_cfg(..=340)]
     pub safe fn sceKernelSysMemDumpTail();
 }
 
