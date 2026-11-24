@@ -5,7 +5,6 @@
 #![feature(
     rustc_attrs,
     pattern_types,
-    pattern_type_macro,
     structural_match,
     asm_experimental_arch,
     allocator_ext,

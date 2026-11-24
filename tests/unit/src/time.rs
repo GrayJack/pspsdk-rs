@@ -55,6 +55,7 @@ pub fn instant_monotonic() {
 
 // #[test]
 // #[cfg(not(target_arch = "wasm32"))]
+#[allow(clippy::if_same_then_else)]
 fn instant_monotonic_concurrent() -> thread::Result<()> {
     let threads: Vec<_> = (0..8)
         .map(|_| {
@@ -118,6 +119,7 @@ pub fn instant_math() {
 }
 
 // #[test]
+#[allow(clippy::eq_op)]
 pub fn instant_math_is_associative() {
     let now = Instant::now();
     let offset = Duration::from_millis(5);

@@ -1690,7 +1690,7 @@ unsafe extern "C" {
     #[psp_fw_cfg(250..)]
     pub unsafe fn sceKernelRebootKernel(args: *mut c_void) -> SceResult<()>;
 
-    /// Register a get ID function, that will be used on [`sceKernelGetId`].
+    /// Registers a get ID function, that will be used on [`sceKernelGetId`].
     ///
     /// # Parameters
     ///
@@ -1718,7 +1718,7 @@ unsafe extern "C" {
         func: unsafe extern "C" fn(path: *const c_char, id: *mut c_char) -> SceResult<i32>,
     ) -> SceResult<()>;
 
-    /// Call the registered get ID function with [`sceKernelRegisterGetIdFunc`], call it, and then
+    /// Calsl the registered get ID function with [`sceKernelRegisterGetIdFunc`], call it, and then
     /// unregisters it.
     ///
     /// # Parameters

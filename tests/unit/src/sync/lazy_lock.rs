@@ -99,6 +99,7 @@ pub fn sync_lazy_default() {
 
 // #[test]
 // #[cfg_attr(any(target_os = "emscripten", target_os = "wasi"), ignore)] // no threads
+#[allow(clippy::vec_init_then_push)]
 pub fn static_sync_lazy() {
     static XS: LazyLock<Vec<i32>> = LazyLock::new(|| {
         let mut xs = Vec::new();
@@ -116,6 +117,7 @@ pub fn static_sync_lazy() {
 }
 
 // #[test]
+#[allow(clippy::vec_init_then_push)]
 pub fn static_sync_lazy_via_fn() {
     fn xs() -> &'static Vec<i32> {
         static XS: OnceLock<Vec<i32>> = OnceLock::new();

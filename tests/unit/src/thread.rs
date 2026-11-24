@@ -94,7 +94,7 @@ fn test_named_thread() {
     Builder::new()
         .name("ada lovelace".to_string())
         .spawn(move || {
-            assert!(thread::current().name().unwrap() == "ada lovelace".to_string());
+            assert!(thread::current().name().unwrap() == "ada lovelace");
         })
         .unwrap()
         .join()
@@ -129,7 +129,7 @@ fn test_is_finished() {
     });
 
     // Thread is definitely running here, since it's still waiting for the barrier.
-    assert_eq!(t.is_finished(), false);
+    assert!(!t.is_finished());
 
     // Unblock the barrier.
     b.wait();
@@ -449,6 +449,7 @@ fn test_scoped_threads_drop_result_before_join() {
 }
 
 // #[test]
+#[allow(clippy::match_single_binding)]
 fn test_scoped_threads_nll() {
     // this is mostly a *compilation test* for this exact function:
     fn foo(x: &u8) {

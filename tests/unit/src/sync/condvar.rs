@@ -236,7 +236,7 @@ pub fn poison_wait_while() {
     });
 
     // Wait for the thread to start up.
-    let &(ref lock, ref cvar) = &*pair;
+    let (lock, cvar) = &*pair;
     let guard = cvar.wait_while(lock.lock(), |started| !*started);
     assert!(*guard);
     _t.join().unwrap();
@@ -252,7 +252,7 @@ pub fn nonpoison_wait_while() {
 
     // Inside of our lock, spawn a new thread, and then wait for it to start.
     let _t = thread::spawn(move || {
-        let &(ref lock, ref cvar) = &*pair2;
+        let (lock, cvar) = &*pair2;
         let mut started = lock.lock();
         *started = true;
         // We notify the condvar that the value has changed.
@@ -260,7 +260,7 @@ pub fn nonpoison_wait_while() {
     });
 
     // Wait for the thread to start up.
-    let &(ref lock, ref cvar) = &*pair;
+    let (lock, cvar) = &*pair;
     let mut guard = lock.lock();
     cvar.wait_while(&mut guard, |started| !*started);
     assert!(*guard);
@@ -373,10 +373,10 @@ pub fn poison_wait_timeout_while_wake() {
     let pair = Arc::new((Mutex::new(false), Condvar::new()));
     let pair_copy = pair.clone();
 
-    let &(ref m, ref c) = &*pair;
+    let (m, c) = &*pair;
     let g = m.lock();
     let _t = thread::spawn(move || {
-        let &(ref lock, ref cvar) = &*pair_copy;
+        let (lock, cvar) = &*pair_copy;
         let mut started = lock.lock();
         thread::sleep(Duration::from_millis(1));
         *started = true;
@@ -398,10 +398,10 @@ pub fn nonpoison_wait_timeout_while_wake() {
     let pair = Arc::new((Mutex::new(false), Condvar::new()));
     let pair_copy = pair.clone();
 
-    let &(ref m, ref c) = &*pair;
+    let (m, c) = &*pair;
     let mut g = m.lock();
     let _t = thread::spawn(move || {
-        let &(ref lock, ref cvar) = &*pair_copy;
+        let (lock, cvar) = &*pair_copy;
         let mut started = lock.lock();
         thread::sleep(Duration::from_millis(1));
         *started = true;

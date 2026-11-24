@@ -394,7 +394,7 @@ fn join_orders_after_tls_destructors() {
                 assert_eq!(SYNC_STATE.swap(THREAD2_LAUNCHED, Ordering::Relaxed), FRESH);
                 jh.join().unwrap();
                 match SYNC_STATE.swap(THREAD2_JOINED, Ordering::Relaxed) {
-                    MAIN_THREAD_RENDEZVOUS => return,
+                    MAIN_THREAD_RENDEZVOUS => (),
                     THREAD2_LAUNCHED | THREAD1_WAITING => {
                         panic!("Thread 2 running after thread 1 join before main thread rendezvous")
                     },

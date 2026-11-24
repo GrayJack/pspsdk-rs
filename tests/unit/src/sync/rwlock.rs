@@ -1,3 +1,4 @@
+#![allow(clippy::unit_arg, clippy::assertions_on_constants)]
 use core::{
     fmt::Debug,
     hint, mem,
